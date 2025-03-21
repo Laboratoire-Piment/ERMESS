@@ -58,6 +58,6 @@ https://www.techniques-ingenieur.fr/base-documentaire/innovation-th10/innovation
 
 DOI : https://doi.org/10.51257/a-v1-in199
 
-![alt text](https://github.com/Laboratoire-Piment/poster_ERMESS-1.png?raw=true)
+![alt text](https://github.com/Laboratoire-Piment/ERMESS/poster_ERMESS-1.png?raw=true)
 
 
