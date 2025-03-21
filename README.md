@@ -58,6 +58,6 @@ https://www.techniques-ingenieur.fr/base-documentaire/innovation-th10/innovation
 
 DOI : https://doi.org/10.51257/a-v1-in199
 
-poster ERMESS-1
+![poster ERMESS-1](https://github.com/user-attachments/assets/aa768874-d14e-48b4-abfc-4864b5e56f90)
 
 
