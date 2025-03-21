@@ -58,6 +58,6 @@ https://www.techniques-ingenieur.fr/base-documentaire/innovation-th10/innovation
 
 DOI : https://doi.org/10.51257/a-v1-in199
 
-![screenshot](C:/Users/jlegalla/Documents/recherche/Conférences/PVSEC 2024/poster ERMESS-1.png)
+poster ERMESS-1
 
 
