@@ -11,16 +11,27 @@ Main contributor: Josselin Le Gal La Salle
 
 
 ## Scripts
+
 #ERMESS_GA.py : contains the core evolutionnary algorithm used for evolution
+
 #ERMESS_classes.py : defines the classes used in ERMESS
+
 #ERMESS_cost_functions.py : proposes some objective functions for common microgrids performance indicators
+
 #ERMESS_evaluation.py : post-processing of the final solution
+
 #ERMESS_evaluation_operators.py : functions for developers - functions for the assessment of the influence of algorithm hyperparameters
+
 #ERMESS_frontal_evolution.py : Retrieve populations of solutions and run an era of evolution
+
 #ERMESS_frontal_initialisation.py : Run pre-optimization and creates an initial population
+
 #ERMESS_functions.py : functions used in the GA algorithm
+
 #ERMESS_functions_2.py : functions used in pre-processing and post-processing scripts
+
 #ERMESS_parallel_processing.py : manage the parallelisation of the algorithm
+
 
 ##  files
 
