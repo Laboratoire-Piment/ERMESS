@@ -5,7 +5,7 @@
 
 <a href='https://twinsolar.eu/'>https://twinsolar.eu/</a>
 
-This repository contains the source of ERMESS, which is Python code to design and size microgrids.
+This repository contains the source of ERMESS, a Python optimization tool derived from evolutionnary algorithms, with the goal of finding the optimal design of microgrid energy systems.
 
 Main contributor: Josselin Le Gal La Salle
 
