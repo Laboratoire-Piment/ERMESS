@@ -1,0 +1,18 @@
+# Fichiers temporaires
+*.log
+*.tmp
+
+# Dossiers
+node_modules/
+dist/
+build/
+__pycache__/
+meteo_data/
+
+# Fichiers de config locaux
+.env
+.env.local
+
+# Autres
+poster_ERMESS-1.png
+README.md
