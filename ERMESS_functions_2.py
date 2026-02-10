@@ -951,4 +951,3 @@ def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movab
     
     wb.save(file_name_out)
   
-    

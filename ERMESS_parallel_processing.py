@@ -59,5 +59,3 @@ def parallel_fitness(args_fitness):
             pool.close()
             pool.join()
             return(local_populations)
-
-     

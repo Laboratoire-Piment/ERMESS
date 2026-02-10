@@ -438,5 +438,3 @@ def combining_HD_solutions2 (D_solutions,H_solutions,days,D_time_resolution,H_ti
         HD_population.append(ECl.Non_JIT_Individual_res(production_set=HD_production_set,storage_sum=HD_storage_sum,storage_TS=HD_storage_TS,contract=HD_contract,Y_DSM=YDSM,D_DSM=DDSM,fitness=np.float64(np.nan),trades=np.empty(np.int64(n_days*H_time_resolution*24))* np.float64(np.nan)))
 
     return(HD_population)
-
-
