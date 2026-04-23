@@ -1,354 +1,62 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep 22 16:18:47 2023
+Created on Tue Mar  3 13:50:18 2026
 
-@author: jlegalla
+@author: JoPHOBEA
 """
 
 import pandas as pd
 import numpy as np
-import openpyxl         
-import copy  
-import timezonefinder
-import ERMESS_PV_model as EPV
-import ERMESS_Windmodel as EWi
-import ERMESS_meteo as Eme
+import openpyxl
 
-def find_constraint_levels(constraint_num,Constraint_level,D_Non_movable_load,D_Movable_load,storage_characteristics,prod_C,prods_U,Bounds_prod):
-    max_production = prod_C/1000+np.inner(prods_U.T,Bounds_prod)/1000 
-    total_load=sum(D_Non_movable_load)+sum(D_Movable_load)       
-    extra_prod = np.where(max_production>D_Non_movable_load,max_production-D_Non_movable_load,0) 
-    sum_extra_prod = sum(extra_prod)-sum(D_Movable_load)        
-    D_Instantaneous_energy=np.minimum(max_production,D_Non_movable_load)
-    D_reportable_energy=max(storage_characteristics[4,:])*sum_extra_prod
-    if constraint_num==1:
-        D_max_self_sufficiency = min(1,(sum(D_Instantaneous_energy)+D_reportable_energy)/total_load)
-        D_max_constraint_level = D_max_self_sufficiency
-    else:
-        
-        ## The max. self-consumption is always 1 because we can always lose artificially energy using storage
-        D_max_self_consumption = 1
-        D_max_constraint_level = D_max_self_consumption
-    return(tuple((constraint_num ,Constraint_level,D_max_constraint_level)))
+from dataclasses import dataclass
 
-def compute_grid_prices(datetime_data,grid_price):
-    grid_price=grid_price.replace(np.nan, '', regex=True)
-    prices = [pd.DataFrame(data={'Datetime':datetime_data,'Hour type':'NONE','Price':None}) for i in range(len(grid_price))]
-    prices_hour_type = []
-    prices_num = []
+from ERMESS_scripts.data.indices import *
+from ERMESS_scripts.reporting import graphs_excel as EgE
+from ERMESS_scripts.reporting import charts_config as Ecc
 
-
-    fixed_premium = []
-    Overrun = []
-    Selling_price = []
+@dataclass
+class PostProcessingResults:
+    timeseries: pd.DataFrame
+    technical: pd.DataFrame
+    economic: pd.DataFrame
+    environmental: pd.DataFrame
+    flows: pd.DataFrame
+    storages: pd.DataFrame
+    production: pd.DataFrame
+    global_dispatching: pd.DataFrame
+    SOC_distribution: pd.DataFrame
+    genset: pd.DataFrame
+    demand_side_management: list
+    time_balancing: list
+    EMS: list
     
-    for i in range(len(grid_price)):
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend peak hours'].split(' '))),'Hour type']='Peak'
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend full hours'].split(' '))),'Hour type']='WE full'
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend off-peak hours'].split(' '))),'Hour type']='WE off'
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday peak hours'].split(' '))),'Hour type']='Peak'
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday full hours'].split(' '))),'Hour type']='W full'
-        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday off-peak hours'].split(' '))),'Hour type']='W off'
-    
-        prices[i].loc[prices[i]['Hour type']=='Peak' ,'Price']=grid_price.iloc[i]['Peak (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
-
-        prices[i]['Price']=prices[i]['Price']*(1+grid_price.iloc[i]['TVA load'])
-        prices[i]['Price']+=grid_price.iloc[i]['CSPE (c€/kWh)']
-        prices[i]['Price']=prices[i]['Price']/100
-        prices_hour_type.append(prices[i]['Hour type'])
-        prices_num.append(prices[i]['Price'])
-
-        fixed_premium.append( grid_price.iloc[i]['Fixed premium (€/kW)'])
-        Overrun.append( grid_price.iloc[i]['Power overrun (€/kW)'])
-        Selling_price.append(np.repeat(grid_price.iloc[i]['Selling base price (c€/kWh)'],len(datetime_data)))
-        Selling_price[i][(prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Selling peak hours'].split(' ')))]=grid_price.iloc[i]['Selling peak price (c€/kWh)']
-        Selling_price[i]=Selling_price[i]/100
-        
-        #Converting into Numpy
-    fixed_premium=np.array(fixed_premium,dtype=np.float64)
-    Overrun=np.array(Overrun,dtype=np.float64)
-    Selling_price=np.array(Selling_price,dtype=np.float64)
-    prices_num=np.float64(np.vstack(prices_num))
-    prices_hour_type=np.vstack(prices_hour_type).astype('U')
-
-    return([prices_hour_type,prices_num,fixed_premium,Overrun,Selling_price])
-
-def timeseries_interpolation(datetime_model,series_datetime,series_yvalue):
-    y_values = np.float64(np.interp(np.array(datetime_model,dtype='float64'),np.array(series_datetime,dtype='float64'),np.array(series_yvalue,dtype='float64')))
-    return(y_values)
-
-def read_data(Data) :
-    
-    EnR_site = {"longitude":Data['Environment']['Longitude (°)'][0],"latitude":Data['Environment']['Latitude (°)'][0],"altitude":Data['Environment']['Altitude (m)'][0]}
-    time_resolution = np.float64( Data['Environment']['time resolution (steps/h)'][0])
-
-    # Meteo data
-    datetime_data=Data['TimeSeries']['Datetime']
-    datetime_data=pd.to_datetime(datetime_data, format="%d/%m/%Y %H:%M").round('1s')
-    
-    timezone_str = timezonefinder.TimezoneFinder().certain_timezone_at(lat=EnR_site['latitude'], lng=EnR_site['longitude'])
-    EnR_site ["tz"]=timezone_str
-
-    datetime_model = pd.date_range(datetime_data[0],datetime_data[len(datetime_data)-1],freq=str(int(60/time_resolution))+'min',tz=timezone_str)#.tz_localize(timezone_str)
-    
-    Meteo_computation = Data['Environment']['Meteo'][0]
-    
-    
-    Production_computation = Data['Environment']['Production'][0]
-    
-    if (Production_computation=='automatic'):
-        
-        if (Meteo_computation=='manual'):
-        
-            PV_meteo = Data['Meteo'].loc[:, ['GHI (W/m²)','DNI (W/m²)','DHI (W/m²)','Air temperature (°C)','Wind speed (m/s)']].rename(columns={'GHI (W/m²)':'ghi','DNI (W/m²)':'dni','DHI (W/m²)':'dhi','Air temperature (°C)':'temp_air','Wind speed (m/s)':'wind_speed'}).set_index(pd.to_datetime(Data['Meteo'].loc[:,'Datetime']))
-            Wind_heights = Data['Meteo'].loc[np.array((5,3,6)),'Measurement height (m)'].to_numpy()
-            Wind_meteo = pd.DataFrame(data=Data['Meteo'].loc[:, ['Wind speed (m/s)','Air temperature (°C)','Pressure (hPa)']].values,index=Data['Meteo']['Datetime'],columns=[np.array(['wind_speed','temperature','pressure']),Wind_heights])
-            Wind_meteo['temperature']=Wind_meteo['temperature']+273.15
-            Wind_meteo['pressure']=Wind_meteo['pressure']*100 #in Pa
-            Datetime_prods = pd.DatetimeIndex(pd.to_datetime(Data['Meteo']['Datetime'],format='%d/%m/%Y %H:%M')).round('1s').tz_localize(timezone_str,nonexistent="shift_forward" ,ambiguous=False)
-            
-        elif (Meteo_computation == 'automatic' ):
-            PV_meteo,Wind_meteo = Eme.import_meteo(EnR_site['latitude'],EnR_site['longitude'],EnR_site['altitude'],datetime_model[0],datetime_model[len(datetime_model)-1],timezone_str)
-            Datetime_prods =PV_meteo.index
-
-        Terrain_type =  Data['Environment']['Terrain type'][0]
-        Roughness_length = 0 if Terrain_type=='off-shore' else (0.005 if Terrain_type=='no vegetation, no obstacles' else (0.005 if Terrain_type=='off-shore' else (0.03 if Terrain_type=='flat terrain, grass, isloated obstacles' else (0.1 if Terrain_type=='low crops, occasional obstacles' else (0.25 if Terrain_type=='high crops, scattered obstacles' else (0.5 if Terrain_type=='parkland, bushes, numerous obstacles' else (1 if Terrain_type=='regular large obstacles (suburbs, forest)' else (2.5 if Terrain_type=='city centre' else 0.5))))))))
-        Wind_meteo[('roughness_length', 0)] = Roughness_length
-        
-        PV_prod = Data['PV_production_specs'].loc[:, ['Tilt (°)','Azimuth (°)','Module type','Mounting','Inverter','Module','Modules per string','Strings','Surface type']]
-        WT_prod = Data['WT_production_specs'].loc[:, ['Model','Hub height (m)']].rename(columns={'Hub height (m)':'hub_height','Model':'turbine_type'})
-        WT_prod = [EWi.default_wind_turbines(WT_prod.iloc[i]) for i in range(len(WT_prod))]
-        
-        PV_TempParam_default = {'a': -3.47,'b': -0.0594,'deltaT': 3} #SAPM coeffs
-        PV_FixModMount = [{"type":"Fixed","surface_tilt":PV_prod['Tilt (°)'][i],"surface_azimuth":PV_prod['Azimuth (°)'][i],"racking_model":PV_prod['Mounting'][i]} for i in range(len(PV_prod))]
-        PV_arrayParam = [{"surface_type":PV_prod['Surface type'][i],"module_type":PV_prod['Module type'][i],"modules_per_string":PV_prod['Modules per string'][i],"strings":PV_prod['Strings'][i]} for i in range(len(PV_prod))]
-        LossesParam_default = {"soiling": 2,"shading": 3,"snow": 0,"mismatch": 2,"wiring": 2,"connections": 0.5,"lid": 1.5,"nameplate_rating": 1,"age": 0,"availability": 3}
-        
-        prods_U_PV = np.array([EPV.pvmodel(EnR_site, PV_meteo, PV_TempParam_default, PV_prod['Module'][i], PV_prod['Inverter'][i], PV_FixModMount[i], PV_arrayParam[i],LossesParam_default,False,False,False,False)[0] for i in range(len(PV_prod))])
-        prods_U_PV = np.where(prods_U_PV<0,0,prods_U_PV)
-        prods_U_WT = np.array([EWi.windmodel(weather=Wind_meteo,MyTurbineDict=WT_prod[i],ModelChainDict=None,csv=False,plot=False,pow_TS=False,pow_curv=False) for i in range(len(WT_prod))])
-        prods_U = np.row_stack([x for x in (prods_U_PV, prods_U_WT) if x.size] or [np.array([])])
-    elif (Production_computation=='manual'):   
-        prods_U = Data['Unit_productions'].drop('Datetime',axis=1)
-        prods_U=np.array(prods_U).T
-        Datetime_prods = Data['Unit_productions']['Datetime']
-        
-    prods_U=np.array([timeseries_interpolation(datetime_model,  Datetime_prods, prods_U[i]) for i in range(len(prods_U))])
-    Volums_prod = np.sum(prods_U,axis=1)
-    
-    
-    PV_specs = Data['PV_production_specs'].loc[:,['Capital unit cost (€)','Operational unit cost (€/yrs)','Lifetime (years)','Capacity','eqCO2 Emissions (gCO2/kWh)','EROI','Surface group']].to_numpy(dtype=np.float64)
-    WT_specs = Data['WT_production_specs'].loc[:,['Capital unit cost (€)','Operational unit cost (€/yrs)','Lifetime (years)','Capacity','eqCO2 Emissions (gCO2/kWh)','EROI','Surface group']].to_numpy(dtype=np.float64)    
-    specs_num = np.row_stack((PV_specs,WT_specs))
-    
-    groups = [np.where(specs_num[:,6]==i)[0] for i in np.unique(specs_num[:,6])]  
-    
-    specs_Id=np.concatenate((Data['PV_production_specs']['Id'].to_numpy(dtype='U'),Data['WT_production_specs']['Id'].to_numpy(dtype='U')))
-    specs_names=np.array(['Capital unit cost','Operational unit cost','Lifetime','Capacity','eqCO2 Emissions','EROI','Surface group'],dtype='U')
-    
-    series_datetime = pd.to_datetime(Data['TimeSeries']['Datetime'], format="%d/%m/%Y %H:%M").dt.tz_localize(timezone_str,nonexistent="shift_forward" ,ambiguous=False)
-    prod_C = timeseries_interpolation(datetime_model, series_datetime, Data['TimeSeries']['Current_production (W)'])
-    prod_C[prod_C<0]=0
-    
-    Non_movable_load = timeseries_interpolation(datetime_model, series_datetime, Data['TimeSeries']['Non-controllable load (kW)'])
-    Y_movable_load = timeseries_interpolation(datetime_model, series_datetime, Data['TimeSeries']['Yearly movable load (kW)'])
-    D_movable_load = timeseries_interpolation(datetime_model, series_datetime, Data['TimeSeries']['Daily movable load (kW)'])
-      
-    grid_price = Data['Grid_prices']
-    Contract_Id = grid_price['Contract_Id']
-
-    #time_resolution = (datetime_data.iloc[-1].round(freq='min')-datetime_data.iloc[1].round(freq='min'))/(len(datetime_data)-2)
-    #time_resolution = np.float64(3600/time_resolution.seconds)
-    Constraint = Data['Environment']['Constraint'][0]
-    Connexion = Data['Environment']['Connexion'][0]
-        
-    if Constraint== 'Self-sufficiency':
-            constraint_num = np.int64(1) 
-    elif Constraint== 'Self-consumption':
-            constraint_num = np.int64(2)
-    elif Constraint== 'EnR fraction':
-            constraint_num = np.int64(3)
-    else : 
-            print('No proper constraint found !')
-            constraint_num = np.int64(0)
-                
-    Constraint_level = np.float64(Data['Environment']['Constraint level'][0])
-    criterion = Data['Environment']['Optimisation criterion'][0]
-       
-    if criterion== 'LCOE':
-            criterion_num = np.int64(1)
-    elif criterion== 'Annual net benefits':
-            criterion_num = np.int64(2)
-    elif criterion== 'NPV':
-            criterion_num = np.int64(3)
-    elif criterion== 'Self-sufficiency':
-            criterion_num = np.int64(4)
-    elif criterion== 'Self-consumption':
-            criterion_num = np.int64(5)
-    elif criterion== 'Autonomy':
-            criterion_num = np.int64(6)
-    elif criterion== 'eqCO2 Emissions':
-            criterion_num = np.int64(7)
-    elif criterion== 'fossil fuel consumption':
-            criterion_num = np.int64(8)
-    elif criterion== 'EROI':
-            criterion_num = np.int64(9)
-    elif criterion== 'Energy losses':
-            criterion_num = np.int64(10)
-    elif criterion== 'Maximum power from grid':
-            criterion_num = np.int64(11)   
-    else : 
-            criterion_num = np.int64(0)
-            
-    type_optim = Data['Environment']['type'][0]
-    
-    storages = Data['Storages']
-    Cost_power = storages['PCS cost (€/kW)']+storages['BOP cost (€/kW)']
-    storage_characteristics = storages.T[1:].to_numpy(dtype=np.float64)
-    storage_techs = storages['Technology'].to_numpy(dtype='U')
-    storage_characteristics = np.vstack((storage_characteristics,Cost_power),dtype=np.float64)
-    storage_characteristics_names = np.hstack((storages.columns[1:].to_numpy(),'Cost power'))
-
-    Bounds_prod = np.int64(specs_num[:,np.where(specs_names=='Capacity')[0][0]])
-    n_UP=len(Bounds_prod)
-    duration_years = np.float64(len(prod_C)/time_resolution/8760)
-    
-    DG_fuel_cost = Data['Diesel generator']['Value'][0]
-    DG_lifetime = Data['Diesel generator']['Value'][1]
-    DG_unit_cost = Data['Diesel generator']['Value'][2]
-    DG_maintenance_cost = Data['Diesel generator']['Value'][3]
-    fuel_CO2eq_emissions = Data['Diesel generator']['Value'][4]
-    DG_EROI = Data['Diesel generator']['Value'][5]
-    DG_fuel_consumption = np.array(Data['Diesel generator']['DG fuel consumption'][1:11],dtype=np.float64)
-    
-    
-    if (type_optim=='pro'):
-        Defined_items = np.array(('Discharge order','D_DSM_levels','Y_DSM_levels','Diesel generator'))[np.where(Data['Dispatching']['User-Defined']=='Yes')[0]]
-        Discharge_order = (np.array(Data['Dispatching']['Discharge order'],dtype=np.int64)[~pd.isnull(np.array(Data['Dispatching']['Storages']))])-1
-        Taking_over = np.array(Data['Dispatching']['Taking over level (%)'][0:9],dtype='float64')
-        Taking_over_ext = np.array(Data['Dispatching']['DG/grid taking over level (%)'][0:9],dtype='float64')
-        Taking_overs = np.row_stack((Taking_over,Taking_over_ext))
-        energy_use_repartition_DSM = Data['Dispatching']['Repartition coefficients'][0]/(Data['Dispatching']['Repartition coefficients'][0]+Data['Dispatching']['Repartition coefficients'][1])
-        D_DSM_minimum_levels = np.array(Data['Dispatching']['D_DSM minimum levels'][1:24],dtype='float64')
-        Y_DSM_minimum_levels = np.array(Data['Dispatching']['Y_DSM minimum levels'][1:12],dtype='float64')
-        DG_strategy = Data['Dispatching']['Diesel generator'][0]
-        DG_min_runtime = Data['Dispatching']['Diesel generator'][1]
-        DG_min_production = Data['Dispatching']['Diesel generator'][2]
-    else : 
-        Defined_items = ()
-        Discharge_order, Taking_overs,energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime,DG_min_production = np.repeat(np.nan,8)
-        
-    Dispatching = [Defined_items, Discharge_order, Taking_overs, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production,energy_use_repartition_DSM]
-    
-    (Grid_Fossil_fuel_ratio,Main_grid_emissions,Main_grid_ratio) = (np.float64(Data['Environment']['Main grid fossil fuel ratio'][0]),np.float64(Data['Environment']['Main grid emissions (gCO2/kWh)'][0]),np.float64(Data['Environment']['Main grid ratio primary over final energy'][0]))
-   
-    
-    r_cross_init=np.float64(Data['Hyperparameters']['Initialisation values'][0])
-    n_iter_init=np.int64(Data['Hyperparameters']['Initialisation values'][1])
-    r_cross=np.float64(Data['Hyperparameters']['Evolution values'][0])
-    n_iter,nb_ere,n_pop,n_nodes,n_core =np.int64(Data['Hyperparameters']['Evolution values'][1:6])
-    Cost_sequence = np.float64(Data['Hyperparameters']['Constraint costs'])
-    operator_contract = np.float64(Data['Hyperparameters']['Contract'])
-    operator_production = np.float64(Data['Hyperparameters']['Production'])
-    operator_storage_volumes = np.float64(Data['Hyperparameters']['Storage volume'])
-    operator_storage_use = np.float64(Data['Hyperparameters']['Storage use'])
-    operator_storage_power = np.float64(Data['Hyperparameters']['Storage power'])
-    operator_scheduling_consistency = np.float64(Data['Hyperparameters']['Scheduling consistency'])
-    operator_storage_timeserie = np.float64(Data['Hyperparameters']['Storage timeserie'])
-    operator_storage_opposite = np.float64(Data['Hyperparameters']['Storage opposite moves'])
-    operator_storage_transfers = np.float64(Data['Hyperparameters']['Storage transfers'])
-    operator_storage_specification = np.float64(Data['Hyperparameters']['Storage specification'])
-    operator_curve_smoothing = np.float64(Data['Hyperparameters']['Curve smoothing'])
-    operator_constraint = np.float64(Data['Hyperparameters']['Constraint'])
-    operator_long_term_consistency = np.float64(Data['Hyperparameters']['Long-term consistency'])
-    operator_YDSM = np.float64(Data['Hyperparameters']['Yearly demand-side management'])
-    operator_DDSM = np.float64(Data['Hyperparameters']['Daily demand-side management'])
-    hyperparameters_main = {'Initialisation':(n_core,n_nodes,r_cross_init,n_pop,n_iter_init),'Evolution':(n_core,n_nodes,r_cross,n_pop,n_iter,nb_ere)}
-    hyperparameters_operators_names = np.array(('Contract','Production','Storage volume','Storage use','Storage power','Scheduling consistency','Storage timeserie','Storage opposite moves','Storage transfers','Storage specification','Curve smoothing','Constraint','Long-term consistency','Yearly demand-side management','Daily demand-side management'))
-    hyperparameters_operators_num = np.array((operator_contract,operator_production,operator_storage_volumes,operator_storage_use,operator_storage_power,operator_scheduling_consistency,operator_storage_timeserie,operator_storage_opposite,operator_storage_transfers,operator_storage_specification,operator_curve_smoothing,operator_constraint,operator_long_term_consistency,operator_YDSM,operator_DDSM)).T
-
-    r_cross_pro = np.float64(Data['Hyperparameters_pro']['Evolution values'][0])
-    n_iter_pro,n_pop_pro = np.int64(Data['Hyperparameters_pro']['Evolution values'][1:3])
-    operator_contract_pro = np.float64(Data['Hyperparameters_pro']['Contract'])
-    operator_production_pro = np.float64(Data['Hyperparameters_pro']['Production'])
-    operator_strategy_pro = np.float64(Data['Hyperparameters_pro']['Strategy'])
-    operator_discharge_order_pro = np.float64(Data['Hyperparameters_pro']['Discharge order'])
-    operator_energy_use_pro = np.float64(Data['Hyperparameters_pro']['Energy use'])
-    operator_taking_over_pro = np.float64(Data['Hyperparameters_pro']['Taking over'])
-    operator_DSM_min_levels_pro = np.float64(Data['Hyperparameters_pro']['DSM minimum levels'])
-    operator_DG_min_runtime_pro = np.float64(Data['Hyperparameters_pro']['DG min runtime'])
-    operator_DG_min_production_pro = np.float64(Data['Hyperparameters_pro']['DG min production'])
-    operator_storages_capacity_pro = np.float64(Data['Hyperparameters_pro']['storages capacity'])
-    operator_storages_power_pro = np.float64(Data['Hyperparameters_pro']['storages power'])
-    operator_init_SOC_pro = np.float64(Data['Hyperparameters_pro']['Initial SOC'])
-    
-    hyperparameters_main_pro = (r_cross_pro,n_pop_pro,n_iter_pro)
-    hyperparameters_operators_names_pro = np.array(('Contract','Production','Strategy','Discharge order','Energy use','Taking over','DSM minimum levels','DG min runtime','DG min production','storages capacity','storages power','Initial SOC'))
-    hyperparameters_operators_num_pro = np.array((operator_contract_pro,operator_production_pro,operator_strategy_pro,operator_discharge_order_pro,operator_energy_use_pro,operator_taking_over_pro,operator_DSM_min_levels_pro,operator_DG_min_runtime_pro,operator_DG_min_production_pro,operator_storages_capacity_pro,operator_storages_power_pro,operator_init_SOC_pro)).T
-
-    [prices_hour_type,prices_num,fixed_premium,Overrun,Selling_price] = compute_grid_prices(datetime_model,grid_price)
-    return (pd.Series(datetime_model),Grid_Fossil_fuel_ratio,Main_grid_emissions,Main_grid_ratio,Connexion,specs_names,specs_Id,specs_num,prod_C,prods_U,Volums_prod,Y_movable_load,D_movable_load,Non_movable_load,time_resolution,constraint_num, Constraint_level ,criterion_num,storage_techs,storage_characteristics_names,storage_characteristics,Bounds_prod,n_UP,duration_years,prices_hour_type,prices_num,fixed_premium,Overrun,Selling_price,Contract_Id,hyperparameters_main,hyperparameters_operators_names,hyperparameters_operators_num,hyperparameters_main_pro,hyperparameters_operators_names_pro,hyperparameters_operators_num_pro,Cost_sequence,type_optim,Dispatching,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,groups)    
-
-
-
-def NONJIT_adaptation_hyperparameters_initialisation(hyperparameters_operators):
-    adaptated_hyperparameters_operators=copy.deepcopy(hyperparameters_operators)
-    adaptated_hyperparameters_operators['Contract'][0]=1*adaptated_hyperparameters_operators['Contract'][0]
-    adaptated_hyperparameters_operators['Production'][0]=1*adaptated_hyperparameters_operators['Production'][0]
-    adaptated_hyperparameters_operators['Storage volume'][0]=0*adaptated_hyperparameters_operators['Storage volume'][0]
-    adaptated_hyperparameters_operators['Storage power'][0]=0*adaptated_hyperparameters_operators['Storage power'][0]
-    adaptated_hyperparameters_operators['Storage use'][0]=1*adaptated_hyperparameters_operators['Storage use'][0]
-    adaptated_hyperparameters_operators['Storage timeserie'][0]=1*adaptated_hyperparameters_operators['Storage timeserie'][0]
-    adaptated_hyperparameters_operators['Storage opposite'][0]=1*adaptated_hyperparameters_operators['Storage opposite'][0]
-    adaptated_hyperparameters_operators['Storage transfer'][0]=1*adaptated_hyperparameters_operators['Storage transfer'][0]
-    adaptated_hyperparameters_operators['Long-term consistency'][0]=0*adaptated_hyperparameters_operators['Long-term consistency'][0]
-    adaptated_hyperparameters_operators['Scheduling consistency'][0]=0.2*adaptated_hyperparameters_operators['Scheduling consistency'][0]
-    adaptated_hyperparameters_operators['Storage specification'][0]=0*adaptated_hyperparameters_operators['Storage specification'][0]
-    adaptated_hyperparameters_operators['Curve smoothing'][0]=0.7*adaptated_hyperparameters_operators['Curve smoothing'][0]
-    adaptated_hyperparameters_operators['Y_DSM'][0]=adaptated_hyperparameters_operators['Y_DSM'][0]
-    adaptated_hyperparameters_operators['D_DSM'][0]=adaptated_hyperparameters_operators['D_DSM'][0]
-
-    return (adaptated_hyperparameters_operators)
-
-def adaptation_hyperparameters_initialisation(hyperparameters_operators_num,hyperparameters_operators_names):
-    adaptated_hyperparameters_operators=copy.deepcopy(hyperparameters_operators_num)
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Contract']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Contract'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Production']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Production'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage volume']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage volume'][0][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage power']=0.2*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage power'][0]
-    #adaptated_hyperparameters_operators[1,hyperparameters_operators_names=='Storage power']=40
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage use']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage use'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage timeserie']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage timeserie'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage opposite']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage opposite'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage transfers']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage transfers'][0]
-    adaptated_hyperparameters_operators[1,hyperparameters_operators_names=='Storage transfers']=5
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Long-term consistency']=0*hyperparameters_operators_num[:,hyperparameters_operators_names=='Long-term consistency'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Scheduling consistency']=0.5*hyperparameters_operators_num[:,hyperparameters_operators_names=='Scheduling consistency'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Storage specification']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Storage specification'][0]
-    adaptated_hyperparameters_operators[1,hyperparameters_operators_names=='Storage specification']=1
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Constraint']=1*hyperparameters_operators_num[:,hyperparameters_operators_names=='Constraint'][0]
-    adaptated_hyperparameters_operators[1,hyperparameters_operators_names=='Constraint']=20
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Curve smoothing']=0.7*hyperparameters_operators_num[:,hyperparameters_operators_names=='Curve smoothing'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='Y_DSM']=hyperparameters_operators_num[:,hyperparameters_operators_names=='Y_DSM'][0]
-    adaptated_hyperparameters_operators[0,hyperparameters_operators_names=='D_DSM']=hyperparameters_operators_num[:,hyperparameters_operators_names=='D_DSM'][0]
-
-    return (adaptated_hyperparameters_operators)
-    
-
 def as_text(value):
+    """
+    Convert a value to a string, returning an empty string for None.
+    
+    This utility ensures that None values are represented as an empty string
+    instead of the literal "None", which is useful for Excel or text output.
+    
+    Args:
+        value (Any): Any value that might be written in a cell.
+    
+    Returns:
+        str: String representation of the value, or empty string if None.
+    """
     if value is None:
         return ""
     return str(value)
 
 def set_column_width(ws,offset=0):
+    """
+    Automatically adjust the width of all columns in an OpenPyXL worksheet
+    based on the maximum length of the content in each column.
+    
+    Args:
+        ws (openpyxl.worksheet.worksheet.Worksheet): Worksheet to format.
+        offset (int): Extra width to add to each column.
+    """
     dim_holder = openpyxl.worksheet.dimensions.DimensionHolder(worksheet=ws)
     j=0
 
@@ -358,9 +66,372 @@ def set_column_width(ws,offset=0):
         dim_holder[openpyxl.utils.get_column_letter(j)] = openpyxl.worksheet.dimensions.ColumnDimension(ws, min=j, max=j, width=length+offset)
 
     ws.column_dimensions = dim_holder
+        
+def _get_nested(data, keys):
+    if isinstance(keys, str):
+        return data[keys]
+
+    for k in keys:
+        data = data[k]
+    return data
+
+
+def _build_comparison_block(outputs_solution, output_baseline, keys):
+    """
+    Generic builder for Optimization vs Baseline comparison blocks.
+
+    keys : str OR list/tuple
+    """
+
+    data_opt = _get_nested(outputs_solution, keys)
+    data_base = _get_nested(output_baseline, keys)
+
+    if isinstance(data_opt, pd.DataFrame):
+        df = pd.concat([data_opt, data_base])
+
+    else:
+        df_opt = pd.DataFrame(data_opt, index=["Optimization"])
+        df_base = pd.DataFrame(data_base, index=["Baseline"])
+        df = pd.concat([df_opt, df_base])
+
+    df.index = ['Optimization', 'Baseline']
+
+    return df
+  
+def compute_economic_comparisons(outputs_solution, output_baseline):
+    NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['Technical']['Installation lifetime (yrs.)']
+    Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
+    if Payback<0 : 
+        Payback = np.nan
+    return(NPV, Payback)
+
+def output_build_production(solution, Contexte):
+    return pd.DataFrame({
+        'ID': Contexte.specs_Id,
+        'Number of units': solution.production_set,
+        'Coverage ratio': solution.production_set / Contexte.production.capacities,
+        'Initial investment (€)': np.multiply(Contexte.production.specs_num[:, PROD_CAPEX], solution.production_set)
+    })    
+
+def write_sheet(writer, df, name, **kwargs):
+    df.to_excel(writer, sheet_name=name, **kwargs)
+    
+def write_multiple_tables(writer, dfs, sheet_name, positions,index):
+    """
+    dfs : list of DataFrames
+    positions : list of (row, col)
+    """
+    for df, (row, col) in zip(dfs, positions):
+        df.to_excel(writer, sheet_name=sheet_name,startrow=row, startcol=col, index=index)
+    
+def export_to_excel(results, Contexte):
+
+    with pd.ExcelWriter(Contexte.postprocess_config.file_name, engine='openpyxl') as writer:
+
+        write_sheet(writer, results.flows, "Flows")
+        write_multiple_tables(writer,results.global_dispatching,"Global dispatching",positions=[(0, 0), (3, 0),(6, 0),(9, 0),(12, 0), (15, 0),],index=True)
+        write_sheet(writer, results.economic, "Financial outputs")
+        write_sheet(writer, results.technical, "Technical")
+        write_sheet(writer, results.storages, "Storages")
+        write_sheet(writer, results.environmental, "Environment outputs")
+        write_sheet(writer, results.SOC_distribution, "SOC distributions", index=False)
+        write_sheet(writer, results.timeseries, "TimeSeries", index=False)
+        write_sheet(writer, results.production, "Production", index=False)
+        write_sheet(writer, results.genset, "Genset", index=False)
+        write_multiple_tables(writer,results.demand_side_management,"Demand side management",positions=[(0, 0), (0, 7),(0, 13),], index=False)
+        write_multiple_tables(writer, results.time_balancing, "Balancing",positions=[(0, 0), (0, 7),(0, 14),(0, 21),], index=False)
+        
+        write_multiple_tables(writer, results.EMS, "EMS",positions=[(0, 0), (0, 1),(0, 3),(0, 6),(0, 9),(0, 11),], index=False)
+    
+        wb = writer.book
+        for ws in wb.worksheets:
+            set_column_width(ws)
+    
+def build_timeseries(outputs_solution, solution, Contexte, datetime):
+    """
+    Build a standardized time series DataFrame from optimization outputs.
+
+    Parameters
+    ----------
+    outputs_solution : dict
+        Output dictionary from evaluation_function.
+    Contexte : object
+        Simulation context (contains time, prices, etc.).
+    datetime_data : array-like
+        Timestamps.
+    Returns
+    -------
+    pd.DataFrame
+        Clean time series DataFrame ready for analysis/export.
+    """
+
+    TS = outputs_solution["TimeSeries"]
+
+    # --- Datetime ---
+    datetime_index = pd.to_datetime(datetime, unit="s").tz_localize(None)
+
+    # --- Core signals ---
+    load = TS["Optimized load (kW)"]
+    production = TS["production (kW)"]
+    grid = TS["Grid trading (kW)"]
+    dg = TS["DG production (kW)"]
+    curtailment = TS["Curtailment (kW)"]
+
+    # --- Storages ---
+    power_storages = pd.DataFrame(TS["Storage_TS (kW)"],index=[f"{tech} power (kW)" for tech in Contexte.storage.technologies],).T
+    losses = pd.DataFrame(TS["Losses (kW)"],index=[f"{tech} losses (kW)" for tech in Contexte.storage.technologies],).T
+    socs = pd.DataFrame(TS["SOCs (%)"],index=[f"{tech} SOC (%)" for tech in Contexte.storage.technologies],).T
+    power_storage_total = power_storages.sum(axis=1)
+
+    # --- Grid price ---
+    grid_price = Contexte.grid.prices[solution.contract] if Contexte.config.connexion=="On-grid" else None
+
+    # --- Imbalance ---
+    imbalance = (production+ power_storage_total+ grid- load- curtailment+ dg)
+
+    # --- Merging dataframe ---
+    df = pd.concat([pd.DataFrame({"Datetime": datetime_index,"Load (kW)": load,"Power production (kW)": production,}),power_storages,losses,
+                    pd.DataFrame({"Grid power (kW)": grid,"Grid price (€/kWh)": grid_price,"Diesel production (kW)": dg,
+                    "Curtailment (kW)": curtailment,"Imbalance (kW)": imbalance,}),socs,],axis=1)
+
+    return df
+
+def build_flows(outputs_solution, output_baseline, Contexte):
+    """
+    Build a standardized flows DataFrame comparing optimization vs baseline.
+
+    Parameters
+    ----------
+    outputs_solution : dict
+    output_baseline : dict
+    Contexte : object
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+
+    # --- Base flows ---
+    flows_opt = pd.DataFrame(outputs_solution["Flows"], index=["Optimization"])
+    flows_base = pd.DataFrame(output_baseline["Flows"], index=["Baseline"])
+
+    df = pd.concat([flows_opt, flows_base])
+
+    # --- Storage flows helper ---
+    def build_storage_metric(metric_name, label):
+        opt_values = outputs_solution["Flows storages"][metric_name]
+        base_values = output_baseline["Flows storages"][metric_name]
+
+        data_opt = {f"{tech} {label}": opt_values[i] for i, tech in enumerate(Contexte.storage.technologies)}
+        data_base = {f"{tech} {label}": base_values[i] for i, tech in enumerate(Contexte.storage.technologies)}
+
+        return pd.concat([pd.DataFrame(data_opt, index=["Optimization"]),pd.DataFrame(data_base, index=["Baseline"]),])
+
+    # --- Storage metrics ---
+    metrics = [
+        ("Annual stored energy (kWh)", "annual stored energy (kWh)"),
+        ("Annual reported energy (kWh)", "annual reported energy (kWh)"),
+        ("Annual losses (kWh)", "annual losses (kWh)"),
+    ]
+
+    storage_blocks = [build_storage_metric(metric, label)for metric, label in metrics]
+
+    # --- Merge everything ---
+    df = pd.concat([df] + storage_blocks, axis=1)
+
+    return df
+
+def build_technical(outputs_solution, output_baseline):
+    """
+    Build technical comparison DataFrame.
+    """
+    return _build_comparison_block(outputs_solution, output_baseline, "Technical")
+
+def build_environmental(outputs_solution, output_baseline):
+    """
+    Build environmental comparison DataFrame.
+    """
+    return _build_comparison_block(outputs_solution, output_baseline, "Environment")
+
+def build_genset(outputs_solution, output_baseline):
+    """
+    Build genset comparison DataFrame.
+    """
+    return _build_comparison_block(outputs_solution, output_baseline, "Genset")
+
+def build_global_dispatching(outputs_solution, output_baseline):
+    """
+    Build balancing comparison DataFrame.
+    """
+    output_useprod   = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','useprod'])
+    output_loadmeet  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','Loadmeet'])
+    output_whenprod  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','when_prod'])
+    output_whenload  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','when_load'])
+    output_gridexport = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Grid usage','export'])
+    output_gridimport = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Grid usage','import'])
+    
+    return output_useprod,output_loadmeet,output_whenprod,output_whenload,output_gridexport,output_gridimport
+
+def build_demand_side_management(outputs_solution, output_baseline):
+    """
+    Build demand_side_management comparison DataFrame.
+    """
+    Load_strategy = pd.DataFrame(outputs_solution['Demand-side management']['Load strategy'])
+    # Removing timezones of Load Strategy to enable excel export
+    if pd.api.types.is_datetime64tz_dtype(Load_strategy['Datetime']):
+        Load_strategy['Datetime'] = Load_strategy['Datetime'].dt.tz_convert(None)
+    DSM_daily_strategy = outputs_solution['Demand-side management']['DSM daily strategy']
+    DSM_yearly_strategy = outputs_solution['Demand-side management']['DSM yearly strategy']
+   
+    return Load_strategy,DSM_daily_strategy,DSM_yearly_strategy
+
+def build_economic(outputs_solution, output_baseline, Contexte):
+    """
+    Build economic comparison DataFrame with NPV and Payback.
+    """
+
+    econ_opt = outputs_solution["economics"].copy()
+    econ_base = output_baseline["economics"].copy()
+    
+    # --- External computation ---
+    NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline) if Contexte.postprocess_config.include_baseline else (np.nan,np.nan)
+
+    # --- Assign ---
+    econ_opt["NPV (€)"] = NPV
+    econ_opt["Payback (yrs.)"] = Payback
+
+    econ_base["NPV (€)"] = 0
+    econ_base["Payback (yrs.)"] = np.nan
+
+    return _build_comparison_block({"economics": econ_opt},{"economics": econ_base},"economics",)
+
+def build_production(solution, Contexte):
+    """
+    Build production assets DataFrame.
+    """
+
+    production_set = solution.production_set
+
+    df = pd.DataFrame({"ID": Contexte.production.Ids,"Number of units": production_set,"Coverage ratio": production_set / Contexte.production.capacities,
+        "Initial investment (€)": np.multiply(Contexte.production.specs_num[:,PROD_CAPEX],production_set),})
+    return df
+
+def build_SOC_distribution(outputs_solution, output_baseline):
+    """
+    Build distribution of depth of discharge storage DataFrame.
+    """
+    return pd.DataFrame(outputs_solution['Extra_outputs']['distribution_DOD'],index=range(100))
+
+def build_time_balancing(outputs_solution, output_baseline):
+    """
+    Build time balancing DataFrames.
+    """
+    
+    daily_optim_time_balancing = outputs_solution['Balancing']['daily time balancing']
+    daily_baseline_time_balancing = output_baseline['Balancing']['daily time balancing']
+    yearly_optim_time_balancing = outputs_solution['Balancing']['yearly time balancing']
+    yearly_baseline_time_balancing = output_baseline['Balancing']['yearly time balancing']
+
+    return [daily_optim_time_balancing,daily_baseline_time_balancing,yearly_optim_time_balancing,yearly_baseline_time_balancing]
+
+def build_EMS(outputs_solution,Contexte):
+    """
+    Build EMS data.
+    """
+    strategy = pd.DataFrame(data={'Strategy':outputs_solution['EMS']['strategy']},index=[0])
+    repartition_coefficient = pd.DataFrame(data={'energy repartition coefficient':outputs_solution['EMS']['energy repartition coefficient']},index=[0])
+    D_DSM_minimum_levels = pd.DataFrame(data={'Hour': np.arange(24)+1, 'D_DSM level (%)':100*np.concatenate((outputs_solution['EMS']['D_DSM min. levels'],np.array([1.])))})
+    Y_DSM_minimum_levels = pd.DataFrame(data={'Month': np.arange(12)+1,'Y_DSM level (%)':100*np.concatenate((outputs_solution['EMS']['Y_DSM min. levels'],np.array([1.])))})
+    discharge_order = pd.DataFrame({'Order':np.arange(Contexte.storage.n_store)+1,'Storage':Contexte.storage.technologies[outputs_solution['EMS']['discharge order']]})
+    overlaps = pd.concat((pd.DataFrame({'effective SOC (%)':10*(np.arange(9,0,-1))}),pd.DataFrame(100*outputs_solution['EMS']['overlaps']).T),axis=1)
+    overlaps.columns = ['effective SOC (%)',"intern overlaps","extern overlaps"]
+   
+    return [strategy,repartition_coefficient,D_DSM_minimum_levels,Y_DSM_minimum_levels,discharge_order,overlaps]
+
+
+def build_results(solution, Contexte, datetime):
+
+    evaluation_function = Contexte.postprocess_config.evaluation_function
+    evaluation_baseline = Contexte.postprocess_config.evaluation_base
+
+    output_baseline = evaluation_baseline(Contexte,datetime)
+    outputs_solution = evaluation_function(solution,Contexte,datetime)
+    NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline)
+    outputs_solution['economics']["NPV (€)"] = NPV
+    outputs_solution['economics']["Payback (yrs.)"] = Payback
+
+    # --- DataFrames ---
+    timeseries = build_timeseries(outputs_solution, solution, Contexte, datetime)
+    flows = build_flows(outputs_solution, output_baseline, Contexte)
+    technical=build_technical(outputs_solution, output_baseline)
+    economic=build_economic(outputs_solution, output_baseline, Contexte)
+    environmental=build_environmental(outputs_solution, output_baseline)
+    storages=pd.DataFrame(outputs_solution['Storages'], index=Contexte.storage.technologies)
+    production=build_production(solution, Contexte)
+    global_dispatching = build_global_dispatching(outputs_solution, output_baseline)
+    SOC_distribution = build_SOC_distribution(outputs_solution, output_baseline)
+    genset=build_genset(outputs_solution, output_baseline)
+    
+    demand_side_management = build_demand_side_management(outputs_solution, output_baseline)
+
+    time_balancing = build_time_balancing(outputs_solution, output_baseline)  
+    
+    EMS = build_EMS(outputs_solution,Contexte) 
+    
+    return PostProcessingResults(timeseries=timeseries,technical=technical,economic=economic,environmental=environmental,flows=flows,
+        storages=storages,production=production,global_dispatching=global_dispatching,SOC_distribution=SOC_distribution,genset=genset,
+        demand_side_management=demand_side_management,time_balancing=time_balancing,EMS=EMS)
+
+def post_traitement(solution, Contexte, datetime):
+
+    results = build_results(solution, Contexte, datetime)
+
+    if Contexte.postprocess_config.export_type=='Excel':
+        export_to_excel(results, Contexte)
+
+    if Contexte.postprocess_config.export_charts:
+        EgE.add_excel_charts(Contexte=Contexte,charts_config=charts_config)
+
 
 def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movable_load,Y_movable_load,storage_techs,specs_Id,Contract_Id,n_days,file_name_out,Contexte):
-                    
+    """
+    Post-process an energy system optimization solution and export detailed outputs to Excel.
+    
+    This function evaluates an optimization solution against baseline costs,
+    aggregates technical, economic, and environmental metrics, prepares
+    time series data for production, storage, grid, and load balancing,
+    and exports structured results and charts to an Excel workbook.
+    
+    Args:
+        solution (object): Optimization solution object.
+        datetime_data (array-like): Simulation datetime series (in seconds or timestamps).
+        evaluation_function (callable): Function to evaluate the solution, returning detailed metrics.
+        cost_base (callable): Function to compute baseline cost for comparison.
+        D_movable_load (array-like): Daily movable load time series (kW).
+        Y_movable_load (array-like): Yearly movable load time series (kW).
+        storage_techs (list): List of storage technology names.
+        specs_Id (array-like): Identifiers of production units.
+        Contract_Id (array-like): Identifiers of contracts.
+        n_days (int): Number of simulation days.
+        file_name_out (str): Path to output Excel file.
+        Contexte (object): Context object containing system parameters, prices,
+            storage characteristics, time resolution, diesel generator specs,
+            and optimization type.
+    
+    Returns:
+        None: Saves results and charts to Excel.
+    
+    Note:
+        Produces multiple sheets in the Excel output, including:
+            - Flows, Balancing, Financial outputs, Technical, Environment outputs,
+              Storages, SOC distributions, TimeSeries, Production, EMS, DG, DSM,
+              and Time_balancing.
+              
+        Adds charts for production use.
+        Computes additional economic indicators such as NPV and Payback period.
+        Handles both "pro" (advanced) and standard optimization types.
+        Uses `openpyxl` for Excel writing and chart generation.
+    """               
     production_set=solution.production_set 
     outputs_solution = evaluation_function(solution,datetime_data,Contexte.storage_characteristics,Contexte.time_resolution,Contexte.n_store,Contexte.duration_years,Contexte.specs_num,Contexte.prices_num,Contexte.fixed_premium,Contexte.Overrun,Contexte.Selling_price,Contexte.Non_movable_load,Contexte.total_D_Movable_load,D_movable_load, Contexte.total_Y_Movable_load,Y_movable_load,Contexte.Grid_Fossil_fuel_ratio,Contexte.Main_grid_PoF_ratio, Contexte.Main_grid_emissions,Contexte.prod_C,Contexte.prods_U,Contexte.Bounds_prod ,Contexte.constraint_num,Contexte.constraint_level,Contexte.cost_constraint,Contexte.n_bits,Contexte.Connexion,Contexte.DG_fuel_consumption,Contexte.DG_fuel_cost,Contexte.DG_unit_cost,Contexte.DG_lifetime,Contexte.DG_maintenance_cost,Contexte.DG_EROI,Contexte.fuel_CO2eq_emissions,storage_techs,n_days)       
     datetime_excel = pd.to_datetime(datetime_data,unit='s').dt.tz_localize(None)
@@ -950,4 +1021,3 @@ def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movab
     
     
     wb.save(file_name_out)
-  

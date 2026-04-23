@@ -1,0 +1,22 @@
+[project]
+name = "ermess"
+version = "1.0.0"
+description = "Energy system modeling and evolutionary optimization framework"
+authors = [
+    { name = "Ton Nom" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "pandas"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ermess*"]

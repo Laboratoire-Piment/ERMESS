@@ -55,6 +55,139 @@ from numba import int64, float64, types
            ('tracking_ope',int64)
            ])
 class Environnement(object):
+    """
+    Class defining the environment for the optimization problem.
+    This class is targeted for Numba JIT compilation.
+
+    :attr storage_characteristics: Characteristics of the storage units.
+    :type storage_characteristics: np.ndarray of shape (n_store, n_features), dtype float64
+    
+    :attr time_resolution: Time resolution of the simulation in hours.
+    :type time_resolution: float
+    
+    :attr n_store: Number of storage units.
+    :type n_store: int
+    
+    :attr duration_years: Duration of the simulation in years.
+    :type duration_years: float
+    
+    :attr specs_num: Specifications number.
+    :type specs_num: np.ndarray of shape (n_specs, n_features), dtype float64
+    
+    :attr groups: Groups of storage units.
+    :type groups: list of np.ndarray
+    
+    :attr n_bits: Number of bits.
+    :type n_bits: float
+    
+    :attr prices_num: Prices.
+    :type prices_num: np.ndarray
+    
+    :attr fixed_premium: Fixed premium.
+    :type fixed_premium: np.ndarray
+    
+    :attr Overrun: Overrun values.
+    :type Overrun: np.ndarray
+    
+    :attr n_contract: Number of contracts.
+    :type n_contract: int
+    
+    :attr Selling_price: Selling price.
+    :type Selling_price: np.ndarray
+    
+    :attr Non_movable_load: Non-movable load profile.
+    :type Non_movable_load: np.ndarray
+    
+    :attr Y_movable_load: Yearly movable load.
+    :type Y_movable_load: np.ndarray
+    
+    :attr total_Y_Movable_load: Total yearly movable load.
+    :type total_Y_Movable_load: float
+    
+    :attr D_movable_load: Daily movable load.
+    :type D_movable_load: np.ndarray
+    
+    :attr total_D_Movable_load: Total daily movable load.
+    :type total_D_Movable_load: float
+    
+    :attr D_DSM_indexes: Indexes for Demand Side Management.
+    :type D_DSM_indexes: np.ndarray
+    
+    :attr Main_grid_emissions: Emissions from the main grid.
+    :type Main_grid_emissions: float
+    
+    :attr Grid_Fossil_fuel_ratio: Ratio of fossil fuel in the grid.
+    :type Grid_Fossil_fuel_ratio: float
+    
+    :attr Main_grid_PoF_ratio: Probability of Failure ratio of the main grid.
+    :type Main_grid_PoF_ratio: float
+    
+    :attr prod_C: Production capacity.
+    :type prod_C: np.ndarray
+    
+    :attr prods_U: Production units.
+    :type prods_U: np.ndarray
+    
+    :attr Volums_prod: Production volumes.
+    :type Volums_prod: np.ndarray
+    
+    :attr Bounds_prod: Production bounds.
+    :type Bounds_prod: np.ndarray
+    
+    :attr DG_fuel_cost: Diesel Generator fuel cost.
+    :type DG_fuel_cost: float
+    
+    :attr DG_lifetime: Diesel Generator lifetime.
+    :type DG_lifetime: float
+    
+    :attr DG_unit_cost: Diesel Generator unit cost.
+    :type DG_unit_cost: float
+    
+    :attr DG_maintenance_cost: Diesel Generator maintenance cost.
+    :type DG_maintenance_cost: float
+    
+    :attr DG_fuel_consumption: Diesel Generator fuel consumption.
+    :type DG_fuel_consumption: np.ndarray
+    
+    :attr DG_EROI: Diesel Generator Energy Return on Investment.
+    :type DG_EROI: float
+    
+    :attr fuel_CO2eq_emissions: CO2 equivalent emissions from fuel.
+    :type fuel_CO2eq_emissions: float
+    
+    :attr constraint_num: Number of constraints.
+    :type constraint_num: int
+    
+    :attr constraint_level: Level of constraints.
+    :type constraint_level: float
+    
+    :attr criterion_num: Number of criteria.
+    :type criterion_num: int
+    
+    :attr cost_constraint: Cost constraint.
+    :type cost_constraint: float
+    
+    :attr r_cross: Crossover rate.
+    :type r_cross: float
+    
+    :attr n_iter: Number of iterations.
+    :type n_iter: int
+    
+    :attr hyperparameters_operators: Hyperparameters for genetic operators.
+    :type hyperparameters_operators: np.ndarray
+    
+    :attr type_optim: Type of optimization.
+    :type type_optim: str
+    
+    :attr Connexion: Connection type.
+    :type Connexion: str
+    
+    :attr Defined_items: Defined items.
+    :type Defined_items: np.ndarray
+    
+    :attr tracking_ope: Tracking operation.
+    :type tracking_ope: int
+    """
     def __init__(self,storage_characteristics,time_resolution,n_store,duration_years,specs_num,groups,n_bits,prices_num,fixed_premium,Overrun,Selling_price,Non_movable_load,total_Y_Movable_load,total_D_Movable_load,D_DSM_indexes,Main_grid_emissions,Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio,prod_C,prods_U,Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,constraint_num,constraint_level,criterion_num,cost_constraint,r_cross,n_iter,hyperparameters_operators,type_optim,Connexion,Defined_items,tracking_ope):
         self.storage_characteristics = storage_characteristics
         self.time_resolution = time_resolution
@@ -99,6 +232,12 @@ class Environnement(object):
         self.tracking_ope = tracking_ope          
 
 class Non_JIT_Environnement():
+    """
+    Class defining the environment for the optimization problem (Non-JIT version).
+    This class mirrors the structure of `Environnement` but without Numba types for easier initialization.
+    
+    See `Environnement` for full attribute descriptions.
+    """
     def __init__(self,storage_characteristics,time_resolution,n_store,duration_years,specs_num,groups,n_bits,prices_num,fixed_premium,Overrun,Selling_price,Non_movable_load,Y_movable_load,D_movable_load,Main_grid_emissions,Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio,prod_C,prods_U,Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,constraint_num,constraint_level,criterion_num,cost_constraint,r_cross,n_iter,hyperparameters_operators,type_optim,Connexion,Defined_items,tracking_ope):
         self.storage_characteristics = storage_characteristics
         self.time_resolution = time_resolution
@@ -143,6 +282,15 @@ class Non_JIT_Environnement():
         self.tracking_ope = tracking_ope        
 
 def jitting_environment(non_jit_environnement):
+    """
+    Converts a Non_JIT_Environnement object to an Environnement object (JIT-compatible).
+    
+    :param non_jit_environnement : The non-JIT environment object to convert.
+    :type Non_JIT_Environnement
+       
+    :returns: The JIT-compatible environment object.
+    :rtype: Environnement
+    """
     jitted_env=Environnement(np.float64(non_jit_environnement.storage_characteristics),np.float64(non_jit_environnement.time_resolution),np.int64(non_jit_environnement.n_store),np.float64(non_jit_environnement.duration_years),np.float64(non_jit_environnement.specs_num),np.int64(non_jit_environnement.n_bits),np.float64(non_jit_environnement.prices_num),np.float64(non_jit_environnement.fixed_premium),np.float64(non_jit_environnement.Overrun),np.float64(non_jit_environnement.Selling_price),np.float64(non_jit_environnement.Non_movable_load),np.float64(non_jit_environnement.total_Y_Movable_load),np.float64(non_jit_environnement.total_D_Movable_load),np.int64(non_jit_environnement.D_DSM_indexes),np.float64(non_jit_environnement.Main_grid_emissions),np.float64(non_jit_environnement.prod_C),np.float64(non_jit_environnement.prods_U),np.float64(non_jit_environnement.Volums_prod),np.int64(non_jit_environnement.Bounds_prod),np.int64(non_jit_environnement.constraint_num),np.float64(non_jit_environnement.constraint_level),np.int64(non_jit_environnement.criterion_num),np.float64(non_jit_environnement.cost_constraint),np.float64(non_jit_environnement.r_cross),np.int64(non_jit_environnement.n_iter),np.float64(non_jit_environnement.hyperparameters_operators))
     return(jitted_env)
 
@@ -157,6 +305,35 @@ def jitting_environment(non_jit_environnement):
            ('fitness', float64),
            ])
 class Individual_res(object):
+    """
+    Class representing an individual in the evolutionnary process (RESEARCH mode).
+    Targeted for Numba JIT compilation.
+
+    :attr  production_set : Set of production units.
+    :type int64[:]
+        
+    :attr  storage_sum : Absolute sum of storage actions.
+    :type float64[:]
+        
+    :attr  storage_TS : Storage Time Series.
+    :type float64[:,:]
+        
+    :attr  contract : Contract ID.
+    :type int64
+        
+    :attr  Y_DSM : Yearly Demand Side Management values.
+    :type float64[:]
+        
+    :attr  D_DSM :  Daily Demand Side Management values.
+    :type float64[:,:]
+       
+    :attr  fitness : Fitness score of the individual. 
+    :type float64
+        
+    :attr  trades : Trades time series.
+    :type float64[:]
+        
+    """
     def __init__(self,production_set,storage_sum,storage_TS,contract,Y_DSM,D_DSM,fitness,trades):
         self.production_set = production_set
         self.storage_sum = storage_sum
@@ -172,6 +349,12 @@ class Individual_res(object):
 
         
 class Non_JIT_Individual_res():
+    """
+    Class representing an individual result in the optimization process (Non-JIT version).
+    Mirrors `Individual_res`.
+    
+    See `Individual_res` for full attribute descriptions.
+    """
     def __init__(self,production_set,storage_sum,storage_TS,contract,Y_DSM,D_DSM,fitness,trades):
         self.production_set = production_set
         self.storage_sum = storage_sum
@@ -187,12 +370,30 @@ class Non_JIT_Individual_res():
 
         
 def jitting_pop_res(pop):
+    """
+    Converts a list of Non_JIT_Individual_res objects to a list of Individual_res objects.
+
+    :param  pop : The population of non-JIT individuals.
+    :type list of Non_JIT_Individual_res
+        
+    :returns :  The population of JIT-compatible individuals.
+    :rtype: list of Individual_res       
+    """
     jitted_pop=[]
     for ind in pop:
         jitted_pop.append(Individual_res(np.int64(ind.production_set),np.array(ind.storage_sum,dtype=np.float64),np.float64(ind.storage_TS),np.int64(ind.contract),np.float64(ind.Y_DSM),np.float64(ind.D_DSM),np.float64(ind.fitness),np.array(ind.trades,dtype=np.float64)))
     return(jitted_pop)
 
 def unjitting_pop_res(jitted_pop):
+    """
+    Converts a list of Individual_res objects back to a list of Non_JIT_Individual_res objects.
+
+    :param  jitted_pop : The population of JIT-compatible individuals.
+    :type list of Individual_res
+        
+    :returns: The population of non-JIT individuals.
+    :rtype: list of Non_JIT_Individual_res
+    """
     pop=[]
     for ind in jitted_pop:
         pop.append(Non_JIT_Individual_res(ind.production_set,ind.storage_sum,ind.storage_TS,ind.contract,ind.Y_DSM,ind.D_DSM,ind.fitness,ind.trades))
@@ -213,6 +414,47 @@ def unjitting_pop_res(jitted_pop):
            ('fitness', float64),
            ])
 class Individual_pro(object):
+    """
+    Class representing an individual result in the optimization process (Production side).
+    Targeted for Numba JIT compilation.
+
+    :attr production_set : Set of production units.
+    :type int64[:]
+        
+    :attr contract : Contract ID.
+    :type int64
+        
+    :attr PMS_strategy : Power Management System strategy.
+    :type string
+        
+    :attr PMS_discharge_order : Order of discharge for PMS.
+    :type int64[:]
+        
+    :attr energy_use_repartition_DSM : Energy use repartition for DSM.
+    :type float64
+        
+    :attr PMS_taking_over : PMS taking over values.
+    :type float64[:,:]
+        
+    :attr PMS_D_DSM_min_levels : Minimum levels for Daily DSM in PMS.
+    :type float64[:]
+        
+    :attr PMS_Y_DSM_min_levels : Minimum levels for Yearly DSM in PMS.
+    :type float64[:]
+        
+    :attr PMS_DG_min_runtime : Minimum runtime for Diesel Generator in PMS.
+    :type int64
+        
+    :attr PMS_DG_min_production : Minimum production for Diesel Generator in PMS.
+    :type float64
+        
+    :attr storages : Storage units.
+    :type float64[:,:]
+        
+    :attr fitness : Fitness score of the individual.
+    :type float64
+        
+    """
     def __init__(self,production_set,contract,PMS_strategy,PMS_discharge_order,energy_use_repartition_DSM,PMS_taking_over,PMS_D_DSM_min_levels,PMS_Y_DSM_min_levels,PMS_DG_min_runtime,PMS_DG_min_production,storages,fitness):
         self.production_set = production_set
         self.contract = contract
@@ -232,6 +474,12 @@ class Individual_pro(object):
 
         
 class Non_JIT_Individual_pro():
+    """
+    Class representing an individual result in the optimization process (Production side, Non-JIT version).
+    Mirrors `Individual_pro`.
+    
+    See `Individual_pro` for full attribute descriptions.
+    """
     def __init__(self,production_set,contract,PMS_strategy,PMS_discharge_order,energy_use_repartition_DSM,PMS_taking_over,PMS_D_DSM_min_levels,PMS_Y_DSM_min_levels,PMS_DG_min_runtime,PMS_DG_min_production,storages,fitness):
         self.production_set = production_set
         self.contract = contract
@@ -251,12 +499,34 @@ class Non_JIT_Individual_pro():
 
         
 def jitting_pop_pro(pop):
+    """
+    Converts a list of Non_JIT_Individual_pro objects to a list of Individual_pro objects.
+
+    :param  pop : The population of non-JIT individuals (production side).
+    :type list of Non_JIT_Individual_pro
+        
+
+    :returns: The population of JIT-compatible individuals.
+    :rtype: list of Individual_pro
+        
+    """
     jitted_pop=[]
     for ind in pop:
         jitted_pop.append(Individual_pro(np.int64(ind.production_set),np.int64(ind.contract),ind.PMS_strategy,np.array(ind.PMS_discharge_order,dtype=np.int64),np.float64(ind.energy_use_repartition_DSM),np.array(ind.PMS_taking_over,dtype=np.float64),np.array(ind.PMS_D_DSM_min_levels,dtype=np.float64),np.array(ind.PMS_Y_DSM_min_levels,dtype=np.float64),np.int64(ind.PMS_DG_min_runtime),np.float64(ind.PMS_DG_min_production),np.array(ind.storages,dtype=np.float64),np.float64(ind.fitness)))
     return(jitted_pop)
 
 def unjitting_pop_pro(jitted_pop):
+    """
+    Converts a list of Individual_pro objects back to a list of Non_JIT_Individual_pro objects.
+
+    :param  jitted_pop : The population of JIT-compatible individuals (production side).
+    :type list of Individual_pro
+        
+
+    :returns: The population of non-JIT individuals.
+    :rtype: list of Non_JIT_Individual_pro
+        
+    """
     pop=[]
     for ind in jitted_pop:
         pop.append(Non_JIT_Individual_pro(np.int64(ind.production_set),np.array(ind.contract,dtype=np.int64),(ind.PMS_strategy),np.array(ind.PMS_discharge_order,dtype=np.int64),np.float64(ind.energy_use_repartition_DSM),np.array(ind.PMS_taking_over,dtype=np.float64),np.array(ind.PMS_D_DSM_min_levels,dtype=np.float64),np.array(ind.PMS_Y_DSM_min_levels,dtype=np.float64),np.float64(ind.PMS_DG_min_runtime),np.float64(ind.PMS_DG_min_production),np.array(ind.storages,dtype=np.float64),np.float64(ind.fitness)))

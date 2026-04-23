@@ -1,12 +1,9 @@
 # -*- coding:utf-8 -*-
 '''
 :Created: 2025-06-19 16:47:59
-:Project: virtual PMS for microgrids
-:Version: 1.0
-:Author: Mathieu Lafitte
+:Author: Mathieu Lafitte and JoPHOBEA
 :Description: Tool to simulate the behavior of a PV system with a single array and a single inverter
-- input : PV system parameters (panels, inverter, location) + timeseries : solar irradiance, temperature, wind speed
-- output : AC power of the inverter (and DC PV output if required)
+
 '''
 #---------------------
 #%%
@@ -74,46 +71,63 @@ def dimensionnement_pv(module, onduleur, temperature_min):
         'courant_total_dc_A': round(n_parallel * i_string, 2)
     }
 
-def pvmodel(siteDict: dict, weather, TempParam, 
+def pvmodel(site, weather, TempParam, 
             Module, Inverter, ModMount: dict,
             arrayParam: dict, LossesParam: dict=LossesParam_default,
             csv: bool = True, plot: bool=False, write_PDC: bool=True, write_POA: bool=True)->tuple[pd.DataFrame, modelchain.ModelChainResult]:
-    """Simulates the behavior of a PV system with a single array of modules and a single inverter.
+    """
+    Simulates the behavior of a PV system with a single array of modules and a single inverter.
     
     Args:
-        siteDict (dict): location of the panels {longitude, latitude, tz, altitude}
-        weather (tuple | str): use a tuple if you want to take data from PVGIS https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en
-                -> (startyear, endyear), see https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.iotools.get_pvgis_tmy.html#pvlib.iotools.get_pvgis_tmy
-            use a string if you want to use a local file (see read_weatherData for the format)
-        TempParam (dict): temperature model's parameters, see https://pvlib-python.readthedocs.io/en/latest/reference/pv_modeling/temperature.html#pv-temperature-models
-        Module (str | dict): module's characteristics (all modules of the array are the same)
-            use a string (module's 'Name') if you find the reference of your PV module here : https://github.com/NREL/SAM/blob/develop/deploy/libraries/CEC%20Modules.csv
-            otherwise you can manually specify the parameters of your modules in a dictionary
-        Inverter (str | dict): inverter's characteristics
-            use a string (inverter's 'Name') if you find the reference of your inverter here : https://github.com/NREL/SAM/blob/develop/deploy/libraries/CEC%20Inverters.csv
-            otherwise you can manually specify the parameters of your inverter in a dictionary
-        ModMount (dict): characteristics of the array's mount (Fixed or Single Axis Tracker availables)
-        arrayParam (dict): characteristics of the array {surface_type, module_type, modules_per_string, strings}
-            more info at https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.pvsystem.Array.html#pvlib-pvsystem-array
-        LossesParam (dict, optional): losses of the system {soiling, shading, snow, mismatch, wiring, connections, lid, nameplate_rating, age, availability} Defaults to LossesParam_default.
-        csv (bool, optional): True to save the output power dataframe using csv format. Defaults to True.
-        plot (bool, optional): True to plot the power timeseries in the end of the simulation. Defaults to False.
-        write_PDC (bool, optional): add the output DC power of the array to the results DataFrame. Defaults to True.
-        write_POA (bool, optional): add the Plane Of Array Irradiance to the results DataFrame. Defaults to True.
+        siteDict (dict): Location of the panels {longitude, latitude, tz, altitude}.
+        
+        weather (tuple or str): 
+            Tuple (startyear, endyear) if data taken from PVGIS https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en, 
+            see https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.iotools.get_pvgis_tmy.html#pvlib.iotools.get_pvgis_tmy.
+            String if data taken from a local file (see read_weatherData for the format).
+            
+        TempParam (dict): Temperature model's parameters, see https://pvlib-python.readthedocs.io/en/latest/reference/pv_modeling/temperature.html#pv-temperature-models.
+        
+        Module (str or dict): Module's characteristics (all modules of the array are the same).
+            Use a string (module's 'Name') if you find the reference of your PV module here: 
+            https://github.com/NREL/SAM/blob/develop/deploy/libraries/CEC%20Modules.csv. 
+            Otherwise you can manually specify the parameters of your modules in a dictionary.
+        
+        Inverter (str or dict): Inverter's characteristics.
+            Use a string (inverter's 'Name') if you find the reference of your inverter here: 
+            https://github.com/NREL/SAM/blob/develop/deploy/libraries/CEC%20Inverters.csv. 
+            Otherwise you can manually specify the parameters of your inverter in a dictionary.
+        
+        ModMount (dict): Characteristics of the array's mount (Fixed or Single Axis Tracker available).
+        
+        arrayParam (dict): Characteristics of the array {surface_type, module_type, modules_per_string, strings}.
+            More info at https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.pvsystem.Array.html#pvlib-pvsystem-array.
+        
+        LossesParam (dict): Losses of the system {soiling, shading, snow, mismatch, wiring, connections, lid, nameplate_rating, age, availability}.
+            Defaults to LossesParam_default (optional).
+        
+        csv (bool): True to save the output power dataframe using csv format. Defaults to True (optional).
+        
+        plot (bool): True to plot the power timeseries at the end of the simulation. Defaults to False (optional).
+        
+        write_PDC (bool): Add the output DC power of the array to the results DataFrame. Defaults to True (optional).
+        
+        write_POA (bool): Add the Plane Of Array Irradiance to the results DataFrame. Defaults to True (optional).
     
     Returns:
-        tuple[pd.DataFrame, modelchain.ModelChainResult]: 
-            dfpower : AC inverter's output in W + DC panels power in W (optional) + POA irradiance received by the entire array in W (optional)
-            model.results : every intermediary results calculated during the simulation. more info at https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.modelchain.ModelChainResult.html#pvlib.modelchain.ModelChainResult
+        tuple: 
+            - dfpower (pd.DataFrame): AC inverter's output in W + DC panels power in W (optional) + POA irradiance received by the entire array in W (optional).
+            - model.results (modelchain.ModelChainResult): Every intermediary result calculated during the simulation. 
+              More info at https://pvlib-python.readthedocs.io/en/latest/reference/generated/pvlib.modelchain.ModelChainResult.html#pvlib.modelchain.ModelChainResult.
     """
     assert(ModMount["type"].lower() in ["sat", "fixed"])
     # Define the location object knowing the coordinates of the site + get the position of the sun over time
     # ---------------------------------------------------
     site = location.Location(
-                             longitude=siteDict["longitude"],
-                             latitude=siteDict["latitude"],
-                             tz=siteDict["tz"],
-                             altitude=siteDict["altitude"],
+                             longitude=site.longitude,
+                             latitude=site.latitude,
+                             tz=site.timezone,
+                             altitude=site.altitude,
                              )
     # Weather data : get from PVGIS https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en
     if type(weather) == tuple: # get from online database

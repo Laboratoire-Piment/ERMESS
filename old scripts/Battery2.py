@@ -14,21 +14,19 @@ from numba import jit
 
 class Battery:
     def __init__(self,capacity, SOCmin,SOCmax,RT_efficiency,  power_in, power_out, SOC_initial, SOC):
-        """battery definition. NB : the energy efficiency eta is only taken into account during the discharge process.
+        """
+        Initializes the Battery object.
 
         Args:
-            paramIn (dict): contains the following parameters
-                capacity (float): storage capacity (kWh)
-                SOC (float): (initial) state of charge (0 to 1)
-                SOCmin (float): minimum state of charge (0 to 1)
-                SOCmax (float): maximum state of charge (0 to 1)
-                eta (float): energy efficiency (0 to 1)
-                Pmax_ch (float): maximum power allowed during charge (kW)
-                Pmax_disch (float): maximum power allowed during discharge (kW)
-                lifetime (float): life expectancy of the battery (kWh) (= lifetime in number of cycles * capacity * (SOCmax - SOCmin))
-                repl_cost (float): replacement cost or price (euros)
-                maint_cost (float): maintenance cost (euros/kWh)
-            """  
+            capacity (float): Storage capacity (kWh).
+            SOCmin (float): Minimum state of charge (0 to 1).
+            SOCmax (float): Maximum state of charge (0 to 1).
+            RT_efficiency (float): Round trip efficiency (0 to 1).
+            power_in (float): Maximum power allowed during charge (kW).
+            power_out (float): Maximum power allowed during discharge (kW).
+            SOC_initial (float): Initial state of charge (0 to 1).
+            SOC (float): Current state of charge (0 to 1).
+        """
         self.capacity = capacity
         self.SOCmin = SOCmin
         self.SOCmax = SOCmax
@@ -43,9 +41,20 @@ class Battery:
 
 @jit(nopython=True)
 def battery_charge(params, SOC_eff, taking_over, power: float, time_resolution: float) -> float:
-        """simulates the charge of a battery.
+        """
+        Simulates the charging process of a battery.
+
+        Args:
+            params (array-like): List of battery parameters, where:
+                params[0] is capacity (kWh),
+                params[1] is maximum charge power (kW).
+            SOC_eff (float): Effective state of charge (0 to 1).
+            taking_over (array-like): Control signal or participation factor indexed by SOC level.
+            power (float): Available charging power (kW).
+            time_resolution (float): Time step duration (hours).
+
         Returns:
-            float: the power actually used to charge the battery, in kW
+            float: The actual power used to charge the battery (kW).
         """
         e_needed = (1 - SOC_eff) * params[0] # energy needed to fully charge the battery
         closest_level = min(8,max(0,9-np.int64(10*SOC_eff)))
@@ -56,9 +65,21 @@ def battery_charge(params, SOC_eff, taking_over, power: float, time_resolution: 
 
 @jit(nopython=True)
 def battery_discharge(params, SOC_eff, RT_efficiency, taking_over, power: float, time_resolution: float) -> float:
-        """simulates the discharge of a battery. SOC is updated within
+        """
+        Simulates the discharging process of a battery.
+
+        Args:
+            params (array-like): List of battery parameters, where:
+                params[0] is capacity (kWh),
+                params[2] is maximum discharge power (kW).
+            SOC_eff (float): Effective state of charge (0 to 1).
+            RT_efficiency (float): Round trip efficiency (0 to 1).
+            taking_over (array-like): Control signal or participation factor indexed by SOC level.
+            power (float): Requested discharging power (kW).
+            time_resolution (float): Time step duration (hours).
+
         Returns:
-            float: power supplied by the battery, in kW
+            float: The actual power supplied by the battery (kW).
         """
         e_available = (SOC_eff) * params[0]  * RT_efficiency  # energy remaining and usable
         closest_level = min(8,max(0,np.int64(10*SOC_eff)))

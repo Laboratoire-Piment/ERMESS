@@ -2,70 +2,75 @@
 """
 Created on Fri Apr  5 15:10:39 2024
 
-@author: jlegalla
+@author: JoPHOBEA
+
+Runs an era in the ERMESS RESEARCH algorithm
+
+Modules used:
+    - data.data_classes
+    - data.read_excel
+    - evolutionnary_core
+    
+important :
+    -Works only on a parallel cluster
+    
 """
 
 import os
 import sys
 import numpy as np
 import pandas as pd
-import ERMESS_classes as ECl
-import ERMESS_functions_2 as fGA2
-import ERMESS_functions as fGA
-import ERMESS_GA as GA
-import ERMESS_cost_functions as Cfc
 import warnings
-import ERMESS_parallel_processing as ppGA
-from multiprocessing import freeze_support,set_start_method
 import pickle
 import time
-from numba import jit
+from multiprocessing import freeze_support,set_start_method
 
 from tkinter import filedialog
 
+from ERMESS_scripts.data import data_classes as Dcl
+from ERMESS_scripts.data import read_excel as Eex
+from ERMESS_scripts.data import data_parsers as Edp
+from ERMESS_scripts.data import data_builder as Dbl
+
+from ERMESS_scripts.evolutionnary_core import ERMESS_research_initialisation as Eri
+from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-
-if __name__ == '__main__':
+def ERMESS_research(input_file_path = None,initialisation = False) :
     
     freeze_support()
-    t1=time.time()
+   
+    ##============================================================================
+    # 1. INPUT DATA LOADING
+    ##============================================================================
+    
+    if input_file_path is None:
+        input_file_path = filedialog.askopenfilename(filetypes =[('Excel Files', '*.xlsx')], initialdir="#Specify the file path")
+    
+    data = Eex.load_excel(input_file_path)
+    Edp._data_validation(data)
+    structured_data = Edp._parse_ERMESSInputs(data)
+
+    ##============================================================================
+    # 2. ENVIRONMENT INITIALIZATION
+    ##============================================================================
+              
+    Contexte=Dbl.build_environment(structured_data)
+        
+    if (initialisation) : 
+        Initial_population = Eri.Initialisation_ERMESS_research(Contexte, structured_data)
+    
     ##### A utiliser seulement sur le calculateur UNIX
     set_start_method('spawn')
-
-    file_name = 'inputs_GEMS_frontal.xlsx' # shows dialog box and return the path
-
-    xl_file = pd.ExcelFile(file_name)
-    
-    Data = {sheet_name:xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
-    
-    (datetime,Grid_Fossil_fuel_ratio,Main_grid_emissions,Main_grid_PoF_ratio,Connexion,specs_names,specs_Id,specs_num,prod_C,prods_U,Volums_prod,Y_movable_load,D_movable_load,Non_movable_load,time_resolution,constraint_num, Constraint_level,criterion_num,storage_techs,storage_characteristics_names,storage_characteristics,Bounds_prod,n_UP,duration_years,prices_hour_type,prices_num,fixed_premium,Overrun,Selling_price,Contract_Id,hyperparameters_main,hyperparameters_operators_names,hyperparameters_operators_num,hyperparameters_main_pro,hyperparameters_operators_names_pro,hyperparameters_operators_num_pro,Cost_sequence,type_optim,Dispatching,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,groups)=fGA2.read_data(Data)
-
-    hyperparameters_main_evol = hyperparameters_main['Evolution']
-    
-    n_contracts = np.int64(len(Selling_price))
-    n_store = np.int64(len(storage_techs))
-    
-    #Définition des variables de l'algorithme génétique
-    n_steps=prod_C.size
-    
-    n_core,n_nodes,r_cross,n_pop,n_iter,nb_ere = hyperparameters_main_evol
-    
-    n_bits = n_steps
-    Defined_items=Dispatching[0]
-
-    n_days=n_bits/time_resolution/24
-    
     
     #Avec pré-traitement
     ##print('Début de l\'algorithme évolutif principal')
     
     num_node = sys.argv[1]
     cost_phase = int(sys.argv[2])
-    cost_constraint=Cost_sequence[cost_phase]
     
-    Contexte=ECl.Non_JIT_Environnement(storage_characteristics, time_resolution, n_store, duration_years, specs_num, groups, n_bits, prices_num, fixed_premium, Overrun, Selling_price, Non_movable_load,Y_movable_load,D_movable_load, Main_grid_emissions, Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio, prod_C, prods_U, Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions, constraint_num, Constraint_level, criterion_num, cost_constraint,r_cross,n_iter,hyperparameters_operators_num,type_optim,Connexion,Defined_items,tracking_ope=1)    
+    Contexte=Dcl.Non_JIT_Environnement(storage_characteristics, time_resolution, n_store, duration_years, specs_num, groups, n_bits, prices_num, fixed_premium, Overrun, Selling_price, Non_movable_load,Y_movable_load,D_movable_load, Main_grid_emissions, Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio, prod_C, prods_U, Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions, constraint_num, Constraint_level, criterion_num, cost_constraint,r_cross,n_iter,hyperparameters_operators_num,type_optim,Connexion,Defined_items,tracking_ope=1)    
 
     Initial_populations = []
     
@@ -136,3 +141,7 @@ if __name__ == '__main__':
 
     #file_name_out='output_GEMS_end.xlsx'
     #fGA2.post_traitement(GA_solution,Cfc.cost_scenario_LCOE_detail, Cfc.cost_base, prod_C, prods_U, Non_movable_load,D_movable_load,Y_movable_load, storage_characteristics, time_resolution, Main_grid_emissions,Grid_Fossil_fuel_ratio,Main_grid_ratio,specs,duration_years,grid_prices,fixed_premium,Overrun,Selling_price,Contract_Id,Bounds_prod,self_sufficiency,Data,n_days,file_name_out)
+
+if __name__ == '__main__':
+    ERMESS_research(sys.argv[1])
+

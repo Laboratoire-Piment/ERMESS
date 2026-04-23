@@ -1,0 +1,5 @@
+decouper ermess_pro et ermess_recherche en fonctions.
+vérifier le nom des variables.
+changer le nom des opérateurs et des fonctions
+
+vérifier les recommandations ChatGPT sur les fonctions avec trop d'arguments d'entrée/de sortie et/ou la réation de classes spécifiques pour entrée/sortie dans ces fonctions
