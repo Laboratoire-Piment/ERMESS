@@ -150,7 +150,7 @@ def init_low_res_population(Context_initialisation_Research, n_core, n_pop_resea
     possible_constraint_levels=Cons.find_constraint_levels(Context_initialisation_Research_LowRes)
     constraint_levels_LowRes = np.random.uniform(min(MIN_INIT_CONSTRAINT_LEVEL,possible_constraint_levels),possible_constraint_levels,n_core)
     
-    args_pop_init_LowRes = [[Context_initialisation_Research_LowRes,  n_pop_research[1],constraint_levels_LowRes[i]] for i in range(n_core)]
+    args_pop_init_LowRes = [[Context_initialisation_Research_LowRes,  n_pop_research,constraint_levels_LowRes[i]] for i in range(n_core)]
     Initial_population_LowRes = ppGA.initial_population_research_PARALLEL(args_pop_init_LowRes)   
     List_Contexts_LowRes = [Context_initialisation_Research_LowRes for i in range(n_core)]
     args_init_LowRes = [(List_Contexts_LowRes[i],Initial_population_LowRes[i]) for i in range(n_core)]
