@@ -232,8 +232,8 @@ def evolutionnary_algorithm_pro(inputs):
     #On introduit de l'élitisme
    del pop[np.random.randint(len(pop))]
    pop.append(best)
-   #final_pop = Efp.unjitting_pop_pro(pop)
-   final_pop=pop
+   final_pop = Efp.unjitting_pop_pro(pop)
+#   final_pop=pop
 #   if (type_pop=='NON_JIT'):
 #       final_pop = Efr.pro_to_research(final_pop, Contexte)
 
