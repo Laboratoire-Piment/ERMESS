@@ -56,10 +56,10 @@ def ERMESS_research(input_file_path = None,initialisation = False) :
     # 2. ENVIRONMENT INITIALIZATION
     ##============================================================================
               
-    Contexte=Dbl.build_environment(structured_data)
+    Context=Dbl.build_environment(structured_data)
         
     if (initialisation) : 
-        Initial_population = Eri.Initialisation_ERMESS_research(Contexte, structured_data)
+        Initial_population = Eri.Initialisation_ERMESS_research(Context, structured_data)
     
     ##### A utiliser seulement sur le calculateur UNIX
     set_start_method('spawn')

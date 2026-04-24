@@ -55,7 +55,6 @@ def evolutionnary_algorithm_research(inputs):
    
  # enumerate generations
    for gen in range(n_iter):
-     print(best.fitness)
 
      # select parents
      selected = [Ef.selection_tournament(pop) for _ in range(n_pop)]

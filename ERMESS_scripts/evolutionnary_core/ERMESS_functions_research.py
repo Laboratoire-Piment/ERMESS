@@ -659,8 +659,9 @@ def initial_population_research(inputs):
             Initial_storage_power[i,:][Initial_storage_power[i,:]<0] = -Initial_storage_power[i,:][Initial_storage_power[i,:]<0]/sum(Initial_storage_power[i,:][Initial_storage_power[i,:]<0])*stored_volumes[j,i]
         Init_pop_j = Individual_res(production_set=Initial_prod[j],storage_sum=stored_volumes[j],storage_TS=Initial_storage_power,contract=Initial_contracts[j],Y_DSM=Initial_Y_DSM[j],D_DSM=Initial_D_DSM[j],fitness=np.nan,trades=np.full([n_bits], np.float64(np.nan)))
         Initial_population.append(Init_pop_j)
+        nonjit_initial_population = unjitting_pop_res(Initial_population)
        
-    return(Initial_population)   
+    return(nonjit_initial_population)   
 
 def _interpolate_signal(high_res_seq, days_sorted, n_days_total, signal_getter):
         """
