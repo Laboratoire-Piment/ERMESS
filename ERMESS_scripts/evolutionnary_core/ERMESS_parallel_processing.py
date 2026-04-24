@@ -15,7 +15,7 @@ from multiprocessing import Pool
 
 def init_and_evolution_pro(Context_initialisation_pro):
     pro_initial_population =  Efp.initial_population_pro(Context_initialisation_pro)
-    pro_initial_solutions = EA.evolutionnary_algorithm_pro(Context_initialisation_pro,pro_initial_population)
+    pro_initial_solutions = EA.evolutionnary_algorithm_pro((Context_initialisation_pro,pro_initial_population))
     return(pro_initial_solutions)
 
 def initial_population_research_PARALLEL(args_pop_init):
