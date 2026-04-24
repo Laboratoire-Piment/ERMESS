@@ -31,8 +31,9 @@ def evolutionnary_algorithm_research(inputs):
         final_pop: List of optimized individuals (Individual_res) after n_iter generations
         operators_perf (optional): Array recording performance of operators per generation. Returned only if Contexte.tracking_ope == 1.
    """
-   (Context,pop)=(inputs[i] for i in range(2))   
+   (Context,nonjit_pop)=(inputs[i] for i in range(2))   
    
+   pop = Efr.jitting_pop_res(nonjit_pop)
    n_iter = Context.hyperparameters.n_iter
    r_cross = Context.hyperparameters.r_cross
    n_pop = Context.hyperparameters.n_pop
