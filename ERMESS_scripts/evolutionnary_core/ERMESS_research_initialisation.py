@@ -109,11 +109,12 @@ def init_pro_population(Context, n_core, n_pop_pro):
     Context_initialisation_pro.hyperparameters.n_pop = n_pop_pro
     Context_initialisation_pro.tracking.tracking_operators = False
     
-    pro_initial_populations =  [Efp.initial_population_pro(Context_initialisation_pro) for _ in range(n_core)]
+    #pro_initial_populations =  [Efp.initial_population_pro(Context_initialisation_pro) for _ in range(n_core)]
     
     #Spreading the ERMESS PRO initial population 
-    initialisation_pro_args = [(Context_initialisation_pro,pro_initial_populations[i]) for i in range(n_core)]
-    local_pro_initial_solutions = ppGA.ere_evolutive_pro_PARALLEL(initialisation_pro_args)            
+    #initialisation_pro_args = [(Context_initialisation_pro,pro_initial_populations[i]) for i in range(n_core)]
+    List_Context_initialisation_pro = [Context_initialisation_pro for _ in range(n_core)]
+    local_pro_initial_solutions = ppGA.ERMESS_pro_PARALLEL(List_Context_initialisation_pro)          
     pro_initial_solutions = [item for sublist in local_pro_initial_solutions for item in sublist]
     return(pro_initial_solutions)
 

@@ -13,6 +13,11 @@ from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
 from ERMESS_scripts.cost import ERMESS_cost_functions as Cfc
 from multiprocessing import Pool
 
+def init_and_evolution_pro(Context_initialisation_pro):
+    pro_initial_population =  Efp.initial_population_pro(Context_initialisation_pro)
+    pro_initial_solutions = EA.evolutionnary_algorithm_pro(Context_initialisation_pro,pro_initial_population)
+    return(pro_initial_solutions)
+
 def initial_population_research_PARALLEL(args_pop_init):
             """
             Generate the initial population (RESEARCH) in parallel using multiple processes.
@@ -52,7 +57,7 @@ def ere_evolutive_research_PARALLEL(args):
             pool.join()
             return(local_populations)
 
-def ere_evolutive_pro_PARALLEL(args_pro):
+def ERMESS_pro_PARALLEL(args_pro):
             """
             Runs the PRO evolutionary algorithm in parallel.
             
@@ -68,7 +73,7 @@ def ere_evolutive_pro_PARALLEL(args_pro):
                 Used only in the initialisation phase of the RESEARCH mode
             """
             pool = Pool()
-            local_populations_pro=pool.map(EA.evolutionnary_algorithm_pro, args_pro)
+            local_populations_pro=pool.map(init_and_evolution_pro, args_pro)
             pool.close()
             pool.join()
             return(local_populations_pro)
