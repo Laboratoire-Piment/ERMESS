@@ -755,11 +755,11 @@ def combining_solutions (population_LowRes,populations_HighRes,days,Low_time_res
         combined_production_set=np.zeros(n_prod)
         for g,group_indices in enumerate(Context.production.groups) :
             
-            candidates = [LowRes_solution.production.production_set,*[h.production.production_set for h in HighRes_solution_seq]]
+            candidates = [LowRes_solution.production_set,*[h.production_set for h in HighRes_solution_seq]]
             selected_source = group_selection[i][g]
             combined_production_set[group_indices] = candidates[selected_source][group_indices]
             
-#            combined_production_set[Context.production.groups[k]]=[LowRes_solution.production.production_set,HighRes_solution_seq[0].production.production_set,HighRes_solution_seq[1].production.production_set,HighRes_solution_seq[2].production.production_set,HighRes_solution_seq[3].production.production_set][indexes_solution_prod[i][k]]      
+#            combined_production_set[Context.production.groups[k]]=[LowRes_solution.production_set,HighRes_solution_seq[0].production_set,HighRes_solution_seq[1].production.production_set,HighRes_solution_seq[2].production.production_set,HighRes_solution_seq[3].production.production_set][indexes_solution_prod[i][k]]      
 
         #Storage combination
         storage_base = _interpolate_signal(HighRes_solution_seq,days_sorted,n_days_total,lambda h: h.storage_TS )
