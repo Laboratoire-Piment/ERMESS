@@ -785,8 +785,8 @@ def combining_solutions (population_LowRes,populations_HighRes,days,Low_time_res
         # D_DSM combination 
    
         D_DSM_base = _interpolate_signal(HighRes_solution_seq,days_sorted, n_days_total,lambda h: h.D_DSM)
-        D_DSM_LowRes_expanded = np.repeat(LowRes_solution.D_DSM / (High_time_resolution * HOURS_PER_DAY),int(High_time_resolution / Low_time_resolution)).reshape(n_days_total,int(HOURS_PER_DAY * High_time_resolution))
-        combined_D_DSM = D_DSM_base + D_DSM_LowRes_expanded         
+        D_DSM_LowRes_expanded = np.repeat(LowRes_solution.D_DSM / (High_time_resolution * HOURS_PER_DAY),int(High_time_resolution / Low_time_resolution))
+        combined_D_DSM = (D_DSM_base + D_DSM_LowRes_expanded).reshape(n_days_total,int(HOURS_PER_DAY * High_time_resolution))     
             
         # Storage correction
         combined_storage_sum = -np.sum(np.where(combined_storage_TS < 0, combined_storage_TS, 0),axis=1)
