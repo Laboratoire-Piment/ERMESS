@@ -7,7 +7,6 @@ Created on Thu Apr 16 12:51:20 2026
 
 from ERMESS_scripts.utils import constraints as Cons
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
-from ERMESS_scripts.evolutionnary_core import ERMESS_Research as ER
 from ERMESS_scripts.data.indices import *
 
 
