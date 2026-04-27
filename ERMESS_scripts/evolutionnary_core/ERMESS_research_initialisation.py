@@ -6,15 +6,14 @@ Created on Thu Apr 16 12:51:20 2026
 """
 
 from ERMESS_scripts.utils import constraints as Cons
-from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
+from ERMESS_scripts.evolutionnary_core import ERMESS_Research as ER
 from ERMESS_scripts.data.indices import *
 
 
 import copy
 import numpy as np
-import sys
 import pickle
 
 
@@ -261,35 +260,7 @@ def combine_populations(pro_initial_solutions, grouped_final_populations_LowRes,
     shuffled_population = sorted(Init_solutions_final, key=lambda x: np.random.rand())
     return(shuffled_population)
 
-def save_population(population , filepath , n_bins):
-    """
-    Save a population into multiple files.
-
-    Args:
-        population: list
-            Population to save.
-        filepath: str
-            Base file path (without extension).
-        n_bins: int
-            Number of output files.
-
-    Returns:
-        None
-
-    Notes:
-        - Files are saved as `{filepath}_part_i.dat`.
-        - Uses Python pickle serialization.
-    """
-    bins_size = len(population) // n_bins
-
-    for i in range(n_bins):
-        content = population[i * bins_size:(i + 1) * bins_size]
-
-        with open(f"{filepath}_part_{i}.dat", "wb") as f:
-            pickle.dump(content, f)
-
-
-def Initialize_ERMESS_research(Context , structured_data, target_file):
+def Initialize_ERMESS_research(Context , structured_data,node_id):
     """
     Initialize and save a population for the ERMESS genetic algorithm.
     
@@ -343,16 +314,7 @@ def Initialize_ERMESS_research(Context , structured_data, target_file):
         
     #3. Merging the solutions
     shuffled_population = combine_populations(pro_initial_solutions, grouped_final_populations_LowRes, population_HighRes, n_core, days, Context_initialisation_Research, Context_initialisation_Research_LowRes, Context_initialisation_Research_HighRes)            
-
-#    args_fitness = [[shuffled_population[(i*n_pop):((i+1)*n_pop)],Contexte] for i in range(n_core)]
-#    fitnesses =ppGA.parallel_fitness(args_fitness)
-#    fitnesses = [item for sublist in fitnesses for item in sublist]
-                
-#    for i in range(len(shuffled_population)) :
-#        shuffled_population[i].fitness=fitnesses[i]
-          
-#    print('Score du meilleur individu : ',min(tuple(shuffled_population[i].fitness for i in range(len(shuffled_population)))))
   
-    save_population(shuffled_population , target_file , n_bins)  
+    ER.write_node_population(node_id,shuffled_population) 
 
    

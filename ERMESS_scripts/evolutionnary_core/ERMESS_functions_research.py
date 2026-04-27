@@ -740,7 +740,6 @@ def combining_solutions (population_LowRes,populations_HighRes,days,Low_time_res
     
     contract_choices = np.random.choice(n_high_res_days,n_population)
     
-    print(n_high_res_days,n_population,len(Context.production.groups))
     group_selection = np.random.choice(n_high_res_days+1,(n_population, len(Context.production.groups)),replace=True,p=(0.5, *np.repeat(0.5/n_high_res_days,n_high_res_days)))
 
     #weights_prod = np.random.rand(n_pop_LowRes,n_prod,4)

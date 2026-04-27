@@ -24,6 +24,7 @@ import warnings
 import pickle
 import time
 from multiprocessing import freeze_support,set_start_method
+import random
 
 from tkinter import filedialog
 
@@ -37,7 +38,7 @@ from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-def ERMESS_research(input_file_path = None,initialisation = False, target_file = None) :
+def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     
     freeze_support()
    
@@ -59,7 +60,7 @@ def ERMESS_research(input_file_path = None,initialisation = False, target_file =
     Context=Dbl.build_environment(structured_data)
         
     if (initialisation) : 
-        Eri.Initialize_ERMESS_research(Context , structured_data, target_file)
+        Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
     
     ##### A utiliser seulement sur le calculateur UNIX
 #    set_start_method('spawn')
@@ -67,28 +68,14 @@ def ERMESS_research(input_file_path = None,initialisation = False, target_file =
     #Avec pré-traitement
     ##print('Début de l\'algorithme évolutif principal')
     
-#    num_node = sys.argv[1]
-#    cost_phase = int(sys.argv[2])
-    
-#    Contexte=Dcl.Non_JIT_Environnement(storage_characteristics, time_resolution, n_store, duration_years, specs_num, groups, n_bits, prices_num, fixed_premium, Overrun, Selling_price, Non_movable_load,Y_movable_load,D_movable_load, Main_grid_emissions, Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio, prod_C, prods_U, Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions, constraint_num, Constraint_level, criterion_num, cost_constraint,r_cross,n_iter,hyperparameters_operators_num,type_optim,Connexion,Defined_items,tracking_ope=1)    
-
-#    Initial_populations = []
-    
-#    t2=time.time()
-#    print('fin pre-processing ',t2-t1)
-    
-
 #    for file_number in range(n_nodes):
 #        with open('pop_'+str(file_number)+'_for_'+str(num_node)+'.dat', 'rb') as input_file:
 #            added_pop =pickle.load(input_file)
 #            Initial_populations.append(added_pop)
     
-#    Initial_populations=[x for xs in Initial_populations for x in xs]
         
     #Initial_populations = ECl.jitting_pop_res(Initial_populations)
 #    Initial_populations = sorted(Initial_populations, key=lambda x: np.random.rand())
-#    Initial_populations = [[Initial_populations[i] for i in range(j*n_pop, (j+1)*n_pop)] for j in range(n_core)] 
-#    args1_2 = [(Contexte,Initial_populations[i]) for i in range(n_core)]  
     
 #    t3=time.time()    
 #    operators=[]
@@ -109,6 +96,154 @@ def ERMESS_research(input_file_path = None,initialisation = False, target_file =
 #        args1_2 = [(Contexte,init_population_2[i],n_iter,r_cross) for i in range(n_core)]
 #        t5=time.time()
 #        print('Ere ',t5-t4)
+
+def load_migrants(files):
+    pool = []
+    for f in files:
+        with open(f, "rb") as infile:
+            pool.extend(pickle.load(infile))
+    return pool
+
+def write_migrants(migrants, node_id, ere):
+    name = f"migrants_node_{node_id}_ere_{ere}.pkl"
+    with open(name, "wb") as f:
+        pickle.dump(migrants, f)
+        
+def write_node_population(node_id,node_population):
+    name = f"population_node_{node_id}.pkl"
+    with open(name, "wb") as f:
+        pickle.dump(node_population, f)
+        
+def collect_migrants(migrants,len_incomers):
+    selected_migrants = random.sample(migrants, len_incomers)
+    return(selected_migrants)
+
+def select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core):
+    N_TOP = int(MIGRATION_TOP_RATE*len_pop)
+    N_RAND = int(MIGRATION_RANDOM_RATE*len_pop)
+    indices = np.random.choice(len_pop - N_TOP, N_RAND, replace = False)+N_TOP
+    #First part of rand : migrants (copied), second part : replaced by incoming migrants
+    return np.array([*np.arange(N_TOP),*indices])
+
+def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core):
+
+    len_incomers_local = len_incomers//n_core
+    N_TOP = int(MIGRATION_TOP_RATE*len_pop)
+    N_RAND = len_incomers_local - N_TOP
+
+    if (N_RAND + N_TOP) > (len_pop - N_TOP):
+        raise ValueError("Migration size too large")
+    replaced_indices = np.random.choice(len_pop - N_TOP, N_RAND+N_TOP, replace = False)+N_TOP
+    return(replaced_indices)
+
+def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):
+    chunk_size = len(incomers) // n_core
+    for i in range(n_core):
+    
+        pop_array = np.array(local_populations[i], dtype=object)
+    
+        start = chunk_size * i 
+        end = chunk_size * (i + 1)
+    
+        incomers_chunk = incomers[start:end]
+        if len(killed_indices) != len(incomers_chunk):
+            raise ValueError("Mismatch migration sizes")
+        pop_array[killed_indices] = incomers_chunk
+    
+        local_populations[i] = list(pop_array)
+    return(local_populations)
+
+def select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE):
+    N_TOP = int(MIGRATION_TOP_RATE*len_pop)
+    N_RAND = int(MIGRATION_RANDOM_RATE*len_pop)
+    rand = np.random.choice(len_pop - N_TOP, N_RAND+N_TOP, replace = False)+N_TOP
+    #First part of rand : random migrants (moved and replaced), second part : replaced by copies of top
+    return np.array([*np.arange(N_TOP),*rand[0:N_RAND]]),rand
+
+def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core):
+        migrants_indices = select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE)
+        migrants = [local_populations[i][migrants_indices[0]] for i in range(n_core)]
+        migrants_pool = [item for sublist in migrants for item in sublist[0] ]
+        target_core = np.random.permutation(np.repeat(np.arange(n_core), len(migrants_indices[0])))
+        for i in range(n_core) : 
+            mask = (target_core == i)
+            for idx, new_indiv in zip(migrants_indices[1], migrants_pool[mask]):
+                local_populations[i][idx] = new_indiv
+        return(local_populations)
+    
+def wait_for_all(ere, n_nodes, timeout=600, sleep_time=5):
+    """
+    Wait for all migrant files to be present.
+    """
+    start_time = time.time()
+    prefix = f"migrants_node_"
+    suffix = f"_ere_{ere}.pkl"
+    directory = "." 
+
+    while True:
+        files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
+
+        if len(files) >= n_nodes:
+            return files
+
+        if time.time() - start_time > timeout:
+            print(f"[WARNING] Timeout atteint à l'ère {ere}. {len(files)}/{n_nodes} fichiers trouvés.")
+            return files
+
+        time.sleep(sleep_time)
+    
+
+def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_core, node_id, n_nodes):
+
+    MIGRATION_TOP_RATE = 0.05    
+    MIGRATION_RANDOM_RATE = 0.05    
+    INTERVAL_EXCHANGE = 4
+    len_pop = Context.hyperparameters.n_pop
+    
+    population_file = f"population_node_{node_id}.pkl"
+    with open(population_file, "rb") as infile:
+        Initial_populations = pickle.load(infile)        
+
+    for ere in range(nb_ere):
+
+        # -----------------------
+        # 1. Local optimization
+        # -----------------------
+        args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
+        local_populations = ppGA.ere_evolutive(args_evolutionnary_algorithm)
+        
+
+        # -----------------------
+        # 2. intra-node mix
+        # -----------------------
+        if ere % INTERVAL_EXCHANGE != 0:
+            local_populations = migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core)
+
+        # -----------------------
+        # 3. inter-nodes mix
+        # -----------------------
+        if ere % INTERVAL_EXCHANGE == 0:
+
+            migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
+            local_migrants = [local_populations[i][migrant_internodes] for i in range(n_core)]
+            migrants = [ item for sublist in local_migrants for item in sublist[0] ]
+            write_migrants(migrants, node_id, ere)
+
+            files = wait_for_all(ere, n_nodes)
+            potential_incomers = load_migrants(files)
+
+            len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
+            incomers = collect_migrants(potential_incomers,len_incomers)
+            killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
+            
+            local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
+            
+        Initial_populations = local_populations
+    
+    node_population = [ item for sublist in local_populations for item in sublist[0] ]
+    best_score = min(ind.fitness for ind in node_population)
+    print('best score : ',best_score)
+    write_node_population(node_id,node_population)
         
 #    print('Fin de l\'algorithme évolutif ',time.time())
 #    world_population3 = [item for sublist in local_populations_1 for item in sublist[0]]
@@ -134,5 +269,5 @@ def ERMESS_research(input_file_path = None,initialisation = False, target_file =
 
 
 if __name__ == '__main__':
-    ERMESS_research(sys.argv[1],True,sys.argv[2])
+    ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3])
 
