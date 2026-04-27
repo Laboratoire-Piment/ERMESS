@@ -109,11 +109,6 @@ def write_migrants(migrants, node_id, ere):
     with open(name, "wb") as f:
         pickle.dump(migrants, f)
         
-def write_node_population(node_id,node_population):
-    name = f"population_node_{node_id}.pkl"
-    with open(name, "wb") as f:
-        pickle.dump(node_population, f)
-        
 def collect_migrants(migrants,len_incomers):
     selected_migrants = random.sample(migrants, len_incomers)
     return(selected_migrants)
@@ -243,7 +238,7 @@ def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_c
     node_population = [ item for sublist in local_populations for item in sublist[0] ]
     best_score = min(ind.fitness for ind in node_population)
     print('best score : ',best_score)
-    write_node_population(node_id,node_population)
+    Eri.write_node_population(node_id,node_population)
         
 #    print('Fin de l\'algorithme évolutif ',time.time())
 #    world_population3 = [item for sublist in local_populations_1 for item in sublist[0]]

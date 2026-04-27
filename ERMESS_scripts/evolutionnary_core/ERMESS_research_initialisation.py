@@ -6,7 +6,6 @@ Created on Thu Apr 16 12:51:20 2026
 """
 
 from ERMESS_scripts.utils import constraints as Cons
-from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 from ERMESS_scripts.evolutionnary_core import ERMESS_Research as ER
 from ERMESS_scripts.data.indices import *
@@ -16,6 +15,11 @@ import copy
 import numpy as np
 import pickle
 
+        
+def write_node_population(node_id,node_population):
+    name = f"population_node_{node_id}.pkl"
+    with open(name, "wb") as f:
+        pickle.dump(node_population, f)
 
 def _Time_downscaling (Transformed_variable,time_resolution,n_days):
     """
@@ -315,6 +319,6 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
     #3. Merging the solutions
     shuffled_population = combine_populations(pro_initial_solutions, grouped_final_populations_LowRes, population_HighRes, n_core, days, Context_initialisation_Research, Context_initialisation_Research_LowRes, Context_initialisation_Research_HighRes)            
   
-    ER.write_node_population(node_id,shuffled_population) 
+    write_node_population(node_id,shuffled_population) 
 
    
