@@ -119,6 +119,7 @@ def init_pro_population(Context, n_core, n_pop_pro):
     List_Context_initialisation_pro = [Context_initialisation_pro for _ in range(n_core)]
     local_pro_initial_solutions = ppGA.ERMESS_pro_PARALLEL(List_Context_initialisation_pro)          
     pro_initial_solutions = [item for sublist in local_pro_initial_solutions for item in sublist]
+    pro_initial_solutions = Efr.pro_to_research(pro_initial_solutions, Context)
     return(pro_initial_solutions)
 
 def init_low_res_population(Context_initialisation_Research, n_core, n_pop_research, MIN_INIT_CONSTRAINT_LEVEL):
@@ -254,13 +255,14 @@ def combine_populations(pro_initial_solutions, grouped_final_populations_LowRes,
         - Final population is randomly shuffled.
     """
 
-    InDepth_initial_solutions_local = []
+    N_DAYS_HIGH_RES = len(population_HighRes)
+    Research_initial_solutions_local = []
     for i in range(n_core) :
-        InDepth_initial_solutions_local.append(Efr.combining_solutions(grouped_final_populations_LowRes[i],[population_HighRes[j][i] for j in range(4)],[days[(j*n_core)+i] for j in range(4)],Context_initialisation_Research_LowRes.time.time_resolution,Context_initialisation_Research_HighRes.time.time_resolution,Context_initialisation_Research))
+        Research_initial_solutions_local.append(Efr.combining_solutions(grouped_final_populations_LowRes[i],[population_HighRes[j][i] for j in range(N_DAYS_HIGH_RES)],[days[(j*n_core)+i] for j in range(N_DAYS_HIGH_RES)],Context_initialisation_Research_LowRes.time.time_resolution,Context_initialisation_Research_HighRes.time.time_resolution,Context_initialisation_Research))
         
-    InDepth_initial_solutions = [item for sublist in InDepth_initial_solutions_local for item in sublist]
+    Research_initial_solutions = [item for sublist in Research_initial_solutions_local for item in sublist]
             
-    Init_solutions_final = InDepth_initial_solutions + pro_initial_solutions
+    Init_solutions_final = Research_initial_solutions + pro_initial_solutions
     shuffled_population = sorted(Init_solutions_final, key=lambda x: np.random.rand())
     return(shuffled_population)
 
@@ -290,6 +292,7 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
     
     n_pop_pro = n_pop//2  if (Context.hyperparameters.n_pop%4==0) else (int((Context.hyperparameters.n_pop/2)-1))
     n_pop_research =  n_pop - n_pop_pro
+    Context.hyperparameters_pro.n_pop = n_pop_pro
         
     ##============================================================================
     # 1. SOLVING THE PROBLEM WITH ERMESS PRO

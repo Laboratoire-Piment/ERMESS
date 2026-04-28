@@ -194,10 +194,10 @@ def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_c
     MIGRATION_RANDOM_RATE = 0.05    
     INTERVAL_EXCHANGE = 4
     len_pop = Context.hyperparameters.n_pop
-    
+    Initial_populations = []
     population_file = f"population_node_{node_id}.pkl"
     with open(population_file, "rb") as infile:
-        Initial_populations = pickle.load(infile)        
+        Initial_populations.append(pickle.load(infile))        
 
     for ere in range(nb_ere):
 
@@ -205,7 +205,7 @@ def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_c
         # 1. Local optimization
         # -----------------------
         args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
-        local_populations = ppGA.ere_evolutive(args_evolutionnary_algorithm)
+        local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)
         
 
         # -----------------------

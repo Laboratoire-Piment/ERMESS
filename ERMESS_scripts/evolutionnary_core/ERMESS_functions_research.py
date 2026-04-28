@@ -12,6 +12,7 @@ from numba import int64, float64, types
 
 from ERMESS_scripts.evolutionnary_core import ERMESS_evolutionnary_operators as Eop
 from ERMESS_scripts.energy_model import ERMESS_EMS_models as Eems
+from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
 from ERMESS_scripts.data.indices import *
 
 
@@ -119,7 +120,7 @@ def unjitting_pop_res(jitted_pop):
         pop.append(Non_JIT_Individual_res(ind.production_set,ind.storage_sum,ind.storage_TS,ind.contract,ind.Y_DSM,ind.D_DSM,ind.fitness,ind.trades))
     return(pop)
         
-def pro_to_research(pop_pro,Contexte):
+def pro_to_research(pop_pro,Context):
     """
     Transform a PRO population into a RESEARCH population.
     
@@ -136,12 +137,15 @@ def pro_to_research(pop_pro,Contexte):
     Returns:
         list of ECl.Non_JIT_Individual_res: List of research individuals.
     """
+    KILOS_FACTOR_CONVERSION = 1000
+    HOURS_PER_DAY = 24
     pop_res = []
     for ind_pro in pop_pro:
-        production = ((Contexte.prods_U.T*ind_pro.production_set).sum(axis=1)+Contexte.prod_C)/1000    
-        (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE.py_func(ind_pro, Contexte.Non_movable_load, Contexte.total_D_Movable_load, Contexte.total_Y_Movable_load, production , Contexte.n_bits,Contexte.n_store,Contexte.time_resolution, Contexte.Connexion, Contexte.storage_characteristics)
-        D_DSM = D_DSM.reshape((int(Contexte.n_bits/(Contexte.time_resolution*24)),int(Contexte.time_resolution*24)))
-        storage_sum=np.array([-np.sum(np.where(storage_TS[i]<0,storage_TS[i],0)) for i in range(Contexte.n_store)])
+        production = ((Context.production.unit_prods.T*ind_pro.production_set).sum(axis=1)+Context.production.current_prod)/KILOS_FACTOR_CONVERSION    
+        pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context,'research')
+        (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE.py_func(ind_pro, global_parameters, pro_parameters, production ,RENSystems_parameters)
+        D_DSM = D_DSM.reshape((int(Context.time.n_bits/(Context.time.time_resolution*HOURS_PER_DAY)),int(Context.time.time_resolution*HOURS_PER_DAY)))
+        storage_sum=np.array([-np.sum(np.where(storage_TS[i]<0,storage_TS[i],0)) for i in range(Context.storage.n_store)])
         ind_res = Non_JIT_Individual_res(ind_pro.production_set, storage_sum, storage_TS, ind_pro.contract, Y_DSM, D_DSM, np.nan, trades)
         pop_res.append(ind_res)
     return (pop_res)

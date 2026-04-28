@@ -96,17 +96,17 @@ class Non_JIT_Individual_pro():
     
     See 'Individual_pro' for full attribute specification.
     """
-    def __init__(self,production_set,contract,PMS_strategy,PMS_discharge_order,energy_use_repartition_DSM,PMS_taking_over,PMS_D_DSM_min_levels,PMS_Y_DSM_min_levels,PMS_DG_min_runtime,PMS_DG_min_production,storages,fitness):
+    def __init__(self,production_set,contract,DG_strategy,discharge_order,energy_use_coefficient,overlaps,D_DSM_minimum_levels,Y_DSM_minimum_levels,DG_min_runtime,DG_min_production,storages,fitness):
         self.production_set = production_set
         self.contract = contract
-        self.PMS_strategy = PMS_strategy
-        self.PMS_discharge_order = PMS_discharge_order
-        self.energy_use_repartition_DSM = energy_use_repartition_DSM
-        self.PMS_taking_over = PMS_taking_over
-        self.PMS_D_DSM_min_levels = PMS_D_DSM_min_levels
-        self.PMS_Y_DSM_min_levels = PMS_Y_DSM_min_levels
-        self.PMS_DG_min_runtime = PMS_DG_min_runtime
-        self.PMS_DG_min_production = PMS_DG_min_production 
+        self.DG_strategy = DG_strategy
+        self.discharge_order = discharge_order
+        self.energy_use_coefficient = energy_use_coefficient
+        self.overlaps = overlaps
+        self.D_DSM_minimum_levels = D_DSM_minimum_levels
+        self.Y_DSM_minimum_levels = Y_DSM_minimum_levels
+        self.DG_min_runtime = DG_min_runtime
+        self.DG_min_production = DG_min_production 
         self.storages = storages
         self.fitness = fitness
         
@@ -116,7 +116,7 @@ class Non_JIT_Individual_pro():
         :returns: A non-JIT Individual PRO object
         :rtype: object of class Individual PRO
         """
-        return Non_JIT_Individual_pro(self.production_set.copy(),self.contract,self.PMS_strategy,self.PMS_discharge_order.copy(),self.energy_use_repartition_DSM,self.PMS_taking_over.copy(),self.PMS_D_DSM_min_levels.copy(),self.PMS_Y_DSM_min_levels.copy(),self.PMS_DG_min_runtime,self.PMS_DG_min_production,self.storages.copy(),self.fitness)
+        return Non_JIT_Individual_pro(self.production_set.copy(),self.contract,self.DG_strategy,self.discharge_order.copy(),self.energy_use_coefficient,self.overlaps.copy(),self.D_DSM_minimum_levels.copy(),self.Y_DSM_minimum_levels.copy(),self.DG_min_runtime,self.DG_min_production,self.storages.copy(),self.fitness)
 
 class RandomFactors:
     def __init__(self, arr):
