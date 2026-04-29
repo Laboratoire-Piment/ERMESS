@@ -137,7 +137,8 @@ def _compute_production_automatic(data, site, datetime_model, meteo_mode):
         datetime_prods = pd.to_datetime(data["Meteo"]["Datetime"],format="%d/%m/%Y %H:%M").tz_localize(site.timezone)
 
     else:
-        PV_meteo, Wind_meteo = Eme.import_meteo(site.latitude,site.longitude,site.altitude,datetime_model[0],datetime_model[-1],site.timezone)
+        CDSAPI_key = data["Environment"]["CDSAPI key"]
+        PV_meteo, Wind_meteo = Eme.import_meteo(site.latitude,site.longitude,site.altitude,datetime_model[0],datetime_model[-1],site.timezone,CDSAPI_key)
         datetime_prods = PV_meteo.index
 
     # --- PV ---

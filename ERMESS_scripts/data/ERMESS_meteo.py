@@ -12,9 +12,57 @@ import pandas as pd
 import zipfile
 import numpy as np
 import datetime
+import time
 
 
-def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str):
+
+def _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str):
+    path = os.path.join(output_dir, folder_name)
+
+    files = [f for f in os.listdir(path) if f.endswith(".nc") or f.endswith(".grib")]
+
+    meteo = pd.DataFrame()
+
+
+    for file in files:
+        ds = xr.open_dataset(os.path.join(path, file))
+        times = ds["valid_time"].values
+
+        if 'u10' in ds:
+            u = ds["u10"].values
+            v = ds["v10"].values
+            meteo=meteo.assign(wind_speed=pd.Series(u**2+v**2)**0.5)
+            meteo=meteo.assign(wind_direction=pd.Series(np.mod(180+np.rad2deg(np.arctan2(u,v)),360)))     
+
+        if 't2m' in ds:
+            meteo=meteo.assign(temp_air=pd.Series(ds["t2m"].values - 273.15))# Conversion in °C
+
+        if 'sp' in ds:
+            meteo=meteo.assign(pressure=pd.Series(ds["sp"].values / 100))# Pa → hPa
+
+        if 'ssrd' in ds:
+            meteo=meteo.assign(GHI=pd.Series(ds["ssrd"].values / 3600))# Wh/m² → W/m²
+    meteo=meteo.set_index(pd.to_datetime(times))
+
+    output_dir = "meteo_data/CAMS"
+    os.makedirs(output_dir, exist_ok=True)
+
+    df_meteo=meteo    
+    
+    
+    df_meteo.index = df_meteo.index.tz_localize('utc').tz_convert(timezone_str)
+    
+    df_meteo = df_meteo.loc[date_from:date_to]
+    df_meteo = df_meteo.round(2)
+    
+    Wind_heights = np.array([10.,2.,0.])
+    PV_meteo = pd.DataFrame(data=df_meteo.loc[:, ['GHI','temp_air','wind_speed']].values,index=df_meteo.index,columns=np.array(['ghi','temp_air','wind_speed']))
+    Wind_meteo = pd.DataFrame(data=df_meteo.loc[:, ['wind_speed','temp_air','pressure']].values,index=df_meteo.index,columns=[np.array(['wind_speed','temperature','pressure']),Wind_heights])
+
+
+    return PV_meteo, Wind_meteo
+
+def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsapi_key):
     
     """
     Download and preprocess ERA5-Land meteorological data when needed by ERMESS.
@@ -105,72 +153,84 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str):
 
     folder_name = f"ERA5_{latitude}_{longitude}_{strdates[0]}_to_{strdates[1]}"
     filename = "ERA5.zip"
+    folder_path = os.path.join(output_dir, folder_name)
     
     os.makedirs(os.path.join(output_dir, folder_name), exist_ok=True)
 
     
     output_path = os.path.join(output_dir,folder_name, filename)    
+    
+    tmp_path = output_path + ".tmp"
 
-    if os.path.exists(output_path):
-        os.remove(output_path)    
+    # -----------------------------
+    # CACHE CHECK     # -----------------------------
+    if os.path.exists(output_path) and zipfile.is_zipfile(output_path):
+        print("[METEO] Using cached ERA5")
+        return _load_meteo(folder_path)
+
+    # -----------------------------
+    # CLEAN OLD FILES
+    # -----------------------------
+    for f in [output_path, tmp_path]:
+        if os.path.exists(f):
+            os.remove(f)
 
     # Crée un client CDS
     c = cdsapi.Client(url='https://cds.climate.copernicus.eu/api',
     key='0201efea-2d1b-45c6-b53d-74b4572667b5')
 
 # Lancement de la requête
-    c.retrieve(
-    'reanalysis-era5-land-timeseries',
-    {
-        'product_type': 'reanalysis',
-        'format': 'csv',
-        'variable': [
-            '2m_temperature',
-            'surface_pressure',
-            '10m_u_component_of_wind',
-            '10m_v_component_of_wind',
-            'surface_solar_radiation_downwards',  # GHI approximatif
-        ],
-        "location": {"longitude": str(longitude), "latitude": str(latitude)},
-        "date": [strdates[0]+"/"+strdates[1]]
-                 },
-    
-    output_path
-)
+    max_retries = 3
 
-    name_files = zipfile.ZipFile(output_path).namelist()
-    with zipfile.ZipFile(output_path, 'r') as zip_ref:
-        zip_ref.extractall(os.path.join(output_dir, folder_name))
-    
-    meteo = pd.DataFrame()
-    for file in name_files:
-        ds = xr.open_dataset(os.path.join(output_dir, folder_name,file))
-        if 'u10' in list(ds.keys()):
-            meteo=meteo.assign(wind_speed=pd.Series(ds["u10"].values**2+ds["v10"].values**2)**0.5)
-            meteo=meteo.assign(wind_direction=pd.Series(np.mod(180+np.rad2deg(np.arctan2(ds["u10"].values,ds["v10"].values)),360)))        
-        elif 't2m' in list(ds.keys()):
-            meteo=meteo.assign(temp_air=pd.Series(ds["t2m"].values - 273.15))# Conversion en °C
-        elif "sp" in list(ds.keys()):
-            meteo=meteo.assign(pressure=pd.Series(ds["sp"].values / 100))# Pa → hPa
-        elif "ssrd" in list(ds.keys()):
-            meteo=meteo.assign(GHI=pd.Series(ds["ssrd"].values / 3600))# Wh/m² → W/m²
-    meteo=meteo.set_index(pd.to_datetime(ds["valid_time"].values))
+    for attempt in range(max_retries):
 
+        try:
+            print(f"[METEO] Download attempt {attempt+1}/{max_retries}")
 
-    output_dir = "meteo_data/CAMS"
-    os.makedirs(output_dir, exist_ok=True)
+            c.retrieve(
+            'reanalysis-era5-land-timeseries',
+            {
+                'product_type': 'reanalysis',
+                'format': 'csv',
+                'variable': [
+                    '2m_temperature',
+                    'surface_pressure',
+                    '10m_u_component_of_wind',
+                    '10m_v_component_of_wind',
+                    'surface_solar_radiation_downwards',  # GHI approximatif
+                ],
+                "location": {"longitude": str(longitude), "latitude": str(latitude)},
+                "date": [strdates[0]+"/"+strdates[1]]
+                         },tmp_path)
+            
+            if not os.path.exists(tmp_path):
+                raise FileNotFoundError("Download failed: file not created")
 
-    df_meteo=meteo    
-    
-    
-    df_meteo.index = df_meteo.index.tz_localize('utc').tz_convert(timezone_str)
-    
-    df_meteo = df_meteo.loc[date_from:date_to]
-    df_meteo = df_meteo.round(2)
-    
-    Wind_heights = np.array([10.,2.,0.])
-    PV_meteo = pd.DataFrame(data=df_meteo.loc[:, ['GHI','temp_air','wind_speed']].values,index=df_meteo.index,columns=np.array(['ghi','temp_air','wind_speed']))
-    Wind_meteo = pd.DataFrame(data=df_meteo.loc[:, ['wind_speed','temp_air','pressure']].values,index=df_meteo.index,columns=[np.array(['wind_speed','temperature','pressure']),Wind_heights])
+            if os.path.getsize(tmp_path) < 1000:
+                raise ValueError("Download corrupted: file too small")
+            
+            os.rename(tmp_path, output_path)
+            break
         
-    return(PV_meteo,Wind_meteo)
+        except Exception as e:
+            print(f"[METEO] Attempt {attempt+1} failed: {e}")
+    
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+    
+            time.sleep(5)
+
+    else:
+        raise RuntimeError("ERA5 download failed after multiple retries")
+        
+    if not zipfile.is_zipfile(output_path):
+        raise ValueError(f"Invalid ZIP file: {output_path}")
+
+    with zipfile.ZipFile(output_path, 'r') as zip_ref:
+        zip_ref.extractall(output_path)
+
+    return(_load_meteo(folder_path))
+
+
+
 
