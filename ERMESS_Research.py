@@ -64,7 +64,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
         
         
-    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
+#    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
     
     ##### A utiliser seulement sur le calculateur UNIX
 #    set_start_method('spawn')
