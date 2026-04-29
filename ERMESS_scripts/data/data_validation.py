@@ -5,6 +5,7 @@ Created on Wed Apr 29 13:00:07 2026
 @author: JoPHOBEA
 """
 import numpy as np
+import pandas as pd
 
 from ERMESS_scripts.data.indices import *
 
