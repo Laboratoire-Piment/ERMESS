@@ -9,7 +9,77 @@ import pandas as pd
 
 from ERMESS_scripts.data.indices import *
 
-def _validate_hyperparameters_matrix(H, used_indices):
+
+   #---------------------------
+   #HYPERPARAMETERS
+   #---------------------------
+used_indices = [
+        # OPER_INV_LENGTH
+        (OPER_INV_LENGTH, RESEARCH_PRODUCTION),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_PATTERNS),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_GLOBAL),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_MIX),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_VOLUME),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_POWER),
+        (OPER_INV_LENGTH, RESEARCH_INTER_STORAGES),
+        (OPER_INV_LENGTH, RESEARCH_CONSTRAINT_FORCING),
+        (OPER_INV_LENGTH, RESEARCH_CURVE_SMOOTHING),
+        (OPER_INV_LENGTH, RESEARCH_STORAGE_TRADES_CONSISTENCY),
+        (OPER_INV_LENGTH, RESEARCH_DSM_NOISE),
+        (OPER_INV_LENGTH, RESEARCH_DSM_TRADES_CONSISTENCY),
+
+        # OPER_INV_MAGNITUDE
+        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_GLOBAL),
+        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_VOLUME),
+        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_POWER),
+        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_MIX),
+        (OPER_INV_MAGNITUDE, RESEARCH_INTERDAILY_CONSISTENCY),
+        (OPER_INV_MAGNITUDE, RESEARCH_CURVE_SMOOTHING),
+
+        # OPER_MAX_AVERAGE
+        (OPER_MAX_AVERAGE, RESEARCH_CONTRACT),
+        (OPER_MAX_AVERAGE, RESEARCH_PRODUCTION),
+        (OPER_MAX_AVERAGE, RESEARCH_STORAGE_MIX),
+        (OPER_MAX_AVERAGE, RESEARCH_STORAGE_VOLUME),
+        (OPER_MAX_AVERAGE, RESEARCH_CONSTRAINT_FORCING),
+
+        # OPER_MIN_AVERAGE
+        (OPER_MIN_AVERAGE, RESEARCH_CONSTRAINT_FORCING),
+
+        # OPER_MAX_DEVIATION
+        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_PATTERNS),
+        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_MIX),
+        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_VOLUME),
+        (OPER_MAX_DEVIATION, RESEARCH_DSM_NOISE),
+    ]
+
+ROW_NAMES = {
+    OPER_INV_LENGTH: "INV_LENGTH",
+    OPER_INV_MAGNITUDE: "INV_MAGNITUDE",
+    OPER_MAX_AVERAGE: "MAX_AVERAGE",
+    OPER_MIN_AVERAGE: "MIN_AVERAGE",
+    OPER_MAX_DEVIATION: "MAX_DEVIATION",
+}
+
+COL_NAMES = {
+    RESEARCH_PRODUCTION: "PRODUCTION",
+    RESEARCH_STORAGE_PATTERNS: "STORAGE_PATTERNS",
+    RESEARCH_STORAGE_GLOBAL: "STORAGE_GLOBAL",
+    RESEARCH_STORAGE_MIX: "STORAGE_MIX",
+    RESEARCH_STORAGE_VOLUME: "STORAGE_VOLUME",
+    RESEARCH_STORAGE_POWER: "STORAGE_POWER",
+    RESEARCH_INTER_STORAGES: "INTER_STORAGES",
+    RESEARCH_CONSTRAINT_FORCING: "CONSTRAINT_FORCING",
+    RESEARCH_CURVE_SMOOTHING: "CURVE_SMOOTHING",
+    RESEARCH_STORAGE_TRADES_CONSISTENCY: "STORAGE_TRADES_CONSISTENCY",
+    RESEARCH_DSM_NOISE: "DSM_NOISE",
+    RESEARCH_DSM_TRADES_CONSISTENCY: "DSM_TRADES_CONSISTENCY",
+    RESEARCH_CONTRACT: "CONTRACT",
+    RESEARCH_INTERDAILY_CONSISTENCY: "INTERDAILY_CONSISTENCY",
+}
+
+
+def _validate_hyperparameters_matrix(H, used_indices, row_names=None, col_names=None):
     """
     Validate critical entries of hyperparameters matrix.
 
@@ -20,27 +90,30 @@ def _validate_hyperparameters_matrix(H, used_indices):
     Raises:
         ValueError if invalid values are found
     """
-    mask = np.zeros(H.shape, dtype=bool)
-
+    errors = []
     for i, j in used_indices:
-        mask[i, j] = True
+        val = H[i, j]
 
-    critical_values = H[mask]
+        row_label = row_names.get(i, f"row_{i}") if row_names else f"row_{i}"
+        col_label = col_names.get(j, f"col_{j}") if col_names else f"col_{j}"
 
-    # --- NaN / Inf ---
-    if np.isnan(critical_values).any():
-        raise ValueError("NaN detected in critical hyperparameters")
+        label = f"[{row_label}, {col_label}] (index=({i},{j}))"
 
-    if np.isinf(critical_values).any():
-        raise ValueError("Inf detected in critical hyperparameters")
+        if np.isnan(val):
+            errors.append(f"{label} = NaN")
 
-    # --- Zeros dangereux (divisions) ---
-    if np.any(critical_values == 0):
-        raise ValueError("Zero detected in critical hyperparameters (division risk)")
+        elif np.isinf(val):
+            errors.append(f"{label} = Inf")
 
-    # --- Valeurs négatives problématiques ---
-    if np.any(critical_values < 0):
-        raise ValueError("Negative values detected in critical hyperparameters (invalid for scales)")
+        elif val == 0:
+            errors.append(f"{label} = 0 (division risk)")
+
+        elif val < 0:
+            errors.append(f"{label} = {val} (negative value not allowed)")
+
+    if errors:
+        message = "Invalid hyperparameters detected:\n" + "\n".join(errors)
+        raise ValueError(message)
 
 
 def _data_validation(data):
@@ -241,7 +314,8 @@ def _data_validation(data):
     # =========================
    hyperparameters_operators_num = np.float64(data['Hyperparameters'][['Contract','Production','Storage volume','Storage_global','Storage_power','Storage_trades_consistency','Storage_patterns','Inter_storages','Storage_mix','Curve_smoothing','Constraint_forcing','Interdaily_consistency','DSM_trades_consistency','DSM_noise']])
 
-   _validate_hyperparameters_matrix(hyperparameters_operators_num, used_indices)
+   _validate_hyperparameters_matrix(hyperparameters_operators_num, used_indices, row_names=ROW_NAMES,
+    col_names=COL_NAMES)
 
     # =========================
     # 10. BASIC NUMERICAL CHECKS
@@ -253,48 +327,4 @@ def _data_validation(data):
         if np.any(np.isinf(numeric_df)):
             raise ValueError(f"Infinite values detected in sheet '{sheet_name}'")
 
-    #---------------------------
-    #HYPERPARAMETERS
-    #---------------------------
-used_indices = [
-        # OPER_INV_LENGTH
-        (OPER_INV_LENGTH, RESEARCH_PRODUCTION),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_PATTERNS),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_GLOBAL),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_MIX),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_VOLUME),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_POWER),
-        (OPER_INV_LENGTH, RESEARCH_INTER_STORAGES),
-        (OPER_INV_LENGTH, RESEARCH_CONSTRAINT_FORCING),
-        (OPER_INV_LENGTH, RESEARCH_CURVE_SMOOTHING),
-        (OPER_INV_LENGTH, RESEARCH_STORAGE_TRADES_CONSISTENCY),
-        (OPER_INV_LENGTH, RESEARCH_DSM_NOISE),
-        (OPER_INV_LENGTH, RESEARCH_DSM_TRADES_CONSISTENCY),
-
-        # OPER_INV_MAGNITUDE
-        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_GLOBAL),
-        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_VOLUME),
-        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_POWER),
-        (OPER_INV_MAGNITUDE, RESEARCH_STORAGE_MIX),
-        (OPER_INV_MAGNITUDE, RESEARCH_INTERDAILY_CONSISTENCY),
-        (OPER_INV_MAGNITUDE, RESEARCH_CURVE_SMOOTHING),
-
-        # OPER_MAX_AVERAGE
-        (OPER_MAX_AVERAGE, RESEARCH_CONTRACT),
-        (OPER_MAX_AVERAGE, RESEARCH_PRODUCTION),
-        (OPER_MAX_AVERAGE, RESEARCH_STORAGE_MIX),
-        (OPER_MAX_AVERAGE, RESEARCH_STORAGE_VOLUME),
-        (OPER_MAX_AVERAGE, RESEARCH_CONSTRAINT_FORCING),
-
-        # OPER_MIN_AVERAGE
-        (OPER_MIN_AVERAGE, RESEARCH_CONSTRAINT_FORCING),
-
-        # OPER_MAX_DEVIATION
-        (OPER_MAX_DEVIATION, RESEARCH_PRODUCTION),
-        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_PATTERNS),
-        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_MIX),
-        (OPER_MAX_DEVIATION, RESEARCH_STORAGE_VOLUME),
-        (OPER_MAX_DEVIATION, RESEARCH_DSM_NOISE),
-        (OPER_MAX_DEVIATION, RESEARCH_CURVE_SMOOTHING),
-    ]
 
