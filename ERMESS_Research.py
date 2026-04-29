@@ -31,6 +31,7 @@ from tkinter import filedialog
 from ERMESS_scripts.data import data_classes as Dcl
 from ERMESS_scripts.data import read_excel as Eex
 from ERMESS_scripts.data import data_parsers as Edp
+from ERMESS_scripts.data import data_validation as Edv
 from ERMESS_scripts.data import data_builder as Dbl
 
 from ERMESS_scripts.evolutionnary_core import ERMESS_research_initialisation as Eri
@@ -50,7 +51,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
         input_file_path = filedialog.askopenfilename(filetypes =[('Excel Files', '*.xlsx')], initialdir="#Specify the file path")
     
     data = Eex.load_excel(input_file_path)
-    Edp._data_validation(data)
+    Edv._data_validation(data)
     structured_data = Edp._parse_ERMESSInputs(data)
 
     ##============================================================================

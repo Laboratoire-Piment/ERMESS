@@ -38,6 +38,8 @@ from ERMESS_scripts.data import data_classes as Dcl
 from ERMESS_scripts.data import read_excel as Eex
 from ERMESS_scripts.data import data_parsers as Edp
 from ERMESS_scripts.data import data_builder as Dbl
+from ERMESS_scripts.data import data_validation as Edv
+
 from ERMESS_scripts.utils import constraints as Cons
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
@@ -60,7 +62,7 @@ def ERMESS_pro(input_file_path=None) :
         input_file_path = filedialog.askopenfilename(filetypes =[('Excel Files', '*.xlsx')], initialdir="#Specify the file path")
 
     data = Eex.load_excel(input_file_path)
-    Edp._data_validation(data)
+    Edv._data_validation(data)
     structured_data = Edp._parse_ERMESSInputs(data)
 
     ##============================================================================
