@@ -68,14 +68,16 @@ def evolutionnary_algorithm_research(inputs):
  # crossover and mutation
              random_factors,choices = random_factors_set[gen,i,:],choices_set[gen,i,:]
              (p1_mut,p1_ope) = Efr.NON_JIT_mutation_contraintes_research(p1 , random_factors, choices, activate_Y_DSM, activate_D_DSM, global_parameters, RENSystems_parameters, grid_parameters, extra_parameters)
+             print(fitness_function_GA(p1_mut)[0])
              random_factors,choices = random_factors_set[gen,i+1,:],choices_set[gen,i+1,:]
              (p2_mut,p2_ope) = Efr.NON_JIT_mutation_contraintes_research(p2 , random_factors, choices, activate_Y_DSM, activate_D_DSM, global_parameters, RENSystems_parameters, grid_parameters, extra_parameters)
-
+             print(fitness_function_GA(p2_mut)[0])
              [c1,c2,ind] = Efr.crossover_reduit(p1_mut, p2_mut, r_cross,global_parameters,RENSystems_parameters,extra_parameters)
 
   # Bouclage
              c1=Efr.enforce_energy_consistency (c1,RENSystems_parameters,pro_parameters,extra_parameters,activate_Y_DSM )                 
              (c1.fitness,c1.trades)=fitness_function_GA(c1)
+             print(c1.fitness)
 
                     
              if c1.fitness < p1.fitness : 
@@ -87,6 +89,7 @@ def evolutionnary_algorithm_research(inputs):
              children.append(c1.copy())
              c2=Efr.enforce_energy_consistency (c2,RENSystems_parameters,pro_parameters,extra_parameters,activate_Y_DSM)
              (c2.fitness,c2.trades)=fitness_function_GA(c2) 
+             print(c2.fitness)
  
              if c2.fitness < p2.fitness : 
                  operators_perf.append(np.hstack((gen,p2_ope,ind)))
@@ -234,13 +237,12 @@ def evolutionnary_algorithm_pro(inputs):
    del pop[np.random.randint(len(pop))]
    pop.append(best)
    pop_sorted = sorted(pop, key=lambda ind: ind.fitness)
-   final_pop = Efp.unjitting_pop_pro(pop_sorted)
 #   final_pop=pop
 #   if (type_pop=='NON_JIT'):
 #       final_pop = Efr.pro_to_research(final_pop, Contexte)
 
    operators_perf=np.array(operators_perf)
    if Context.tracking.tracking_operators :
-       return [final_pop,operators_perf]
+       return [pop_sorted,operators_perf]
    else :
-       return (final_pop)
+       return (pop_sorted)

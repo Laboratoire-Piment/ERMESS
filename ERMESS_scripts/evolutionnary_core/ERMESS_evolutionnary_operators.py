@@ -646,8 +646,8 @@ def Merge_opposite_storage_flows_operator(c,n_store,hyperparameters_operators_nu
     if (len(opposite_sign_indices)>1):
         changes = np.random.choice(opposite_sign_indices,max(2,int(len(opposite_sign_indices) / hyperparameters_operators_num[OPER_INV_LENGTH,RESEARCH_INTER_STORAGES])),replace=False)
         aggregated_signal = np.sum(c.storage_TS[:, changes], axis=0)
-        c.storage_TS[stores[0],changes]=aggregated_signal
-        c.storage_TS[stores[1],changes]=0
+        c.storage_TS[store_a,changes]=aggregated_signal
+        c.storage_TS[store_b,changes]=0
     return(c)
 
 @jit(nopython=True)
@@ -1132,9 +1132,9 @@ def Copy_DDSM_interdaily_patterns_operator(c,D_DSM_indexes,random_factor,time_re
     span_length = np.random.randint(1, n_days)      
     direction = np.random.choice(np.array([-1, 1]))   
 
-    propagation_days = np.arange(reference_day,reference_day+span_length[2]+1)[::(-1)*direction[3]]%n_days            
+    propagation_days = np.arange(reference_day,reference_day+span_length+1)[::(-1)*direction]%n_days            
     distances = np.abs(propagation_days-propagation_days[0])
-    max_distance = np.max((0.1,np.max(distances)))
+    max_distance = max(0.1,np.max(distances))
     reference_profile = c.D_DSM[propagation_days[0]]
     for i in range(len(propagation_days)):
         attenuation = 1 - distances[i] / (2 * max_distance)

@@ -116,10 +116,10 @@ def init_pro_population(Context, n_core, n_pop_pro):
     
     #Spreading the ERMESS PRO initial population 
     #initialisation_pro_args = [(Context_initialisation_pro,pro_initial_populations[i]) for i in range(n_core)]
-    List_Context_initialisation_pro = [Context_initialisation_pro for _ in range(n_core)]
-    local_pro_initial_solutions = ppGA.ERMESS_pro_PARALLEL(List_Context_initialisation_pro)          
+    List_Contexts = [(Context_initialisation_pro,Context) for _ in range(n_core)]
+    local_pro_initial_solutions = ppGA.ERMESS_pro_PARALLEL(List_Contexts)          
     pro_initial_solutions = [item for sublist in local_pro_initial_solutions for item in sublist]
-    pro_initial_solutions = Efr.pro_to_research(pro_initial_solutions, Context)
+    
     return(pro_initial_solutions)
 
 def init_low_res_population(Context_initialisation_Research, n_core, n_pop_research, MIN_INIT_CONSTRAINT_LEVEL):
@@ -321,7 +321,8 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
         
     #3. Merging the solutions
     shuffled_population = combine_populations(pro_initial_solutions, grouped_final_populations_LowRes, population_HighRes, n_core, days, Context_initialisation_Research, Context_initialisation_Research_LowRes, Context_initialisation_Research_HighRes)            
-  
+    spread_shuffled_population = [shuffled_population[(i*n_pop):((i+1)*n_pop)] for i in range(n_core)]
+    
     write_node_population(node_id,shuffled_population) 
 
    

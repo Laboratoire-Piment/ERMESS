@@ -61,6 +61,9 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
         
     if (initialisation) : 
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
+        
+        
+    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
     
     ##### A utiliser seulement sur le calculateur UNIX
 #    set_start_method('spawn')
@@ -188,7 +191,7 @@ def wait_for_all(ere, n_nodes, timeout=600, sleep_time=5):
         time.sleep(sleep_time)
     
 
-def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_core, node_id, n_nodes):
+def run_ERMESS_research(Context, Initial_populations, nb_ere, n_core, node_id, n_nodes):
 
     MIGRATION_TOP_RATE = 0.05    
     MIGRATION_RANDOM_RATE = 0.05    
@@ -197,7 +200,7 @@ def run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, n_c
     Initial_populations = []
     population_file = f"population_node_{node_id}.pkl"
     with open(population_file, "rb") as infile:
-        Initial_populations.append(pickle.load(infile))        
+        Initial_populations = pickle.load(infile)  
 
     for ere in range(nb_ere):
 

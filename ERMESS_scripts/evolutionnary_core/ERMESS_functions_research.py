@@ -143,7 +143,7 @@ def pro_to_research(pop_pro,Context):
     for ind_pro in pop_pro:
         production = ((Context.production.unit_prods.T*ind_pro.production_set).sum(axis=1)+Context.production.current_prod)/KILOS_FACTOR_CONVERSION    
         pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context,'research')
-        (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE.py_func(ind_pro, global_parameters, pro_parameters, production ,RENSystems_parameters)
+        (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE(ind_pro, global_parameters, pro_parameters, production ,RENSystems_parameters)
         D_DSM = D_DSM.reshape((int(Context.time.n_bits/(Context.time.time_resolution*HOURS_PER_DAY)),int(Context.time.time_resolution*HOURS_PER_DAY)))
         storage_sum=np.array([-np.sum(np.where(storage_TS[i]<0,storage_TS[i],0)) for i in range(Context.storage.n_store)])
         ind_res = Non_JIT_Individual_res(ind_pro.production_set, storage_sum, storage_TS, ind_pro.contract, Y_DSM, D_DSM, np.nan, trades)
@@ -386,7 +386,7 @@ def NON_JIT_mutation_contraintes_research(c , random_factors, choices, activate_
             c=Eop.Copy_interdaily_patterns_operator(c,choices[11],random_factors[RES_RF_STORAGE_COPY_EFFECT],global_parameters.n_bits,global_parameters.time_resolution)
             usage_ope[17]=1
         
-        ##APPLATISSEMENT DES COURBES
+        ##Curve smoothing
         if (random_factors[RES_RF_STORAGE_SMOOTHING]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING]):
                c=Eop.Smooth_storage_noise_operator(c,choices[12],random_factors[RES_RF_STORAGE_SMOOTHING_EFFECT],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
                usage_ope[18]=1
@@ -663,7 +663,7 @@ def initial_population_research(inputs):
             Initial_storage_power[i,:][Initial_storage_power[i,:]<0] = -Initial_storage_power[i,:][Initial_storage_power[i,:]<0]/sum(Initial_storage_power[i,:][Initial_storage_power[i,:]<0])*stored_volumes[j,i]
         Init_pop_j = Individual_res(production_set=Initial_prod[j],storage_sum=stored_volumes[j],storage_TS=Initial_storage_power,contract=Initial_contracts[j],Y_DSM=Initial_Y_DSM[j],D_DSM=Initial_D_DSM[j],fitness=np.nan,trades=np.full([n_bits], np.float64(np.nan)))
         Initial_population.append(Init_pop_j)
-        nonjit_initial_population = unjitting_pop_res(Initial_population)
+    nonjit_initial_population = unjitting_pop_res(Initial_population)
        
     return(nonjit_initial_population)   
 
