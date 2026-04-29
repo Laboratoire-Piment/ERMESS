@@ -166,7 +166,7 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
     # CACHE CHECK     # -----------------------------
     if os.path.exists(output_path) and zipfile.is_zipfile(output_path):
         print("[METEO] Using cached ERA5")
-        return _load_meteo(folder_path)
+        return _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str)
 
     # -----------------------------
     # CLEAN OLD FILES
@@ -229,7 +229,7 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
     with zipfile.ZipFile(output_path, 'r') as zip_ref:
         zip_ref.extractall(output_path)
 
-    return(_load_meteo(folder_path))
+    return(_load_meteo((output_dir, folder_name, date_from, date_to, timezone_str)))
 
 
 
