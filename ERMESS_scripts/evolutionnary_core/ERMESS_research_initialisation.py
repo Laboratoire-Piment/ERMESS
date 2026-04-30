@@ -323,6 +323,6 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
     shuffled_population = combine_populations(pro_initial_solutions, grouped_final_populations_LowRes, population_HighRes, n_core, days, Context_initialisation_Research, Context_initialisation_Research_LowRes, Context_initialisation_Research_HighRes)            
     spread_shuffled_population = [shuffled_population[(i*n_pop):((i+1)*n_pop)] for i in range(n_core)]
     
-    write_node_population(node_id,shuffled_population) 
+    write_node_population(node_id,spread_shuffled_population) 
 
    

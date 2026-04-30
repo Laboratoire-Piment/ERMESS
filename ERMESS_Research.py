@@ -63,6 +63,8 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     if (initialisation) : 
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
         
+    run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes)
+        
         
 #    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
     
@@ -192,7 +194,7 @@ def wait_for_all(ere, n_nodes, timeout=600, sleep_time=5):
         time.sleep(sleep_time)
     
 
-def run_ERMESS_research(Context, Initial_populations, nb_ere, n_core, node_id, n_nodes):
+def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
     MIGRATION_TOP_RATE = 0.05    
     MIGRATION_RANDOM_RATE = 0.05    
