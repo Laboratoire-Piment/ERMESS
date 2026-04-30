@@ -20,9 +20,20 @@ pro_params = [
     ]
 
 @jitclass(pro_params)
-class ProParams:
-    def __init__(self, total_D_Movable_load,total_Y_Movable_load):
+class _ProParams:
+    """Parameters related to movable loads.
 
+    Attributes:
+        total_D_Movable_load (np.ndarray): Daily movable load profile.
+        total_Y_Movable_load (float): Yearly movable load total.
+    """
+    def __init__(self, total_D_Movable_load,total_Y_Movable_load):
+        """Initialize movable load parameters.
+
+        Args:
+            total_D_Movable_load (np.ndarray): Daily movable load total.
+            total_Y_Movable_load (float): Yearly movable load total.
+        """
         self.total_D_Movable_load = total_D_Movable_load
         self.total_Y_Movable_load = total_Y_Movable_load
 
@@ -39,9 +50,32 @@ global_params = [
 ]
 
 @jitclass(global_params)
-class GlobalParams:
-    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connexion,Non_movable_load):
+class _GlobalParams:
+    """Global simulation parameters.
 
+    Attributes:
+        n_bits (int): Number of timesteps.
+        time_resolution (float): Time resolution.
+        duration_years (float): Simulation duration in years.
+        constraint_num (int): ID of the constraint.
+        constraint_level (float): Constraint threshold.
+        cost_constraint (float): Cost factor of the constraint.
+        Connexion (str): Grid connection type.
+        Non_movable_load (np.ndarray): Fixed load profile.
+    """
+    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connexion,Non_movable_load):
+        """Initialize global parameters.
+
+        Args:
+            n_bits (int): Number of timesteps.
+            time_resolution (float): Time resolution.
+            duration_years (float): Simulation duration in years.
+            constraint_num (int): ID of the constraint.
+            constraint_level (float): Constraint threshold.
+            cost_constraint (float): Cost factor of the constraint.
+            Connexion (str): Grid connection type.
+            Non_movable_load (np.ndarray): Fixed load profile.
+        """
         self.n_bits = n_bits
         self.time_resolution = time_resolution
         self.duration_years = duration_years
@@ -61,7 +95,17 @@ specs_grid = [
 ]
 
 @jitclass(specs_grid)
-class GridParams:
+class _GridParams:
+    """Grid-related parameters.
+
+    Attributes:
+        prices (np.ndarray): Energy purchase prices.
+        fixed_premium (np.ndarray): Fixed premium costs.
+        Overrun (np.ndarray): Overrun penalties.
+        Selling_price (np.ndarray): Energy selling prices.
+        eqCO2emissions (float): CO2 equivalent emissions.
+        fossil_fuel_ratio (float): Fossil fuel share.
+    """
     def __init__(self, prices, fixed_premium, Overrun, Selling_price, eqCO2emissions, fossil_fuel_ratio):
 
         self.prices = prices
@@ -72,8 +116,10 @@ class GridParams:
         self.fossil_fuel_ratio = fossil_fuel_ratio
         
 @jitclass(specs_grid)
-class GridParamsDummy:
+class _GridParamsDummy:
+    """Dummy grid parameters (default zero values)."""
     def __init__(self):
+        """Initialize dummy grid parameters."""
         self.prices = np.zeros((1, 1))
         self.fixed_premium = np.zeros(1)
         self.Overrun = np.zeros(1)
@@ -92,9 +138,20 @@ REN_specs_systems = [
 ]
 
 @jitclass(REN_specs_systems)
-class RENSystemsParams:
-    def __init__(self, current_production, unit_productions,groups_production, specs_prod, capacities, specs_storage, n_store):
+class _RENSystemsParams:
+    """Renewable energy systems parameters.
 
+    Attributes:
+        current_production (np.ndarray): Current production timeseries.
+        unit_productions (np.ndarray): Production per unit timeseries.
+        groups_production (List[np.ndarray]): Exclusive producer indices.
+        specs_prod (np.ndarray): Producer specifications.
+        capacities (np.ndarray): Installation capacities.
+        specs_storage (np.ndarray): Storage specifications.
+        n_store (int): Maximum number of storage units.
+    """
+    def __init__(self, current_production, unit_productions,groups_production, specs_prod, capacities, specs_storage, n_store):
+        """Initialize renewable systems parameters."""
         self.current_production = current_production
         self.unit_productions = unit_productions
         self.groups_production = groups_production
@@ -114,9 +171,20 @@ spec_genset = [
 ]
 
 @jitclass(spec_genset)
-class GensetParams:
-    def __init__(self, fuel_cost, lifetime, unit_cost,
-                 maintenance_cost, fuel_consumption, fuel_CO2eq_emissions, EROI):
+class _GensetParams:
+    """Generator (genset) parameters.
+
+    Attributes:
+        fuel_cost (float): Fuel cost.
+        lifetime (float): Lifetime of the generator.
+        unit_cost (float): Investment cost.
+        maintenance_cost (float): Maintenance cost.
+        fuel_consumption (np.ndarray): Fuel consumption.
+        fuel_CO2eq_emissions (float): CO2 emissions factor.
+        EROI (float): Energy Return On Investment.
+    """
+    def __init__(self, fuel_cost, lifetime, unit_cost,maintenance_cost, fuel_consumption, fuel_CO2eq_emissions, EROI):
+        """Initialize generator parameters."""
 
         self.fuel_cost = fuel_cost
         self.lifetime = lifetime
@@ -127,7 +195,8 @@ class GensetParams:
         self.EROI = EROI
         
 @jitclass(spec_genset)
-class GensetParamsDummy:
+class _GensetParamsDummy:
+    """Dummy generator parameters (default zero values)."""
     def __init__(self):
         self.fuel_cost = np.float64(0)
         self.lifetime = np.float64(0)
