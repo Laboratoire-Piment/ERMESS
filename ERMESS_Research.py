@@ -226,7 +226,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
         if ere % INTERVAL_EXCHANGE == 0:
 
             migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
-            local_migrants = [local_populations[i][migrant_internodes] for i in range(n_core)]
+            local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
             migrants = [ item for sublist in local_migrants for item in sublist[0] ]
             write_migrants(migrants, node_id, ere)
 
