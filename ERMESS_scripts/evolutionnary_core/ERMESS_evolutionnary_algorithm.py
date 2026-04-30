@@ -106,10 +106,10 @@ def evolutionnary_algorithm_research(inputs):
    final_pop = Efr.unjitting_pop_res(pop)
 
    operators_perf=np.array(operators_perf)
-   if Context.tracking.tracking_operators == 1 :
-       return [final_pop,operators_perf]
-   else :
-       return (final_pop)
+#   if Context.tracking.tracking_operators == 1 :
+#       return [final_pop,operators_perf]
+#   else :
+   return (final_pop)
 
 def evolutionnary_algorithm_pro(inputs):
    """
