@@ -172,7 +172,7 @@ def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_
                 local_populations[i][idx] = new_indiv
         return(local_populations)
     
-def wait_for_all(ere, n_nodes, timeout=600, sleep_time=5):
+def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
     """
     Wait for all migrant files to be present.
     """

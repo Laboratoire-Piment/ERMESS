@@ -206,7 +206,7 @@ class _GensetParamsDummy:
         self.fuel_CO2eq_emissions = np.float64(0)
         self.EROI = np.float64(0)
 
-def cost_baseline(Contexte,datetime):
+def cost_baseline(Context,datetime):
     """
     Comprehensive cost and performance evaluation of the base scenario (current microgrid design without optimization).
     
@@ -226,31 +226,12 @@ def cost_baseline(Contexte,datetime):
         - Detailed time-series outputs for load, production, storage, and trades
     
     Args:
-        gene (structured object compatible with Numba): Microgrid operational strategy, design (production and storage), and PMS parameters.
-        datetime (pandas.DatetimeIndex or numpy.ndarray): Time series for the simulation period.
-        storage_characteristics (numpy.ndarray): Array of storage parameters including capacities, power ratings, efficiencies, and lifetime metrics.
-        time_resolution (float): Time resolution.
-        n_store (int): Number of storage units in the microgrid.
-        duration_years (float): Duration of the simulation in years.
-        Non_movable_load (numpy.ndarray): Time series of non-flexible (base) load.
-        D_movable_load (numpy.ndarray): Time series of daily-flexible load.
-        Y_movable_load (numpy.ndarray): Time series of yearly-flexible load.
-        prod_C (numpy.ndarray): Current on-site renewable energy production time series (kW).
-        prods_U, Bounds_prod, constraint_num, constraint_level, cost_constraint (various): Additional production constraints and parameters.
-        n_bits (int): Number of timesteps in the simulation.
-        Connexion (str): Grid connection mode ('On-grid' or 'Off-grid').
-        DG_fuel_consumption (np.ndarray): Diesel generator fuel consumption per output level.
-        DG_fuel_cost (float): Diesel fuel cost.
-        DG_unit_cost (float): Capital cost per kW of diesel generator.
-        DG_lifetime (float): Diesel generator lifetime in years.
-        DG_maintenance_cost (float): Annual O&M cost of diesel generator.
-        DG_EROI (float): Energy return on investment of diesel generator fuel.
-        fuel_CO2eq_emissions (float): CO2eq emissions per kWh of diesel fuel.
-        storage_techs (list of str): List of storage technology names.
-        n_days (int): Number of days in the simulation period.
+        Context (object): Simulation context containing loads, production,
+            storage, grid, genset, time, and configuration parameters.
+        datetime (pandas.DatetimeIndex | np.ndarray): Time index of simulation.
     
     Returns:
-        dict: Dictionary containing comprehensive microgrid outputs structured as:
+        dict: Nested dictionary containing comprehensive microgrid outputs structured as:
             - TimeSeries: Storage operation, SOCs, trades, grid flows, DG production
             - Technical: Self-sufficiency, autonomy, EnR fraction, capacity factor, lifetime, etc.
             - Economics: LCOE, CAPEX/OPEX, contract power, import/export economics, DG costs
@@ -272,120 +253,118 @@ def cost_baseline(Contexte,datetime):
     Important:
         This is the final evaluation function used to compute ERMESS outputs.
     """
-
-    from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
     
     TONS_CONVERSION_FACTOR = 1000000
     KILOS_CONVERSION_FACTOR = 1000
     
-    Load = Contexte.loads.non_movable+Contexte.loads.D_movable+Contexte.loads.Y_movable
-    production = (Contexte.production.current_prod)/KILOS_CONVERSION_FACTOR    
-    Annual_REN_production = sum(production)/Contexte.time.time_resolution/Contexte.time.duration_years
+    Load = Context.loads.non_movable+Context.loads.D_movable+Context.loads.Y_movable
+    production = (Context.production.current_prod)/KILOS_CONVERSION_FACTOR    
+    Annual_REN_production = sum(production)/Context.time.time_resolution/Context.time.duration_years
     annual_cost_production = 0
-    size_power=np.array([0 for i in range(Contexte.storage.n_store)])
-    losses=np.repeat(0,Contexte.time.n_bits*Contexte.storage.n_store).reshape((Contexte.storage.n_store,Contexte.time.n_bits))
-    Annual_sum_losses = np.sum(losses,axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years      
+    size_power=np.array([0 for i in range(Context.storage.n_store)])
+    losses=np.repeat(0,Context.time.n_bits*Context.storage.n_store).reshape((Context.storage.n_store,Context.time.n_bits))
+    Annual_sum_losses = np.sum(losses,axis=1)/Context.time.time_resolution/Context.time.duration_years      
     
-    D_DSM=np.repeat(0,Contexte.time.n_bits).reshape((int(Contexte.time.n_bits/(24*Contexte.time.time_resolution)),24*int(Contexte.time.time_resolution)))
-    Y_DSM=np.repeat(0,Contexte.time.n_bits)
+    D_DSM=np.repeat(0,Context.time.n_bits).reshape((int(Context.time.n_bits/(24*Context.time.time_resolution)),24*int(Context.time.time_resolution)))
+    Y_DSM=np.repeat(0,Context.time.n_bits)
     trades=Load-production        
     Optimized_Load = Load
-    Annual_load = sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years
+    Annual_load = sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years
     EnR_fraction = Annual_REN_production/Annual_load
-    storage_TS=np.repeat(0,Contexte.time.n_bits*Contexte.storage.n_store).reshape((Contexte.storage.n_store,Contexte.time.n_bits))
-    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Contexte.time.time_resolution+losses[i,:]/Contexte.time.time_resolution) for i in range(Contexte.storage.n_store)])
-    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years
-    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years
+    storage_TS=np.repeat(0,Context.time.n_bits*Context.storage.n_store).reshape((Context.storage.n_store,Context.time.n_bits))
+    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Context.time.time_resolution+losses[i,:]/Context.time.time_resolution) for i in range(Context.storage.n_store)])
+    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
+    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
     power_storage = np.sum(storage_TS,axis=0)
    
     importation=np.where(trades>0,trades,0)
     exportation = np.where(trades<0,-trades,0)
     signal =  Optimized_Load - production      
-    Annual_sum_importation=sum(importation)/Contexte.time.time_resolution/Contexte.time.duration_years
-    Annual_sum_exportation=sum(exportation)/Contexte.time.time_resolution/Contexte.time.duration_years
+    Annual_sum_importation=sum(importation)/Context.time.time_resolution/Context.time.duration_years
+    Annual_sum_exportation=sum(exportation)/Context.time.time_resolution/Context.time.duration_years
         
     logicals_sells = np.where((trades<=0) & (signal<=0))[0]
     logicals_buys = np.where((trades>=0) & (signal>=0))[0]
     illogicals_buys = np.where((trades>0) & (signal<=0))[0]
     illogicals_sells = np.where((trades<0) & (signal>=0))[0]
-    use_logical_sells = (sum(Optimized_Load[logicals_sells]),-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]<0,storage_TS[i][logicals_sells],0) for i in range(Contexte.storage.n_store)))),-sum(trades[logicals_sells]))/Contexte.time.time_resolution/Contexte.time.duration_years-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]>0,storage_TS[i][logicals_sells],0) for i in range(Contexte.storage.n_store))))
-    use_logical_buys = (sum(production[logicals_buys]),sum(tuple(sum(np.where(storage_TS[i][logicals_buys]>0,storage_TS[i][logicals_buys],0) for i in range(Contexte.storage.n_store)))),sum(trades[logicals_buys]))/Contexte.time.time_resolution/Contexte.time.duration_years
-    use_illogical_sells = (sum(production[illogicals_sells]),sum(tuple(sum(np.where(storage_TS[i][illogicals_sells]>0,storage_TS[i][illogicals_sells],0) for i in range(Contexte.storage.n_store))))-sum(trades[illogicals_sells]),-sum(trades[illogicals_sells]))/Contexte.time.time_resolution/Contexte.time.duration_years
-    use_illogical_buys = (sum(Optimized_Load[illogicals_buys]),sum(production[illogicals_buys]-sum(Optimized_Load[illogicals_buys])))/Contexte.time.time_resolution/Contexte.time.duration_years
+    use_logical_sells = (sum(Optimized_Load[logicals_sells]),-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]<0,storage_TS[i][logicals_sells],0) for i in range(Context.storage.n_store)))),-sum(trades[logicals_sells]))/Context.time.time_resolution/Context.time.duration_years-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]>0,storage_TS[i][logicals_sells],0) for i in range(Context.storage.n_store))))
+    use_logical_buys = (sum(production[logicals_buys]),sum(tuple(sum(np.where(storage_TS[i][logicals_buys]>0,storage_TS[i][logicals_buys],0) for i in range(Context.storage.n_store)))),sum(trades[logicals_buys]))/Context.time.time_resolution/Context.time.duration_years
+    use_illogical_sells = (sum(production[illogicals_sells]),sum(tuple(sum(np.where(storage_TS[i][illogicals_sells]>0,storage_TS[i][illogicals_sells],0) for i in range(Context.storage.n_store))))-sum(trades[illogicals_sells]),-sum(trades[illogicals_sells]))/Context.time.time_resolution/Context.time.duration_years
+    use_illogical_buys = (sum(Optimized_Load[illogicals_buys]),sum(production[illogicals_buys]-sum(Optimized_Load[illogicals_buys])))/Context.time.time_resolution/Context.time.duration_years
     
-    when_prod_exceeds = pd.DataFrame(data=((sum(Optimized_Load[logicals_sells])+sum(Optimized_Load[illogicals_buys]))/Contexte.time.time_resolution/Contexte.time.duration_years,-sum(trades[logicals_sells])/Contexte.time.time_resolution,sum(trades[illogicals_buys])/Contexte.time.time_resolution) + tuple(-sum(storage_TS[i][(signal<0) & (storage_TS[i]<0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)) + tuple(sum(storage_TS[i][(signal<0) & (storage_TS[i]>0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)),index=['Load (kWh)','Exportation (kWh)','Importation (kWh)']+['Storage '+Contexte.storage.technologies[i]+' charge (kWh)' for i in range(Contexte.storage.n_store)]+['Storage '+Contexte.storage.technologies[i]+' discharge (kWh)' for i in range(Contexte.storage.n_store)]).transpose()
-    when_load_exceeds = pd.DataFrame(data=(sum(production[logicals_buys])/Contexte.time.time_resolution+sum(production[illogicals_sells])/Contexte.time.time_resolution,-sum(trades[(signal>0) & (trades<0) ])/Contexte.time.time_resolution,sum(trades[(signal>0) & (trades>0) ])/Contexte.time.time_resolution) + tuple(-sum(storage_TS[i][(signal>0) & (storage_TS[i]<0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)) + tuple(sum(storage_TS[i][(signal>0) & (storage_TS[i]>0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)),index=['Production (kWh)','Exportation (kWh)','Importation (kWh)']+['Storage '+Contexte.storage.technologies[i]+' charge (kWh)' for i in range(Contexte.storage.n_store)]+['Storage '+Contexte.storage.technologies[i]+' discharge (kWh)' for i in range(Contexte.storage.n_store)]).transpose()
+    when_prod_exceeds = pd.DataFrame(data=((sum(Optimized_Load[logicals_sells])+sum(Optimized_Load[illogicals_buys]))/Context.time.time_resolution/Context.time.duration_years,-sum(trades[logicals_sells])/Context.time.time_resolution,sum(trades[illogicals_buys])/Context.time.time_resolution) + tuple(-sum(storage_TS[i][(signal<0) & (storage_TS[i]<0)])/Context.time.time_resolution for i in range(Context.storage.n_store)) + tuple(sum(storage_TS[i][(signal<0) & (storage_TS[i]>0)])/Context.time.time_resolution for i in range(Context.storage.n_store)),index=['Load (kWh)','Exportation (kWh)','Importation (kWh)']+['Storage '+Context.storage.technologies[i]+' charge (kWh)' for i in range(Context.storage.n_store)]+['Storage '+Context.storage.technologies[i]+' discharge (kWh)' for i in range(Context.storage.n_store)]).transpose()
+    when_load_exceeds = pd.DataFrame(data=(sum(production[logicals_buys])/Context.time.time_resolution+sum(production[illogicals_sells])/Context.time.time_resolution,-sum(trades[(signal>0) & (trades<0) ])/Context.time.time_resolution,sum(trades[(signal>0) & (trades>0) ])/Context.time.time_resolution) + tuple(-sum(storage_TS[i][(signal>0) & (storage_TS[i]<0)])/Context.time.time_resolution for i in range(Context.storage.n_store)) + tuple(sum(storage_TS[i][(signal>0) & (storage_TS[i]>0)])/Context.time.time_resolution for i in range(Context.storage.n_store)),index=['Production (kWh)','Exportation (kWh)','Importation (kWh)']+['Storage '+Context.storage.technologies[i]+' charge (kWh)' for i in range(Context.storage.n_store)]+['Storage '+Context.storage.technologies[i]+' discharge (kWh)' for i in range(Context.storage.n_store)]).transpose()
      
     useprod = pd.DataFrame(data=(use_logical_sells[1]+use_illogical_buys[1],use_logical_buys[0]+use_logical_sells[0]+use_illogical_sells[0]+use_illogical_buys[0],use_illogical_sells[2]+use_logical_sells[2] ,Annual_REN_production),index=['Storage (kWh)' ,'Load (kWh)','Exportation (kWh)','Annual REN production (kWh)']).transpose()
     Loadmeet = pd.DataFrame(data=(use_logical_buys[1]+use_illogical_sells[1] ,use_logical_buys[0]+use_logical_sells[0]+use_illogical_sells[0]+use_illogical_buys[0],use_logical_buys[2] ,Annual_load),index=['Storage (kWh)', 'Production (kWh)','Importation (kWh)','Annual load (kWh)']).transpose()    
     Grid_use_export = pd.DataFrame(data=(useprod['Exportation (kWh)'], Annual_sum_exportation-useprod['Exportation (kWh)']),index=['Production (kWh)','Storage (kWh)']).transpose()
     Grid_use_import = pd.DataFrame(data=(Loadmeet['Importation (kWh)'], Annual_sum_importation-Loadmeet['Importation (kWh)']),index=['Load (kWh)','Storage (kWh)']).transpose()
 
-    energy_storages = np.repeat(0,Contexte.storage.n_store)
-    powers_out = np.repeat(0,Contexte.storage.n_store)
-    powers_in = np.repeat(0,Contexte.storage.n_store)
-    size_power=np.repeat(0,Contexte.storage.n_store)
-    CAPEX_storage_cost = np.repeat(0,Contexte.storage.n_store)
-    Equivalent_cycles = np.repeat(0.,Contexte.storage.n_store)
-    Lifetime = np.repeat(0,Contexte.storage.n_store)
+    energy_storages = np.repeat(0,Context.storage.n_store)
+    powers_out = np.repeat(0,Context.storage.n_store)
+    powers_in = np.repeat(0,Context.storage.n_store)
+    size_power=np.repeat(0,Context.storage.n_store)
+    CAPEX_storage_cost = np.repeat(0,Context.storage.n_store)
+    Equivalent_cycles = np.repeat(0.,Context.storage.n_store)
+    Lifetime = np.repeat(0,Context.storage.n_store)
     economics_CAPEX_storage = 0
     economics_OPEX_storage = 0
     
-    minSOCs=np.repeat(np.nan,Contexte.storage.n_store)
-    SOCs=np.repeat(np.nan,Contexte.storage.n_store*Contexte.time.n_bits).reshape(Contexte.storage.n_store,Contexte.time.n_bits)
-    storage_NULL=tuple(energy_storages[i]==0 for i in range(Contexte.storage.n_store))
+    minSOCs=np.repeat(np.nan,Context.storage.n_store)
+    SOCs=np.repeat(np.nan,Context.storage.n_store*Context.time.n_bits).reshape(Context.storage.n_store,Context.time.n_bits)
+    storage_NULL=tuple(energy_storages[i]==0 for i in range(Context.storage.n_store))
     
-    State_SOCs=[np.searchsorted([(i+1)/100 for i in range(99)], SOCs[j,:]) for j in range(Contexte.storage.n_store)]
-    distribution_Depth_of_discharge=np.array([[np.count_nonzero(State_SOCs[i]==j)/len(State_SOCs[i]) for j in range(100)] for i in range(Contexte.storage.n_store)])
+    State_SOCs=[np.searchsorted([(i+1)/100 for i in range(99)], SOCs[j,:]) for j in range(Context.storage.n_store)]
+    distribution_Depth_of_discharge=np.array([[np.count_nonzero(State_SOCs[i]==j)/len(State_SOCs[i]) for j in range(100)] for i in range(Context.storage.n_store)])
     if sum(storage_NULL)>0:
         distribution_Depth_of_discharge[np.where(storage_NULL)[0][0]]=np.repeat(np.nan,100)
     
     dist_DOD = pd.DataFrame(data={'SOC Percentile':[i/100 for i in range(101)]})
-    for i in range(Contexte.storage.n_store):
-        dist_DOD = dist_DOD.join(pd.DataFrame(data={'SOC distribution ' + Contexte.storage.technologies[i]:distribution_Depth_of_discharge[i]}))
+    for i in range(Context.storage.n_store):
+        dist_DOD = dist_DOD.join(pd.DataFrame(data={'SOC distribution ' + Context.storage.technologies[i]:distribution_Depth_of_discharge[i]}))
 
 
-    Grid_trading = trades if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)
-    Grid_importation = importation if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)
-    Grid_exportation = exportation if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)  
-    DG_production = importation if (Contexte.config.connexion=='Off-grid') else np.repeat(0,Contexte.time.n_bits)
-    curtailment = exportation if (Contexte.config.connexion=='Off-grid') else np.repeat(0,Contexte.time.n_bits)  
+    Grid_trading = trades if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
+    Grid_importation = importation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
+    Grid_exportation = exportation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)  
+    DG_production = importation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)
+    curtailment = exportation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)  
         
     annual_CO2eq_prod = 0
-    annual_CO2eq_importation = sum(Grid_importation)*Contexte.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Contexte.time.time_resolution/Contexte.time.duration_years if (Contexte.config.connexion=='On-grid') else 0
+    annual_CO2eq_importation = sum(Grid_importation)*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.config.connexion=='On-grid') else 0
     annual_CO2eq_storage = 0
 
-    annual_fossil_fuel_consumption_importation =  Contexte.grid.fossil_fuel_ratio*sum(Grid_importation)/Contexte.time.time_resolution/Contexte.time.duration_years if (Contexte.config.connexion=='On-grid') else 0
+    annual_fossil_fuel_consumption_importation =  Context.grid.fossil_fuel_ratio*sum(Grid_importation)/Context.time.time_resolution/Context.time.duration_years if (Context.config.connexion=='On-grid') else 0
     
     productible_energy = 0
     consumed_energy_production = 0
-    consumed_energy_storage = sum(np.nanmin(np.array([Contexte.storage.characteristics[STOR_CYCLE_LIFE,:],Contexte.storage.characteristics[STOR_LIFETIME,:]*Equivalent_cycles]),axis=0)*energy_storages/Contexte.storage.characteristics[STOR_ESOEI,:])
+    consumed_energy_storage = sum(np.nanmin(np.array([Context.storage.characteristics[STOR_CYCLE_LIFE,:],Context.storage.characteristics[STOR_LIFETIME,:]*Equivalent_cycles]),axis=0)*energy_storages/Context.storage.characteristics[STOR_ESOEI,:])
 
-    if (Contexte.config.connexion=='Off-grid'):
+    if (Context.config.connexion=='Off-grid'):
         DG_nominal_power = max(trades)
         DG_production=importation
         if (DG_nominal_power>0):
-            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Contexte.time.n_bits)])
-            annual_fuel_consumption = sum(DG_production*Contexte.genset.fuel_consumption[closest_levels]/Contexte.time.time_resolution/Contexte.time.duration_years)
+            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Context.time.n_bits)])
+            annual_fuel_consumption = sum(DG_production*Context.genset.fuel_consumption[closest_levels]/Context.time.time_resolution/Context.time.duration_years)
         else : 
-            closest_levels = np.array([np.nan for i in range(Contexte.time.n_bits)])
+            closest_levels = np.array([np.nan for i in range(Context.time.n_bits)])
             annual_fuel_consumption = 0
-        annual_total_fuel_cost = annual_fuel_consumption*Contexte.genset.fuel_cost
-        DG_lifetime_years = Contexte.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Contexte.time.time_resolution/Contexte.time.duration_years)
-        DG_CAPEX_cost = DG_nominal_power*Contexte.genset.unit_cost/DG_lifetime_years
-        DG_OPEX_cost = sum(DG_production)*Contexte.genset.maintenance_cost/Contexte.time.time_resolution/Contexte.time.duration_years
+        annual_total_fuel_cost = annual_fuel_consumption*Context.genset.fuel_cost
+        DG_lifetime_years = Context.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Context.time.time_resolution/Context.time.duration_years)
+        DG_CAPEX_cost = DG_nominal_power*Context.genset.unit_cost/DG_lifetime_years
+        DG_OPEX_cost = sum(DG_production)*Context.genset.maintenance_cost/Context.time.time_resolution/Context.time.duration_years
         Contract_power=0
         economics_exportation = 0
         economics_importation = 0
         economics_overrun = 0
         economics_contract_power = 0
-        annual_CO2eq_DG = annual_fuel_consumption*Contexte.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR   
-        productible_energy_DG = sum(DG_production)/Contexte.time.time_resolution/Contexte.time.duration_years*DG_lifetime_years
-        consumed_energy_DG = productible_energy_DG/Contexte.genset.EROI
+        annual_CO2eq_DG = annual_fuel_consumption*Context.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR   
+        productible_energy_DG = sum(DG_production)/Context.time.time_resolution/Context.time.duration_years*DG_lifetime_years
+        consumed_energy_DG = productible_energy_DG/Context.genset.EROI
 
-    elif (Contexte.config.connexion=='On-grid'):  
+    elif (Context.config.connexion=='On-grid'):  
         DG_nominal_power = 0
-        DG_production=np.repeat(0,Contexte.time.n_bits)
+        DG_production=np.repeat(0,Context.time.n_bits)
         closest_levels = 0
         annual_fuel_consumption = 0
         annual_total_fuel_cost = 0
@@ -393,10 +372,10 @@ def cost_baseline(Contexte,datetime):
         DG_CAPEX_cost = 0
         DG_OPEX_cost = 0          
         Contract_power=max(0,max(trades))
-        economics_exportation = np.multiply(exportation,Contexte.grid.selling_price[solution.contract,:]).sum()/Contexte.time.time_resolution/Contexte.time.duration_years
-        economics_importation = np.multiply(importation,Contexte.grid.prices[solution.contract,:]).sum()/Contexte.time.time_resolution/Contexte.time.duration_years
-        economics_overrun = max(0,(max(importation)-Contract_power)*Contexte.grid.overrun[solution.contract])
-        economics_contract_power = Contexte.grid.fixed_premium[solution.contract]*Contract_power
+        economics_exportation = np.multiply(exportation,Context.grid.selling_price[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_importation = np.multiply(importation,Context.grid.prices[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_overrun = max(0,(max(importation)-Contract_power)*Context.grid.overrun[solution.contract])
+        economics_contract_power = Context.grid.fixed_premium[solution.contract]*Contract_power
         annual_CO2eq_DG = 0.
         productible_energy_DG = 0.
         consumed_energy_DG = 0.
@@ -406,42 +385,42 @@ def cost_baseline(Contexte,datetime):
     self_consumption = (1-sum(exportation)/sum(production)) if sum(production )>0 else np.nan
     EnR_fraction = sum(production)/Annual_load if Annual_load>0 else np.nan
         
-    obtained_constraint_level = obtained_self_sufficiency if Contexte.optimization.constraint_num==CONS_Self_sufficiency else self_consumption if (Contexte.optimization.constraint_num==CONS_Self_consumption) else EnR_fraction if(Contexte.optimization.constraint_num==CONS_REN_fraction) else np.nan
+    obtained_constraint_level = obtained_self_sufficiency if Context.optimization.constraint_num==CONS_Self_sufficiency else self_consumption if (Context.optimization.constraint_num==CONS_Self_consumption) else EnR_fraction if(Context.optimization.constraint_num==CONS_REN_fraction) else np.nan
 
-    Autonomy = 1-sum(Grid_importation>0)/Contexte.time.n_bits
-    EnR_autonomy = 1-sum(importation>0)/Contexte.time.n_bits
-    Capacity_factor = sum(production)/(max(production)*Contexte.time.n_bits) if max(production)>0 else np.nan
+    Autonomy = 1-sum(Grid_importation>0)/Context.time.n_bits
+    EnR_autonomy = 1-sum(importation>0)/Context.time.n_bits
+    Capacity_factor = sum(production)/(max(production)*Context.time.n_bits) if max(production)>0 else np.nan
     Max_power_from_grid = max(Grid_importation) 
     Max_power_from_DG = max(DG_production) 
     Max_power_to_grid = max(Grid_exportation) 
     Max_curtailment = max(curtailment)   
         
     #Demand-side management
-    indexes_hour = [[int((i+j*Contexte.time.time_resolution*24)) for j in range(Contexte.time.n_days)] for i in range(int(Contexte.time.time_resolution*24))]
-    Daily_base_load = [np.mean(Contexte.loads.non_movable[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_movable_loads = [np.mean(Contexte.loads.D_movable[indexes_hour[j]]+Contexte.loads.Y_movable[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_final_loads = [np.mean(Optimized_Load[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
+    indexes_hour = [[int((i+j*Context.time.time_resolution*24)) for j in range(Context.time.n_days)] for i in range(int(Context.time.time_resolution*24))]
+    Daily_base_load = [np.mean(Context.loads.non_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_movable_loads = [np.mean(Context.loads.D_movable[indexes_hour[j]]+Context.loads.Y_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_final_loads = [np.mean(Optimized_Load[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
     
-    indexes_days = [[int(i+j*Contexte.time.time_resolution*24) for i in range(int(Contexte.time.time_resolution*24))] for j in range(Contexte.time.n_days)]
-    Yearly_base_load = [np.mean(Contexte.loads.non_movable[indexes_days[j]]+Contexte.loads.D_movable[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_movable_loads = [np.mean(Contexte.loads.Y_movable[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_final_loads = [np.mean(Optimized_Load[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Contexte.time.n_days)]
+    indexes_days = [[int(i+j*Context.time.time_resolution*24) for i in range(int(Context.time.time_resolution*24))] for j in range(Context.time.n_days)]
+    Yearly_base_load = [np.mean(Context.loads.non_movable[indexes_days[j]]+Context.loads.D_movable[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_movable_loads = [np.mean(Context.loads.Y_movable[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_final_loads = [np.mean(Optimized_Load[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Context.time.n_days)]
     
-    DSM_daily_strategy = pd.DataFrame(data={'Datetime':datetime[0:int(Contexte.time.time_resolution*24)].strftime('%H:%M'),'Daily base load (kW)':Daily_base_load,'Daily movable load (kW)':Daily_movable_loads,'Daily final load (kW)':Daily_final_loads,'Daily prod (kW)':Daily_prod})
+    DSM_daily_strategy = pd.DataFrame(data={'Datetime':datetime[0:int(Context.time.time_resolution*24)].strftime('%H:%M'),'Daily base load (kW)':Daily_base_load,'Daily movable load (kW)':Daily_movable_loads,'Daily final load (kW)':Daily_final_loads,'Daily prod (kW)':Daily_prod})
     DSM_yearly_strategy = pd.DataFrame(data={'Datetime':datetime[indexes_hour[0]].strftime('%Y-%m-%d'),'Yearly base load (kW)':Yearly_base_load,'Yearly movable load (kW)':Yearly_movable_loads,'Yearly final load (kW)':Yearly_final_loads,'Yearly prod (kW)':Yearly_prod})
-    Load_strategy = pd.DataFrame(data={'Datetime':datetime,'Non controllable load (kW)':Contexte.loads.non_movable,'Daily movable load (kW)':Contexte.loads.D_movable,'Yearly movable load (kW)':Contexte.loads.Y_movable, 'Daily optimized load (kW)':D_DSM.flatten(),'Yearly optimized load (kW)':Y_DSM})
+    Load_strategy = pd.DataFrame(data={'Datetime':datetime,'Non controllable load (kW)':Context.loads.non_movable,'Daily movable load (kW)':Context.loads.D_movable,'Yearly movable load (kW)':Context.loads.Y_movable, 'Daily optimized load (kW)':D_DSM.flatten(),'Yearly optimized load (kW)':Y_DSM})
   
-    daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_importation = [np.mean(importation[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_importation = [np.mean(importation[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_exportation = [-np.mean(exportation[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_exportation = [-np.mean(exportation[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_storage = [np.mean(power_storage[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_storage = [np.mean(power_storage[indexes_days[j]]) for j in range(Contexte.time.n_days)]   
-    daily_time_balancing = pd.DataFrame(data={'Datetime':datetime[0:int(Contexte.time.time_resolution*24)].strftime('%H:%M'),'Daily load (kW)':Daily_final_loads,'Daily prod (kW)':daily_prod,'Daily importation (kW)':daily_importation,'Daily exportation (kW)':daily_exportation,'Daily storage (kW)':daily_storage})
+    daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_importation = [np.mean(importation[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_importation = [np.mean(importation[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_exportation = [-np.mean(exportation[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_exportation = [-np.mean(exportation[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_storage = [np.mean(power_storage[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_storage = [np.mean(power_storage[indexes_days[j]]) for j in range(Context.time.n_days)]   
+    daily_time_balancing = pd.DataFrame(data={'Datetime':datetime[0:int(Context.time.time_resolution*24)].strftime('%H:%M'),'Daily load (kW)':Daily_final_loads,'Daily prod (kW)':daily_prod,'Daily importation (kW)':daily_importation,'Daily exportation (kW)':daily_exportation,'Daily storage (kW)':daily_storage})
     yearly_time_balancing = pd.DataFrame(data={'Datetime':datetime[indexes_hour[0]].strftime('%Y-%m-%d'),'Yearly load (kW)':Yearly_final_loads,'Yearly prod (kW)':yearly_prod,'Yearly importation (kW)':yearly_importation,'Yearly exportation (kW)':yearly_exportation,'Yearly storage (kW)':yearly_storage})  
     
     
@@ -449,15 +428,15 @@ def cost_baseline(Contexte,datetime):
     
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+annual_fuel_consumption
     annual_CO2eq_total = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
-    LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+DG_OPEX_cost+DG_CAPEX_cost+annual_total_fuel_cost+economics_importation+economics_contract_power+economics_overrun-economics_exportation)/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years)   if sum(Optimized_Load )>0 else np.nan
+    LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+DG_OPEX_cost+DG_CAPEX_cost+annual_total_fuel_cost+economics_importation+economics_contract_power+economics_overrun-economics_exportation)/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years)   if sum(Optimized_Load )>0 else np.nan
 
     Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
     Initial_investment = sum(CAPEX_storage_cost) +0 +0
     fitness_baseline=np.nan
 
-    return{'TimeSeries':{'Storage_TS (kW)':storage_TS,'Storage cumulative energy (kWh)':sum_diff_storages,'SOCs (%)':SOCs,'Losses (kW)': losses,'D_DSM (kW)':D_DSM,'Y_DSM (kW)':Y_DSM,'trades (kW)':trades,'Optimized load (kW)':Optimized_Load,'Non movable load (kW)':Contexte.loads.non_movable,'production (kW)':production,'Grid trading (kW)':Grid_trading,'Grid importation (kW)':Grid_importation,'Grid exportation (kW)':Grid_exportation,'DG production (kW)':DG_production,'Curtailment (kW)':curtailment},
-           'Technical':{'fitness':fitness_baseline,'Self-sufficiency':obtained_self_sufficiency,'Self-consumption':self_consumption,'Autonomy':Autonomy,'EnR fraction':EnR_fraction,'EnR Self-sufficiency':EnR_self_sufficiency,'EnR Autonomy':EnR_autonomy,'Annual sum losses (kWh)':sum(np.sum(losses,axis=1))/Contexte.time.time_resolution/Contexte.time.duration_years,'Contract power (kW)':Contract_power,'Capacity factor':Capacity_factor,'Max power from grid (kW)':Max_power_from_grid,'Max power to grid (kW)':Max_power_to_grid,'Max curtailment (kW)':Max_curtailment ,'Installation lifetime (yrs.)':np.nan},
-           'economics':{'LCOE (€/kWh)':LCOE,'Cost production (€/kWh)':annual_cost_production/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years) ,'OPEX storage (€/kWh)':economics_OPEX_storage/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'CAPEX storage (€/kWh)':economics_CAPEX_storage/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years), 'Contract power (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Overrun penalty (€/kWh)':economics_overrun/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Energy importation (€/kWh)':economics_importation/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Fixed premium (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG fuel cost (€/kWh)':annual_total_fuel_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG CAPEX cost (€/kWh)':DG_CAPEX_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG OPEX cost (€/kWh)':DG_OPEX_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Energy exportation (€/kWh)':economics_exportation/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Annual net benefits (€/yrs.)':Annual_net_benefits,'Initial investment (€)':Initial_investment }, 
+    return{'TimeSeries':{'Storage_TS (kW)':storage_TS,'Storage cumulative energy (kWh)':sum_diff_storages,'SOCs (%)':SOCs,'Losses (kW)': losses,'D_DSM (kW)':D_DSM,'Y_DSM (kW)':Y_DSM,'trades (kW)':trades,'Optimized load (kW)':Optimized_Load,'Non movable load (kW)':Context.loads.non_movable,'production (kW)':production,'Grid trading (kW)':Grid_trading,'Grid importation (kW)':Grid_importation,'Grid exportation (kW)':Grid_exportation,'DG production (kW)':DG_production,'Curtailment (kW)':curtailment},
+           'Technical':{'fitness':fitness_baseline,'Self-sufficiency':obtained_self_sufficiency,'Self-consumption':self_consumption,'Autonomy':Autonomy,'EnR fraction':EnR_fraction,'EnR Self-sufficiency':EnR_self_sufficiency,'EnR Autonomy':EnR_autonomy,'Annual sum losses (kWh)':sum(np.sum(losses,axis=1))/Context.time.time_resolution/Context.time.duration_years,'Contract power (kW)':Contract_power,'Capacity factor':Capacity_factor,'Max power from grid (kW)':Max_power_from_grid,'Max power to grid (kW)':Max_power_to_grid,'Max curtailment (kW)':Max_curtailment ,'Installation lifetime (yrs.)':np.nan},
+           'economics':{'LCOE (€/kWh)':LCOE,'Cost production (€/kWh)':annual_cost_production/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years) ,'OPEX storage (€/kWh)':economics_OPEX_storage/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'CAPEX storage (€/kWh)':economics_CAPEX_storage/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years), 'Contract power (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Overrun penalty (€/kWh)':economics_overrun/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Energy importation (€/kWh)':economics_importation/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Fixed premium (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG fuel cost (€/kWh)':annual_total_fuel_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG CAPEX cost (€/kWh)':DG_CAPEX_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG OPEX cost (€/kWh)':DG_OPEX_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Energy exportation (€/kWh)':economics_exportation/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Annual net benefits (€/yrs.)':Annual_net_benefits,'Initial investment (€)':Initial_investment }, 
            'Storages':{'Capacity (kWh)':energy_storages,'Powers in (kW)':powers_in,'Powers out (kW)':powers_out,'Min SOCs (%)':minSOCs ,'Equivalent cycles':Equivalent_cycles,'Storage lifetime (yrs.)':Lifetime}, 
            'Genset':{'nominal_power (kW)':DG_nominal_power, 'Max power from DG (kW)':Max_power_from_DG, 'DG lifetime (yrs.)':DG_lifetime_years,'DG min. production':np.nan, 'DG min. runtime':np.nan},
            'Genset power distribution':closest_levels,
@@ -472,7 +451,7 @@ def cost_baseline(Contexte,datetime):
 ####  PRO COST FUNCTIONS ##################
 
 
-def KPI_pro(solution,Contexte,datetime):
+def KPI_pro(solution,Context,datetime):
     """
     Comprehensive cost and performance evaluation of the final (best) scenario.
     
@@ -551,115 +530,115 @@ def KPI_pro(solution,Contexte,datetime):
     TONS_CONVERSION_FACTOR = 1000000
     KILOS_CONVERSION_FACTOR = 1000
 
-    production = ((Contexte.production.unit_prods.T*solution.production_set).sum(axis=1)+Contexte.production.current_prod)/KILOS_CONVERSION_FACTOR    
-    Annual_REN_production = sum(production)/Contexte.time.time_resolution/Contexte.time.duration_years
-    annual_cost_production = np.sum((Contexte.production.specs_num[:,PROD_CAPEX]/Contexte.production.specs_num[:,PROD_LIFETIME]+Contexte.production.specs_num[:,PROD_OPEX])*(solution.production_set))
-    size_power=np.array([max(solution.storages[1:3,i]) for i in range(Contexte.storage.n_store)])
+    production = ((Context.production.unit_prods.T*solution.production_set).sum(axis=1)+Context.production.current_prod)/KILOS_CONVERSION_FACTOR    
+    Annual_REN_production = sum(production)/Context.time.time_resolution/Context.time.duration_years
+    annual_cost_production = np.sum((Context.production.specs_num[:,PROD_CAPEX]/Context.production.specs_num[:,PROD_LIFETIME]+Context.production.specs_num[:,PROD_OPEX])*(solution.production_set))
+    size_power=np.array([max(solution.storages[1:3,i]) for i in range(Context.storage.n_store)])
     
-    pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Contexte)
+    pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
     (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE(solution, global_parameters, pro_parameters, production ,RENSystems_parameters)
              
-    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Contexte.time.time_resolution+losses[i,:]/Contexte.time.time_resolution) for i in range(Contexte.storage.n_store)])             
-    Annual_sum_losses = np.sum(losses,axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years      
+    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Context.time.time_resolution+losses[i,:]/Context.time.time_resolution) for i in range(Context.storage.n_store)])             
+    Annual_sum_losses = np.sum(losses,axis=1)/Context.time.time_resolution/Context.time.duration_years      
                                           
-    Optimized_Load = Contexte.loads.non_movable+Y_DSM+D_DSM
-    Annual_load = sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years
+    Optimized_Load = Context.loads.non_movable+Y_DSM+D_DSM
+    Annual_load = sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years
     importation=np.where(trades>0,trades,0)
     exportation = np.where(trades<0,-trades,0)
     signal =  Optimized_Load - production
-    Annual_sum_importation=sum(importation)/Contexte.time.time_resolution/Contexte.time.duration_years
-    Annual_sum_exportation=sum(exportation)/Contexte.time.time_resolution/Contexte.time.duration_years
+    Annual_sum_importation=sum(importation)/Context.time.time_resolution/Context.time.duration_years
+    Annual_sum_exportation=sum(exportation)/Context.time.time_resolution/Context.time.duration_years
         
     logicals_sells = np.where((trades<=0) & (signal<=0))[0]
     logicals_buys = np.where((trades>=0) & (signal>=0))[0]
     illogicals_buys = np.where((trades>0) & (signal<=0))[0]
     illogicals_sells = np.where((trades<0) & (signal>=0))[0]
-    use_logical_sells = (sum(Optimized_Load[logicals_sells]),-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]<0,storage_TS[i][logicals_sells],0) for i in range(Contexte.storage.n_store)))),-sum(trades[logicals_sells]))/Contexte.time.time_resolution/Contexte.time.duration_years-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]>0,storage_TS[i][logicals_sells],0) for i in range(Contexte.storage.n_store))))
-    use_logical_buys = (sum(production[logicals_buys]),sum(tuple(sum(np.where(storage_TS[i][logicals_buys]>0,storage_TS[i][logicals_buys],0) for i in range(Contexte.storage.n_store)))),sum(trades[logicals_buys]))/Contexte.time.time_resolution/Contexte.time.duration_years
-    use_illogical_sells = (sum(production[illogicals_sells]),sum(tuple(sum(np.where(storage_TS[i][illogicals_sells]>0,storage_TS[i][illogicals_sells],0) for i in range(Contexte.storage.n_store))))-sum(trades[illogicals_sells]),-sum(trades[illogicals_sells]))/Contexte.time.time_resolution/Contexte.time.duration_years
-    use_illogical_buys = (sum(Optimized_Load[illogicals_buys]),sum(production[illogicals_buys]-sum(Optimized_Load[illogicals_buys])))/Contexte.time.time_resolution/Contexte.time.duration_years
+    use_logical_sells = (sum(Optimized_Load[logicals_sells]),-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]<0,storage_TS[i][logicals_sells],0) for i in range(Context.storage.n_store)))),-sum(trades[logicals_sells]))/Context.time.time_resolution/Context.time.duration_years-sum(tuple(sum(np.where(storage_TS[i][logicals_sells]>0,storage_TS[i][logicals_sells],0) for i in range(Context.storage.n_store))))
+    use_logical_buys = (sum(production[logicals_buys]),sum(tuple(sum(np.where(storage_TS[i][logicals_buys]>0,storage_TS[i][logicals_buys],0) for i in range(Context.storage.n_store)))),sum(trades[logicals_buys]))/Context.time.time_resolution/Context.time.duration_years
+    use_illogical_sells = (sum(production[illogicals_sells]),sum(tuple(sum(np.where(storage_TS[i][illogicals_sells]>0,storage_TS[i][illogicals_sells],0) for i in range(Context.storage.n_store))))-sum(trades[illogicals_sells]),-sum(trades[illogicals_sells]))/Context.time.time_resolution/Context.time.duration_years
+    use_illogical_buys = (sum(Optimized_Load[illogicals_buys]),sum(production[illogicals_buys]-sum(Optimized_Load[illogicals_buys])))/Context.time.time_resolution/Context.time.duration_years
     
-    when_prod_exceeds = pd.DataFrame(data=((sum(Optimized_Load[logicals_sells])+sum(Optimized_Load[illogicals_buys]))/Contexte.time.time_resolution/Contexte.time.duration_years,-sum(trades[logicals_sells])/Contexte.time.time_resolution,sum(trades[illogicals_buys])/Contexte.time.time_resolution) + tuple(-sum(storage_TS[i][(signal<0) & (storage_TS[i]<0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)) + tuple(sum(storage_TS[i][(signal<0) & (storage_TS[i]>0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)),index=['Load (kWh)','Grid export (kWh)','Grid import (kWh)']+['Storage '+Contexte.storage.technologies[i]+' charge (kWh)' for i in range(Contexte.storage.n_store)]+['Storage '+Contexte.storage.technologies[i]+' discharge (kWh)' for i in range(Contexte.storage.n_store)]).transpose()
-    when_load_exceeds = pd.DataFrame(data=(sum(production[logicals_buys])/Contexte.time.time_resolution+sum(production[illogicals_sells])/Contexte.time.time_resolution,-sum(trades[(signal>0) & (trades<0) ])/Contexte.time.time_resolution,sum(trades[(signal>0) & (trades>0) ])/Contexte.time.time_resolution) + tuple(-sum(storage_TS[i][(signal>0) & (storage_TS[i]<0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)) + tuple(sum(storage_TS[i][(signal>0) & (storage_TS[i]>0)])/Contexte.time.time_resolution for i in range(Contexte.storage.n_store)),index=['Production (kWh)','Grid export (kWh)','Grid import (kWh)']+['Storage '+Contexte.storage.technologies[i]+' charge (kWh)' for i in range(Contexte.storage.n_store)]+['Storage '+Contexte.storage.technologies[i]+' discharge (kWh)' for i in range(Contexte.storage.n_store)]).transpose()
+    when_prod_exceeds = pd.DataFrame(data=((sum(Optimized_Load[logicals_sells])+sum(Optimized_Load[illogicals_buys]))/Context.time.time_resolution/Context.time.duration_years,-sum(trades[logicals_sells])/Context.time.time_resolution,sum(trades[illogicals_buys])/Context.time.time_resolution) + tuple(-sum(storage_TS[i][(signal<0) & (storage_TS[i]<0)])/Context.time.time_resolution for i in range(Context.storage.n_store)) + tuple(sum(storage_TS[i][(signal<0) & (storage_TS[i]>0)])/Context.time.time_resolution for i in range(Context.storage.n_store)),index=['Load (kWh)','Grid export (kWh)','Grid import (kWh)']+['Storage '+Context.storage.technologies[i]+' charge (kWh)' for i in range(Context.storage.n_store)]+['Storage '+Context.storage.technologies[i]+' discharge (kWh)' for i in range(Context.storage.n_store)]).transpose()
+    when_load_exceeds = pd.DataFrame(data=(sum(production[logicals_buys])/Context.time.time_resolution+sum(production[illogicals_sells])/Context.time.time_resolution,-sum(trades[(signal>0) & (trades<0) ])/Context.time.time_resolution,sum(trades[(signal>0) & (trades>0) ])/Context.time.time_resolution) + tuple(-sum(storage_TS[i][(signal>0) & (storage_TS[i]<0)])/Context.time.time_resolution for i in range(Context.storage.n_store)) + tuple(sum(storage_TS[i][(signal>0) & (storage_TS[i]>0)])/Context.time.time_resolution for i in range(Context.storage.n_store)),index=['Production (kWh)','Grid export (kWh)','Grid import (kWh)']+['Storage '+Context.storage.technologies[i]+' charge (kWh)' for i in range(Context.storage.n_store)]+['Storage '+Context.storage.technologies[i]+' discharge (kWh)' for i in range(Context.storage.n_store)]).transpose()
      
     useprod = pd.DataFrame(data=(use_logical_sells[1]+use_illogical_buys[1],use_logical_buys[0]+use_logical_sells[0]+use_illogical_sells[0]+use_illogical_buys[0],use_illogical_sells[2]+use_logical_sells[2] ,Annual_REN_production),index=['Storage (kWh)' ,'Load (kWh)','Exportation (kWh)','Annual REN production (kWh)']).transpose()
     Loadmeet = pd.DataFrame(data=(use_logical_buys[1]+use_illogical_sells[1] ,use_logical_buys[0]+use_logical_sells[0]+use_illogical_sells[0]+use_illogical_buys[0],use_logical_buys[2] ,Annual_load),index=['Storage (kWh)', 'Production (kWh)','Importation (kWh)','Annual load (kWh)']).transpose()
     Grid_use_export = pd.DataFrame(data=(useprod['Exportation (kWh)'], Annual_sum_exportation-useprod['Exportation (kWh)']),index=['Production (kWh)','Storage (kWh)']).transpose()
     Grid_use_import = pd.DataFrame(data=(Loadmeet['Importation (kWh)'], Annual_sum_importation-Loadmeet['Importation (kWh)']),index=['Load (kWh)','Storage (kWh)']).transpose()    
     
-    energy_storages = solution.storages[INDIV_PRO_VOLUME,:]/Contexte.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:]
+    energy_storages = solution.storages[INDIV_PRO_VOLUME,:]/Context.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:]
     powers_out = solution.storages[INDIV_PRO_DISCHARGE_POWER,:]
     powers_in = solution.storages[INDIV_PRO_CHARGE_POWER,:]
-    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years
-    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Contexte.time.time_resolution/Contexte.time.duration_years
+    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
+    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
     
     power_storage = np.sum(storage_TS,axis=0)
     
-    size_power=np.array([max(powers_in[i],powers_out[i]) for i in range(Contexte.storage.n_store)])
-    CAPEX_storage_cost =  np.multiply(size_power,Contexte.storage.characteristics[STOR_POWER_COST,:]) + np.multiply(energy_storages,Contexte.storage.characteristics[STOR_ENERGY_COST,:]) + np.multiply(Contexte.storage.characteristics[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,Contexte.storage.n_store)))
+    size_power=np.array([max(powers_in[i],powers_out[i]) for i in range(Context.storage.n_store)])
+    CAPEX_storage_cost =  np.multiply(size_power,Context.storage.characteristics[STOR_POWER_COST,:]) + np.multiply(energy_storages,Context.storage.characteristics[STOR_ENERGY_COST,:]) + np.multiply(Context.storage.characteristics[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,Context.storage.n_store)))
    
-    Equivalent_cycles =  np.array([np.sum(np.abs(storage_TS[i,:]))/(2*Contexte.time.time_resolution*max(energy_storages[i],np.float64(1e-15))*Contexte.time.duration_years) for i in range(Contexte.storage.n_store)]) 
-    Lifetime = np.array([min(Contexte.storage.characteristics[STOR_LIFETIME,i],Contexte.storage.characteristics[STOR_CYCLE_LIFE,i]/max(1e-15,Equivalent_cycles[i])) for i in range(Contexte.storage.n_store)])
+    Equivalent_cycles =  np.array([np.sum(np.abs(storage_TS[i,:]))/(2*Context.time.time_resolution*max(energy_storages[i],np.float64(1e-15))*Context.time.duration_years) for i in range(Context.storage.n_store)]) 
+    Lifetime = np.array([min(Context.storage.characteristics[STOR_LIFETIME,i],Context.storage.characteristics[STOR_CYCLE_LIFE,i]/max(1e-15,Equivalent_cycles[i])) for i in range(Context.storage.n_store)])
     economics_CAPEX_storage = sum(np.divide(CAPEX_storage_cost,Lifetime))
-    economics_OPEX_storage = sum(np.multiply(Contexte.storage.characteristics[STOR_OM_COST,:],size_power))
+    economics_OPEX_storage = sum(np.multiply(Context.storage.characteristics[STOR_OM_COST,:],size_power))
     
-    minSOCs=(1-Contexte.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:])/2 
+    minSOCs=(1-Context.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:])/2 
     SOCs=(np.divide((sum_diff_storages.T-np.min(sum_diff_storages,axis=1)),energy_storages) + minSOCs).T
             
-    storage_NULL=tuple(energy_storages[i]==0 for i in range(Contexte.storage.n_store))
+    storage_NULL=tuple(energy_storages[i]==0 for i in range(Context.storage.n_store))
     
-    State_SOCs=[np.searchsorted([(i+1)/100 for i in range(99)], SOCs[j,:]) for j in range(Contexte.storage.n_store)]
-    distribution_Depth_of_discharge=np.array([[np.count_nonzero(State_SOCs[i]==j)/len(State_SOCs[i]) for j in range(100)] for i in range(Contexte.storage.n_store)])
+    State_SOCs=[np.searchsorted([(i+1)/100 for i in range(99)], SOCs[j,:]) for j in range(Context.storage.n_store)]
+    distribution_Depth_of_discharge=np.array([[np.count_nonzero(State_SOCs[i]==j)/len(State_SOCs[i]) for j in range(100)] for i in range(Context.storage.n_store)])
     if sum(storage_NULL)>0:
         distribution_Depth_of_discharge[np.where(storage_NULL)[0][0]]=np.repeat(np.nan,100)
     
     dist_DOD = pd.DataFrame(data={'SOC Percentile':[i/100 for i in range(101)]})
-    for i in range(Contexte.storage.n_store):
-        dist_DOD = dist_DOD.join(pd.DataFrame(data={'SOC distribution ' + Contexte.storage.technologies[i]:distribution_Depth_of_discharge[i]}))
+    for i in range(Context.storage.n_store):
+        dist_DOD = dist_DOD.join(pd.DataFrame(data={'SOC distribution ' + Context.storage.technologies[i]:distribution_Depth_of_discharge[i]}))
     
-    Grid_trading = trades if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)
-    Grid_importation = importation if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)
-    Grid_exportation = exportation if (Contexte.config.connexion=='On-grid') else np.repeat(0,Contexte.time.n_bits)  
-    DG_production = importation if (Contexte.config.connexion=='Off-grid') else np.repeat(0,Contexte.time.n_bits)
-    curtailment = exportation if (Contexte.config.connexion=='Off-grid') else np.repeat(0,Contexte.time.n_bits)  
+    Grid_trading = trades if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
+    Grid_importation = importation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
+    Grid_exportation = exportation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)  
+    DG_production = importation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)
+    curtailment = exportation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)  
         
-    annual_CO2eq_prod = sum(sum(np.multiply(np.array([solution.production_set[i]*Contexte.production.unit_prods[i,:] for i in range(len(solution.production_set))]).T/KILOS_CONVERSION_FACTOR,np.array(Contexte.production.specs_num[:,PROD_EMISSIONS]))))/TONS_CONVERSION_FACTOR/Contexte.time.time_resolution/Contexte.time.duration_years
-    annual_CO2eq_importation = sum(Grid_importation)*Contexte.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Contexte.time.time_resolution/Contexte.time.duration_years if (Contexte.config.connexion=='On-grid') else 0
-    annual_CO2eq_storage = np.inner(np.array([sum(np.where(storage_TS[i]>0,storage_TS[i],0)) for i in range(Contexte.storage.n_store)]),Contexte.storage.characteristics[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR/Contexte.time.time_resolution/Contexte.time.duration_years
+    annual_CO2eq_prod = sum(sum(np.multiply(np.array([solution.production_set[i]*Context.production.unit_prods[i,:] for i in range(len(solution.production_set))]).T/KILOS_CONVERSION_FACTOR,np.array(Context.production.specs_num[:,PROD_EMISSIONS]))))/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years
+    annual_CO2eq_importation = sum(Grid_importation)*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.config.connexion=='On-grid') else 0
+    annual_CO2eq_storage = np.inner(np.array([sum(np.where(storage_TS[i]>0,storage_TS[i],0)) for i in range(Context.storage.n_store)]),Context.storage.characteristics[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years
 
-    annual_fossil_fuel_consumption_importation =  Contexte.grid.fossil_fuel_ratio*sum(Grid_importation)/Contexte.time.time_resolution/Contexte.time.duration_years if (Contexte.config.connexion=='On-grid') else 0
+    annual_fossil_fuel_consumption_importation =  Context.grid.fossil_fuel_ratio*sum(Grid_importation)/Context.time.time_resolution/Context.time.duration_years if (Context.config.connexion=='On-grid') else 0
     
-    productible_energy = sum(np.sum(np.multiply(solution.production_set,Contexte.production.unit_prods.T),axis=0)/Contexte.time.time_resolution/Contexte.time.duration_years*Contexte.production.specs_num[:,PROD_LIFETIME])
-    consumed_energy_production = sum(productible_energy/Contexte.production.specs_num[:,PROD_EROI])
-    consumed_energy_storage = sum(np.nanmin(np.array([Contexte.storage.characteristics[STOR_CYCLE_LIFE,:],Contexte.storage.characteristics[STOR_LIFETIME,:]*Equivalent_cycles]),axis=0)*energy_storages/Contexte.storage.characteristics[STOR_ESOEI,:])
+    productible_energy = sum(np.sum(np.multiply(solution.production_set,Context.production.unit_prods.T),axis=0)/Context.time.time_resolution/Context.time.duration_years*Context.production.specs_num[:,PROD_LIFETIME])
+    consumed_energy_production = sum(productible_energy/Context.production.specs_num[:,PROD_EROI])
+    consumed_energy_storage = sum(np.nanmin(np.array([Context.storage.characteristics[STOR_CYCLE_LIFE,:],Context.storage.characteristics[STOR_LIFETIME,:]*Equivalent_cycles]),axis=0)*energy_storages/Context.storage.characteristics[STOR_ESOEI,:])
 
      
-    if (Contexte.config.connexion=='Off-grid'):
+    if (Context.config.connexion=='Off-grid'):
         DG_nominal_power = max(trades)
         DG_production=importation
         if (DG_nominal_power>0):
-            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Contexte.time.n_bits)])
-            annual_fuel_consumption = sum(DG_production*Contexte.genset.fuel_consumption[closest_levels]/Contexte.time.time_resolution/Contexte.time.duration_years)
-            DG_lifetime_years = Contexte.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Contexte.time.time_resolution/Contexte.time.duration_years)
+            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Context.time.n_bits)])
+            annual_fuel_consumption = sum(DG_production*Context.genset.fuel_consumption[closest_levels]/Context.time.time_resolution/Context.time.duration_years)
+            DG_lifetime_years = Context.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Context.time.time_resolution/Context.time.duration_years)
         else : 
-            closest_levels = np.array([np.nan for i in range(Contexte.time.n_bits)])
+            closest_levels = np.array([np.nan for i in range(Context.time.n_bits)])
             annual_fuel_consumption = 0
             DG_lifetime_years = np.nan
-        annual_total_fuel_cost = annual_fuel_consumption*Contexte.genset.fuel_cost
-        DG_CAPEX_cost = DG_nominal_power*Contexte.genset.unit_cost/DG_lifetime_years
-        DG_OPEX_cost = sum(DG_production)*Contexte.genset.maintenance_cost/Contexte.time.time_resolution/Contexte.time.duration_years
+        annual_total_fuel_cost = annual_fuel_consumption*Context.genset.fuel_cost
+        DG_CAPEX_cost = DG_nominal_power*Context.genset.unit_cost/DG_lifetime_years
+        DG_OPEX_cost = sum(DG_production)*Context.genset.maintenance_cost/Context.time.time_resolution/Context.time.duration_years
         Contract_power=0
         economics_exportation = 0
         economics_importation = 0
         economics_overrun = 0
         economics_contract_power = 0        
-        annual_CO2eq_DG = annual_fuel_consumption*Contexte.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR  
-        productible_energy_DG = sum(DG_production)/Contexte.time.time_resolution/Contexte.time.duration_years*DG_lifetime_years
-        consumed_energy_DG = productible_energy_DG/Contexte.genset.EROI
+        annual_CO2eq_DG = annual_fuel_consumption*Context.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR  
+        productible_energy_DG = sum(DG_production)/Context.time.time_resolution/Context.time.duration_years*DG_lifetime_years
+        consumed_energy_DG = productible_energy_DG/Context.genset.EROI
         
-    elif (Contexte.config.connexion=='On-grid'):          
+    elif (Context.config.connexion=='On-grid'):          
         DG_nominal_power = 0
-        DG_production=np.repeat(0,Contexte.time.n_bits)
+        DG_production=np.repeat(0,Context.time.n_bits)
         closest_levels = 0
         annual_fuel_consumption = 0
         annual_total_fuel_cost = 0
@@ -667,10 +646,10 @@ def KPI_pro(solution,Contexte,datetime):
         DG_CAPEX_cost = 0
         DG_OPEX_cost = 0
         Contract_power=max(0,max(trades))
-        economics_exportation = np.multiply(exportation,Contexte.grid.selling_price[solution.contract,:]).sum()/Contexte.time.time_resolution/Contexte.time.duration_years
-        economics_importation = np.multiply(importation,Contexte.grid.prices[solution.contract,:]).sum()/Contexte.time.time_resolution/Contexte.time.duration_years
-        economics_overrun = max(0,(max(importation)-Contract_power)*Contexte.grid.overrun[solution.contract])
-        economics_contract_power = Contexte.grid.fixed_premium[solution.contract]*Contract_power
+        economics_exportation = np.multiply(exportation,Context.grid.selling_price[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_importation = np.multiply(importation,Context.grid.prices[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_overrun = max(0,(max(importation)-Contract_power)*Context.grid.overrun[solution.contract])
+        economics_contract_power = Context.grid.fixed_premium[solution.contract]*Contract_power
         annual_CO2eq_DG = 0.
         productible_energy_DG = 0.
         consumed_energy_DG = 0.
@@ -682,40 +661,40 @@ def KPI_pro(solution,Contexte,datetime):
     
     obtained_constraint_level = obtained_self_sufficiency if global_parameters.constraint_num==CONS_Self_sufficiency else self_consumption if (global_parameters.constraint_num==CONS_Self_consumption) else EnR_fraction if(global_parameters.constraint_num==CONS_REN_fraction) else np.nan
 
-    Autonomy = 1-sum(Grid_importation>0)/Contexte.time.n_bits
-    EnR_autonomy = 1-sum(importation>0)/Contexte.time.n_bits
-    Capacity_factor = sum(production)/(max(production)*Contexte.time.n_bits) if max(production)>0 else np.nan
+    Autonomy = 1-sum(Grid_importation>0)/Context.time.n_bits
+    EnR_autonomy = 1-sum(importation>0)/Context.time.n_bits
+    Capacity_factor = sum(production)/(max(production)*Context.time.n_bits) if max(production)>0 else np.nan
     Max_power_from_grid = max(Grid_importation) 
     Max_power_from_DG = max(DG_production) 
     Max_power_to_grid = max(Grid_exportation) 
     Max_curtailment = max(curtailment)   
     
     #Demand-side management
-    indexes_hour = [[int((i+j*Contexte.time.time_resolution*24)) for j in range(Contexte.time.n_days)] for i in range(int(Contexte.time.time_resolution*24))]
-    Daily_base_load = [np.mean(Contexte.loads.non_movable[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_movable_loads = [np.mean(Contexte.loads.D_movable[indexes_hour[j]]+Contexte.loads.Y_movable[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_final_loads = [np.mean(Optimized_Load[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    Daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
+    indexes_hour = [[int((i+j*Context.time.time_resolution*24)) for j in range(Context.time.n_days)] for i in range(int(Context.time.time_resolution*24))]
+    Daily_base_load = [np.mean(Context.loads.non_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_movable_loads = [np.mean(Context.loads.D_movable[indexes_hour[j]]+Context.loads.Y_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_final_loads = [np.mean(Optimized_Load[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    Daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
     
-    indexes_days = [[int(i+j*Contexte.time.time_resolution*24) for i in range(int(Contexte.time.time_resolution*24))] for j in range(Contexte.time.n_days)]
-    Yearly_base_load = [np.mean(Contexte.loads.non_movable[indexes_days[j]]+Contexte.loads.D_movable[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_movable_loads = [np.mean(Contexte.loads.Y_movable[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_final_loads = [np.mean(Optimized_Load[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    Yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Contexte.time.n_days)]
+    indexes_days = [[int(i+j*Context.time.time_resolution*24) for i in range(int(Context.time.time_resolution*24))] for j in range(Context.time.n_days)]
+    Yearly_base_load = [np.mean(Context.loads.non_movable[indexes_days[j]]+Context.loads.D_movable[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_movable_loads = [np.mean(Context.loads.Y_movable[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_final_loads = [np.mean(Optimized_Load[indexes_days[j]]) for j in range(Context.time.n_days)]
+    Yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Context.time.n_days)]
     
-    DSM_daily_strategy = pd.DataFrame(data={'Datetime':datetime[0:int(Contexte.time.time_resolution*24)].strftime('%H:%M'),'Daily base load (kW)':Daily_base_load,'Daily movable load (kW)':Daily_movable_loads,'Daily final load (kW)':Daily_final_loads,'Daily prod (kW)':Daily_prod})
+    DSM_daily_strategy = pd.DataFrame(data={'Datetime':datetime[0:int(Context.time.time_resolution*24)].strftime('%H:%M'),'Daily base load (kW)':Daily_base_load,'Daily movable load (kW)':Daily_movable_loads,'Daily final load (kW)':Daily_final_loads,'Daily prod (kW)':Daily_prod})
     DSM_yearly_strategy = pd.DataFrame(data={'Datetime':datetime[indexes_hour[0]].strftime('%Y-%m-%d'),'Yearly base load (kW)':Yearly_base_load,'Yearly movable load (kW)':Yearly_movable_loads,'Yearly final load (kW)':Yearly_final_loads,'Yearly prod (kW)':Yearly_prod})
-    Load_strategy = pd.DataFrame(data={'Datetime':datetime,'Non controllable load (kW)':Contexte.loads.non_movable,'Daily movable load (kW)':Contexte.loads.D_movable,'Yearly movable load (kW)':Contexte.loads.Y_movable, 'Daily optimized load (kW)':D_DSM.flatten(),'Yearly optimized load (kW)':Y_DSM})
+    Load_strategy = pd.DataFrame(data={'Datetime':datetime,'Non controllable load (kW)':Context.loads.non_movable,'Daily movable load (kW)':Context.loads.D_movable,'Yearly movable load (kW)':Context.loads.Y_movable, 'Daily optimized load (kW)':D_DSM.flatten(),'Yearly optimized load (kW)':Y_DSM})
   
-    daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_importation = [np.mean(importation[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_importation = [np.mean(importation[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_exportation = [-np.mean(exportation[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_exportation = [-np.mean(exportation[indexes_days[j]]) for j in range(Contexte.time.n_days)]
-    daily_storage = [np.mean(power_storage[indexes_hour[j]]) for j in range(int(Contexte.time.time_resolution*24))]
-    yearly_storage = [np.mean(power_storage[indexes_days[j]]) for j in range(Contexte.time.n_days)]   
-    daily_time_balancing = pd.DataFrame(data={'Datetime':datetime[0:int(Contexte.time.time_resolution*24)].strftime('%H:%M'),'Daily load (kW)':Daily_final_loads,'Daily prod (kW)':daily_prod,'Daily importation (kW)':daily_importation,'Daily exportation (kW)':daily_exportation,'Daily storage (kW)':daily_storage})
+    daily_prod = [np.mean(production[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_prod = [np.mean(production[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_importation = [np.mean(importation[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_importation = [np.mean(importation[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_exportation = [-np.mean(exportation[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_exportation = [-np.mean(exportation[indexes_days[j]]) for j in range(Context.time.n_days)]
+    daily_storage = [np.mean(power_storage[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+    yearly_storage = [np.mean(power_storage[indexes_days[j]]) for j in range(Context.time.n_days)]   
+    daily_time_balancing = pd.DataFrame(data={'Datetime':datetime[0:int(Context.time.time_resolution*24)].strftime('%H:%M'),'Daily load (kW)':Daily_final_loads,'Daily prod (kW)':daily_prod,'Daily importation (kW)':daily_importation,'Daily exportation (kW)':daily_exportation,'Daily storage (kW)':daily_storage})
     yearly_time_balancing = pd.DataFrame(data={'Datetime':datetime[indexes_hour[0]].strftime('%Y-%m-%d'),'Yearly load (kW)':Yearly_final_loads,'Yearly prod (kW)':yearly_prod,'Yearly importation (kW)':yearly_importation,'Yearly exportation (kW)':yearly_exportation,'Yearly storage (kW)':yearly_storage})  
     
     
@@ -724,16 +703,16 @@ def KPI_pro(solution,Contexte,datetime):
     
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+annual_fuel_consumption
     annual_CO2eq_total = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
-    LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+DG_OPEX_cost+DG_CAPEX_cost+annual_total_fuel_cost+economics_importation+economics_contract_power+economics_overrun-economics_exportation)/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years)   if sum(Optimized_Load )>0 else np.nan
+    LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+DG_OPEX_cost+DG_CAPEX_cost+annual_total_fuel_cost+economics_importation+economics_contract_power+economics_overrun-economics_exportation)/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years)   if sum(Optimized_Load )>0 else np.nan
     
-    Lifetime_installation = np.nanmin(np.array([DG_lifetime_years,min(Lifetime),np.nanmin(np.where(solution.production_set>0,Contexte.production.specs_num[:,PROD_LIFETIME],np.nan))]))
+    Lifetime_installation = np.nanmin(np.array([DG_lifetime_years,min(Lifetime),np.nanmin(np.where(solution.production_set>0,Context.production.specs_num[:,PROD_LIFETIME],np.nan))]))
     Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
     Value = Annual_net_benefits*Lifetime_installation
-    Initial_investment = sum(CAPEX_storage_cost) +np.nanmin((0.,DG_CAPEX_cost*DG_lifetime_years))+ np.sum(Contexte.production.specs_num[:,PROD_CAPEX]*solution.production_set)
+    Initial_investment = sum(CAPEX_storage_cost) +np.nanmin((0.,DG_CAPEX_cost*DG_lifetime_years))+ np.sum(Context.production.specs_num[:,PROD_CAPEX]*solution.production_set)
         
-    return{'TimeSeries':{'Storage_TS (kW)':storage_TS,'Storage cumulative energy (kWh)':sum_diff_storages,'SOCs (%)':SOCs,'Losses (kW)': losses,'D_DSM (kW)':D_DSM,'Y_DSM (kW)':Y_DSM,'trades (kW)':trades,'Optimized load (kW)':Optimized_Load,'Non movable load (kW)':Contexte.loads.non_movable,'production (kW)':production,'Grid trading (kW)':Grid_trading,'Grid importation (kW)':Grid_importation,'Grid exportation (kW)':Grid_exportation,'DG production (kW)':DG_production,'Curtailment (kW)':curtailment},
-           'Technical':{'fitness':solution.fitness,'Self-sufficiency':obtained_self_sufficiency,'Self-consumption':self_consumption,'Autonomy':Autonomy,'EnR fraction':EnR_fraction,'EnR Self-sufficiency':EnR_self_sufficiency,'EnR Autonomy':EnR_autonomy,'Annual sum losses (kWh)':sum(np.sum(losses,axis=1))/Contexte.time.time_resolution/Contexte.time.duration_years,'Contract power (kW)':Contract_power,'Capacity factor':Capacity_factor,'Max power from grid (kW)':Max_power_from_grid,'Max power to grid (kW)':Max_power_to_grid,'Max curtailment (kW)':Max_curtailment,'Installation lifetime (yrs.)':Lifetime_installation },
-           'economics':{'LCOE (€/kWh)':LCOE,'Cost production (€/kWh)':annual_cost_production/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years) ,'OPEX storage (€/kWh)':economics_OPEX_storage/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'CAPEX storage (€/kWh)':economics_CAPEX_storage/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years), 'Contract power (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Overrun penalty (€/kWh)':economics_overrun/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Energy importation (€/kWh)':economics_importation/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Fixed premium (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG fuel cost (€/kWh)':annual_total_fuel_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG CAPEX cost (€/kWh)':DG_CAPEX_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'DG OPEX cost (€/kWh)':DG_OPEX_cost/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Energy exportation (€/kWh)':economics_exportation/(sum(Optimized_Load)/Contexte.time.time_resolution/Contexte.time.duration_years),'Annual net benefits (€/yrs.)':Annual_net_benefits,'Value (€)':Value,'Initial investment (€)':Initial_investment}, 
+    return{'TimeSeries':{'Storage_TS (kW)':storage_TS,'Storage cumulative energy (kWh)':sum_diff_storages,'SOCs (%)':SOCs,'Losses (kW)': losses,'D_DSM (kW)':D_DSM,'Y_DSM (kW)':Y_DSM,'trades (kW)':trades,'Optimized load (kW)':Optimized_Load,'Non movable load (kW)':Context.loads.non_movable,'production (kW)':production,'Grid trading (kW)':Grid_trading,'Grid importation (kW)':Grid_importation,'Grid exportation (kW)':Grid_exportation,'DG production (kW)':DG_production,'Curtailment (kW)':curtailment},
+           'Technical':{'fitness':solution.fitness,'Self-sufficiency':obtained_self_sufficiency,'Self-consumption':self_consumption,'Autonomy':Autonomy,'EnR fraction':EnR_fraction,'EnR Self-sufficiency':EnR_self_sufficiency,'EnR Autonomy':EnR_autonomy,'Annual sum losses (kWh)':sum(np.sum(losses,axis=1))/Context.time.time_resolution/Context.time.duration_years,'Contract power (kW)':Contract_power,'Capacity factor':Capacity_factor,'Max power from grid (kW)':Max_power_from_grid,'Max power to grid (kW)':Max_power_to_grid,'Max curtailment (kW)':Max_curtailment,'Installation lifetime (yrs.)':Lifetime_installation },
+           'economics':{'LCOE (€/kWh)':LCOE,'Cost production (€/kWh)':annual_cost_production/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years) ,'OPEX storage (€/kWh)':economics_OPEX_storage/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'CAPEX storage (€/kWh)':economics_CAPEX_storage/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years), 'Contract power (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Overrun penalty (€/kWh)':economics_overrun/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Energy importation (€/kWh)':economics_importation/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Fixed premium (€/kWh)':economics_contract_power/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG fuel cost (€/kWh)':annual_total_fuel_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG CAPEX cost (€/kWh)':DG_CAPEX_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'DG OPEX cost (€/kWh)':DG_OPEX_cost/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Energy exportation (€/kWh)':economics_exportation/(sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years),'Annual net benefits (€/yrs.)':Annual_net_benefits,'Value (€)':Value,'Initial investment (€)':Initial_investment}, 
            'Storages':{'Capacity (kWh)':energy_storages,'Powers in (kW)':powers_in,'Powers out (kW)':powers_out,'Min SOCs (%)':minSOCs ,'Equivalent cycles':Equivalent_cycles,'Storage lifetime (yrs.)':Lifetime}, 
            'Genset':{'nominal_power (kW)':DG_nominal_power, 'Max power from DG (kW)':Max_power_from_DG, 'DG lifetime (yrs.)':DG_lifetime_years,'DG min. production':solution.DG_min_production, 'DG min. runtime':solution.DG_min_runtime },
            'Genset power distribution':closest_levels,
