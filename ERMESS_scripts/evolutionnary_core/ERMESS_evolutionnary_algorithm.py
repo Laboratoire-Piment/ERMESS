@@ -32,9 +32,6 @@ def evolutionnary_algorithm_research(inputs):
         operators_perf (optional): Array recording performance of operators per generation. Returned only if Contexte.tracking_ope == 1.
    """
    (Context,nonjit_pop)=(inputs[i] for i in range(2))   
-   for pop in nonjit_pop:
-       if type(pop)==list:
-           print(pop)
    pop = Efr.jitting_pop_res(nonjit_pop)
    n_iter = Context.hyperparameters.n_iter
    r_cross = Context.hyperparameters.r_cross
@@ -184,12 +181,12 @@ def evolutionnary_algorithm_pro(inputs):
      if gen<PID_init_steps :
          diversities_10[gen] = diversity*beta
          mutation_factor=1
-         print(gen,best.fitness,round(diversity,0),round(mutation_factor,2))
+#         print(gen,best.fitness,round(diversity,0),round(mutation_factor,2))
      else : 
          if (gen==10):
              diversity_threshold = np.median(diversities_10)
          integrale_PID,mutation_factor,prev_error = Efp.PID_correction(stagnation,diversity_threshold,diversity,integrale_PID,prev_error,Kp,Ki,Kd,u_min,u_max,anti_windup)
-         print(gen,best.fitness,round(diversity,0),'/',round(diversity_threshold,0),round(mutation_factor,2))
+#         print(gen,best.fitness,round(diversity,0),'/',round(diversity_threshold,0),round(mutation_factor,2))
          
      hyperparameters_matrix = Context.hyperparameters_pro.operators_parameters.copy()     
      hyperparameters_matrix = hyperparameters_matrix*mutation_factor

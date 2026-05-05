@@ -161,8 +161,8 @@ def select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE
 
 def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core):
         migrants_indices = select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE)
-        migrants = [local_populations[i][migrants_indices[0]] for i in range(n_core)]
-        migrants_pool = [item for sublist in migrants for item in sublist[0] ]
+        migrants_pool = [local_populations[i][index] for index in migrants_indices[0]  for i in range(n_core)]
+        #migrants_pool = [item for sublist in migrants for item in sublist[0] ]
         target_core = np.random.permutation(np.repeat(np.arange(n_core), len(migrants_indices[0])))
         for i in range(n_core) : 
             mask = (target_core == i)
