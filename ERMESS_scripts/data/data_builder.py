@@ -7,7 +7,7 @@ Created on Fri Mar 20 11:53:44 2026
 
 import numpy as np
 
-class OptimBlock:
+class _OptimBlock:
     """
     Optimization problem definition.
     
@@ -16,13 +16,16 @@ class OptimBlock:
     
     Attributes:
         constraint_num (int):
-            Encoded type of constraint (e.g., self-sufficiency, self-consumption).
+            Encoded type of constraint (e.g., self-sufficiency, self-consumption, REN fraction).
     
         constraint_level (float):
             Target level for the constraint.
     
         criterion_num (int):
             Encoded optimization objective.
+            
+        connexion (str):
+            Type of grid integration (On-grid , Off-grid).
     """
     __slots__ = (
         "constraint_num",
@@ -37,7 +40,7 @@ class OptimBlock:
         self.criterion_num = np.int64(criterion_num)
         self.connexion = connexion
         
-class HyperparametersBlock:
+class _HyperparametersBlock:
     """
     Genetic algorithm hyperparameters.
     
@@ -54,7 +57,7 @@ class HyperparametersBlock:
         n_pop (int):
             Number of individuals in the population.
     
-        operators (np.ndarray):
+        operators_parameters (np.ndarray):
             Array of operator weights or probabilities.
                         
         cost_constraint (float):
@@ -80,7 +83,7 @@ class HyperparametersBlock:
         self.cost_constraint = cost_constraint
         self.elitism_probability = elitism_probability
         
-class DispatchingBlock:
+class _DispatchingBlock:
     """
     Global system configuration.
     
@@ -88,9 +91,7 @@ class DispatchingBlock:
     and activated features.
     
     Attributes:
-        connexion (str):
-            Grid connection type ("On-grid" or "Off-grid").
-    
+        
         Defined_items (np.ndarray):
             List of non-controllable dispatching features.
     """
@@ -117,7 +118,7 @@ class DispatchingBlock:
         self.discharge_order = discharge_order if 'Storages management' in defined_items else None
         self.overlaps = overlaps if 'Storages management' in defined_items else None 
 
-class TimeParametersBlock:
+class _TimeParametersBlock:
     """
     Temporal configuration of the simulation environment.
     
@@ -131,8 +132,11 @@ class TimeParametersBlock:
         duration_years (float):
             Total simulation duration in years.
     
-        n_steps (int):
+        n_bits (int):
             Total number of simulation time steps.
+            
+        n_days(int):
+            Total number of days in the simulation
     """
     __slots__ = (
         "time_resolution",
@@ -147,7 +151,7 @@ class TimeParametersBlock:
         self.n_bits = np.int64(n_bits)
         self.n_days = np.int64(n_days)
         
-class ProductionBlock:
+class _ProductionBlock:
     """
     Production assets and generation profiles.
     
@@ -159,20 +163,21 @@ class ProductionBlock:
         specs_num (np.ndarray):
             Numerical characteristics of production units, incluing grouping structure, Total production volumes and capacity bounds.
     
+        Ids (np.ndarray):
+            Identification strings of the producers
+            
         capacities (np.ndarray):
             Capacities of on-site installation of each production asset.
     
         groups (np.ndarray):
             Grouping structure of production assets.
     
-        prod_C (np.ndarray):
+        current_prod (np.ndarray):
             Production cost coefficients.
     
-        prods_U (np.ndarray):
+        unit_prods (np.ndarray):
             Unit production time series for each asset.
-    
-        n_units (int):
-            Number of production units.
+
     """
     __slots__ = (
         "specs_num",
@@ -192,7 +197,7 @@ class ProductionBlock:
         self.unit_prods = unit_prods
         self.n_units = np.int64(len(specs_num))
               
-class LoadBlock:
+class _LoadBlock:
     """
     Load characteristics and profiles.
     
@@ -209,14 +214,8 @@ class LoadBlock:
         D_movable (np.array):
             Daily dispatchable electrical load time series.
     
-        total_Y (float):
-            Total yearly movable load.
-    
-        total_D (np.ndarray):
-            Aggregated daily movable load per day.
-    
-        D_DSM_indexes (np.ndarray):
-            Indices of non-zero DSM day periods.
+        time_resolution (float):
+            Temporal resolution of the simulation (in timesteps per hour).
     """
     __slots__ = (
         "non_movable",
@@ -236,7 +235,7 @@ class LoadBlock:
             for i in range( 0,np.int32(len(D_movable) / time_resolution / 24))], dtype=np.float64)
         self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
 
-class StorageBlock:
+class _StorageBlock:
     """
      Storage system description for the optimization environment.
     
@@ -248,6 +247,8 @@ class StorageBlock:
              Numerical matrix describing storage parameters (costs, capacities, efficiencies, etc.). 
          n_store (int):
              Number of storage technologies in the system.
+         technologies (np.ndarray):
+             Names of the available storage technologies.
      """
     __slots__ = ("characteristics","n_store","technologies",)
 
@@ -256,7 +257,7 @@ class StorageBlock:
         self.n_store = n_store
         self.technologies = technologies
 
-class GridBlock:
+class _GridBlock:
     """
      Electrical grid connection and pricing model.
     
@@ -265,11 +266,6 @@ class GridBlock:
      parameters. It is used in on-grid and hybrid system configurations.
     
      Attributes:
-         n_contracts (int):
-             number of available trade contracts
-             
-         prices (np.ndarray):
-             Time-dependent electricity prices (buying from grid).
              
          C02eqemissions (float):
              Grid-specific CO₂ emissions factor (e.g., gCO₂/kWh).
@@ -279,6 +275,9 @@ class GridBlock:
     
          pof_ratio (float):
              Ratio between primary and final energy in the grid system. 
+             
+         prices (np.ndarray):
+             Time-dependent electricity prices (buying from grid).
     
          fixed_premium (np.ndarray):
              Fixed tariff components or subsidies applied to grid pricing.
@@ -302,7 +301,7 @@ class GridBlock:
         self.overrun = overrun
         self.selling_price = selling_price
 
-class GensetBlock:
+class _GensetBlock:
     """
      Diesel generator (DG) system characteristics.
     
@@ -332,7 +331,7 @@ class GensetBlock:
          eroi (float):
              Energy Return on Investment of the generator.
     
-         emissions (float):
+         C02eqemissions (float):
              CO₂-equivalent emissions factor (e.g., gCO₂/kWh).
      """
     __slots__ = (
@@ -355,7 +354,7 @@ class GensetBlock:
         self.eroi = eroi
         self.C02eqemissions = C02eqemissions
         
-class TrackingOpeBlock:
+class _TrackingOpeBlock:
     """
     Operator tracking and diagnostics.
     
@@ -364,7 +363,7 @@ class TrackingOpeBlock:
     
     Attributes:
         tracking_operators (integer):
-            Defines the need for tracking (1:Yes, .
+            Defines the need for operators tracking.
     """
     __slots__ = ("tracking_operators",)
 
@@ -372,7 +371,7 @@ class TrackingOpeBlock:
         self.tracking_operators = tracking_operators
 
 
-class Environment:
+class _Environment:
     """
      Core optimization environment used by the genetic algorithm.
     
@@ -416,6 +415,9 @@ class Environment:
     
          genset (GensetBlock or None):
              Diesel generator system data (None for on-grid systems).
+             
+         postprocess_config(postProcessConfig):
+             Algorithm post-processing parameters.              
     
          tracking (TrackingOpeBlock):
              Optional diagnostics and operator tracking data.
@@ -475,6 +477,7 @@ def build_environment(structured_data):
             - hyperparameters / hyperparameterspro
             - grid (optional)
             - genset (optional)
+            -post-processing
             - tracking
     
     Returns:
@@ -495,11 +498,11 @@ def build_environment(structured_data):
         called once before launching the optimization process.
     """
 
-    storage = StorageBlock(structured_data.storage.characteristics_num,structured_data.storage.n_store,structured_data.storage.techs,)
+    storage = _StorageBlock(structured_data.storage.characteristics_num,structured_data.storage.n_store,structured_data.storage.techs,)
 
-    time = TimeParametersBlock(structured_data.time.time_resolution,structured_data.time.duration_years,len(structured_data.time.datetime),structured_data.time.n_days)
+    time = _TimeParametersBlock(structured_data.time.time_resolution,structured_data.time.duration_years,len(structured_data.time.datetime),structured_data.time.n_days)
 
-    production = ProductionBlock(
+    production = _ProductionBlock(
         structured_data.production.characteristics_num,
         structured_data.production.ids,
         structured_data.production.capacities,
@@ -508,14 +511,14 @@ def build_environment(structured_data):
         structured_data.production.unit_prods,
     )
 
-    loads = LoadBlock(
+    loads = _LoadBlock(
         structured_data.load.non_movable,
         structured_data.load.yearly_movable,
         structured_data.load.daily_movable,
         structured_data.time.time_resolution
     )
 
-    optimization = OptimBlock(
+    optimization = _OptimBlock(
         structured_data.optimization.constraint_num,
         structured_data.optimization.constraint_level,
         structured_data.optimization.criterion_num,
@@ -523,7 +526,7 @@ def build_environment(structured_data):
     )
 
     if structured_data.optimization.type_optim=='research' : 
-        hyperparameters = HyperparametersBlock(
+        hyperparameters = _HyperparametersBlock(
         structured_data.hyperparameters.r_cross,
         structured_data.hyperparameters.n_iter,
         structured_data.hyperparameters.n_pop,
@@ -531,7 +534,7 @@ def build_environment(structured_data):
         structured_data.hyperparameters.cost_constraint,
         structured_data.hyperparameters.elitism_probability,)
     
-    hyperparameters_pro = HyperparametersBlock(
+    hyperparameters_pro = _HyperparametersBlock(
     structured_data.hyperparameterspro.r_cross,
     structured_data.hyperparameterspro.n_iter,
     structured_data.hyperparameterspro.n_pop,
@@ -539,7 +542,7 @@ def build_environment(structured_data):
     structured_data.hyperparameterspro.cost_constraint,
     structured_data.hyperparameterspro.elitism_probability,)
 
-    dispatching = DispatchingBlock(
+    dispatching = _DispatchingBlock(
         structured_data.dispatching.Defined_items,
         structured_data.dispatching.energy_use_coefficient,
         structured_data.dispatching.Y_DSM_minimum_levels,
@@ -550,13 +553,13 @@ def build_environment(structured_data):
         structured_data.dispatching.Discharge_order,
         structured_data.dispatching.Overlaps)
 
-    tracking = TrackingOpeBlock(structured_data.tracking)
+    tracking = _TrackingOpeBlock(structured_data.tracking)
 
     grid = structured_data.grid if structured_data.grid is not None else None
     genset = structured_data.genset if structured_data.genset is not None else None
     postprocess_config = structured_data.postProcessConfig
 
-    return Environment(
+    return _Environment(
         optimization,
         hyperparameters,
         hyperparameters_pro,

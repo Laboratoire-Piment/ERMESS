@@ -102,6 +102,7 @@ def jitting_pop_res(pop):
     """
     jitted_pop=[]
     for ind in pop:
+        print(ind)
         jitted_pop.append(Individual_res(np.int64(ind.production_set),np.array(ind.storage_sum,dtype=np.float64),np.float64(ind.storage_TS),np.int64(ind.contract),np.float64(ind.Y_DSM),np.float64(ind.D_DSM),np.float64(ind.fitness),np.array(ind.trades,dtype=np.float64)))
     return(jitted_pop)
 
