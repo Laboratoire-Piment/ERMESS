@@ -165,9 +165,10 @@ def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_
         #migrants_pool = [item for sublist in migrants for item in sublist[0] ]
         target_core = np.random.permutation(np.repeat(np.arange(n_core), len(migrants_indices[0])))
         for i in range(n_core) : 
-            mask = (target_core == i)
-            for idx, new_indiv in zip(migrants_indices[1], migrants_pool[mask]):
-                local_populations[i][idx] = new_indiv
+            mask = np.where(target_core == i)[0]
+            for j in range(len(migrants_indices[1])):
+                idx = migrants_indices[1][j]
+                local_populations[i][idx] = migrants_pool[mask[j]]
         return(local_populations)
     
 def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
