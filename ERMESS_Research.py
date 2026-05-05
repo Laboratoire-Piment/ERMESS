@@ -242,7 +242,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
-            print('incomers ', type(incomers),len(incomers),len(incomers[0]))
+            print('incomers ', type(incomers),len(incomers),type(incomers[0]))
 
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
             
