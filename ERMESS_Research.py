@@ -241,14 +241,14 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             print('before replace',len(local_populations))   
             for i in local_populations[0] : 
                 if type(i)==list:
-                    print(i)
+                    print('catch 0',i[0])
             
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
         
             print('after replace',len(local_populations))   
             for i in local_populations[0] : 
                 if type(i)==list:
-                    print(i)
+                    print('catch 1',i[0])
         Initial_populations = local_populations
     
     node_population = [ item for sublist in local_populations for item in sublist[0] ]
