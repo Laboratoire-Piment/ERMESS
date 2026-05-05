@@ -149,7 +149,6 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
             raise ValueError("Mismatch migration sizes")
         for j in range(len(killed_indices)) :
             local_populations[i][killed_indices[j]] = incomers_chunk[j]
-            print('incomers', incomers_chunk[j])
     
     return(local_populations)
 
