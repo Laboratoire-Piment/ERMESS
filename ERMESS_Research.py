@@ -236,19 +236,10 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
-            killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
-            
-            print('before replace',len(local_populations))   
-            for i in local_populations[0] : 
-                if type(i)==list:
-                    print('catch 0',i[0])
+            killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
             
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
         
-            print('after replace',len(local_populations))   
-            for i in local_populations[0] : 
-                if type(i)==list:
-                    print('catch 1',i[0])
         Initial_populations = local_populations
     
     node_population = [ item for sublist in local_populations for item in sublist[0] ]
