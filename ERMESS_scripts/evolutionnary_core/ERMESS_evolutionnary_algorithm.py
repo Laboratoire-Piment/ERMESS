@@ -33,7 +33,6 @@ def evolutionnary_algorithm_research(inputs):
    """
    (Context,nonjit_pop)=(inputs[i] for i in range(2))   
    print(nonjit_pop[0])
-   print(len(nonjit_pop[0]))
    print(len(nonjit_pop))
    pop = Efr.jitting_pop_res(nonjit_pop)
    n_iter = Context.hyperparameters.n_iter
