@@ -211,6 +211,8 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
         # -----------------------
         # 1. Local optimization
         # -----------------------
+        print('main',len(Initial_populations),len(Initial_populations[0]))
+
         args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
         local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)
         
@@ -240,7 +242,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
         
-            print(local_populations[0],len(local_populations),len(local_populations[0]))           
+            print(len(local_populations),len(local_populations[0]))           
         Initial_populations = local_populations
     
     node_population = [ item for sublist in local_populations for item in sublist[0] ]
