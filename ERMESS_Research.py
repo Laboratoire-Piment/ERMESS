@@ -142,18 +142,16 @@ def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
 def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):
     chunk_size = len(incomers) // n_core
     for i in range(n_core):
-    
-        pop_array = np.array(local_populations[i], dtype=object)
-    
+        
         start = chunk_size * i 
         end = chunk_size * (i + 1)
     
         incomers_chunk = incomers[start:end]
         if len(killed_indices) != len(incomers_chunk):
             raise ValueError("Mismatch migration sizes")
-        pop_array[killed_indices] = incomers_chunk
+        for j in range(len(killed_indices)) :
+            local_populations[i][killed_indices[j]] = incomers_chunk[j]
     
-        local_populations[i] = list(pop_array)
     return(local_populations)
 
 def select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE):
@@ -208,6 +206,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
         Initial_populations = pickle.load(infile)  
 
     for ere in range(nb_ere):
+        print(ere)
 
         # -----------------------
         # 1. Local optimization
