@@ -116,8 +116,6 @@ def write_migrants(migrants, node_id, ere):
         pickle.dump(migrants, f)
         
 def collect_migrants(migrants,len_incomers):
-    print(len(migrants))
-    print (len_incomers)
     selected_migrants = random.sample(migrants, len_incomers)
     return(selected_migrants)
 
@@ -212,7 +210,6 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
         # -----------------------
         # 1. Local optimization
         # -----------------------
-        print('main',len(Initial_populations),len(Initial_populations[0]))
 
         args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
         local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)
@@ -241,9 +238,14 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             incomers = collect_migrants(potential_incomers,len_incomers)
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
             
+            print('before replace',len(local_populations))   
+            for i in local_populations[0] : 
+                if type(i)==list:
+                    print(i)
+            
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
         
-            print(len(local_populations))   
+            print('after replace',len(local_populations))   
             for i in local_populations[0] : 
                 if type(i)==list:
                     print(i)
