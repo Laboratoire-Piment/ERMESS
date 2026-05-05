@@ -151,6 +151,7 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
             raise ValueError("Mismatch migration sizes")
         for j in range(len(killed_indices)) :
             local_populations[i][killed_indices[j]] = incomers_chunk[j]
+            print('incomers', incomers_chunk[j])
     
     return(local_populations)
 
@@ -242,7 +243,10 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
         
-            print(len(local_populations),len(local_populations[0]))           
+            print(len(local_populations))   
+            for i in local_populations[0] : 
+                if type(i)==list:
+                    print(i)
         Initial_populations = local_populations
     
     node_population = [ item for sublist in local_populations for item in sublist[0] ]

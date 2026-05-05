@@ -16,7 +16,7 @@ from ERMESS_scripts.reporting import graphs_excel as EgE
 from ERMESS_scripts.reporting import charts_config as Ecc
 
 @dataclass
-class PostProcessingResults:
+class _PostProcessingResults:
     timeseries: pd.DataFrame
     technical: pd.DataFrame
     economic: pd.DataFrame
@@ -31,7 +31,7 @@ class PostProcessingResults:
     time_balancing: list
     EMS: list
     
-def as_text(value):
+def _as_text(value):
     """
     Convert a value to a string, returning an empty string for None.
     
@@ -48,7 +48,7 @@ def as_text(value):
         return ""
     return str(value)
 
-def set_column_width(ws,offset=0):
+def _set_column_width(ws,offset=0):
     """
     Automatically adjust the width of all columns in an OpenPyXL worksheet
     based on the maximum length of the content in each column.
@@ -62,7 +62,7 @@ def set_column_width(ws,offset=0):
 
     for col in ws.columns:
         j+=1
-        length = max(len(as_text(cell.value)) for cell in col)
+        length = max(len(_as_text(cell.value)) for cell in col)
         dim_holder[openpyxl.utils.get_column_letter(j)] = openpyxl.worksheet.dimensions.ColumnDimension(ws, min=j, max=j, width=length+offset)
 
     ws.column_dimensions = dim_holder
@@ -113,10 +113,10 @@ def output_build_production(solution, Contexte):
         'Initial investment (€)': np.multiply(Contexte.production.specs_num[:, PROD_CAPEX], solution.production_set)
     })    
 
-def write_sheet(writer, df, name, **kwargs):
+def _write_sheet(writer, df, name, **kwargs):
     df.to_excel(writer, sheet_name=name, **kwargs)
     
-def write_multiple_tables(writer, dfs, sheet_name, positions,index):
+def _write_multiple_tables(writer, dfs, sheet_name, positions,index):
     """
     dfs : list of DataFrames
     positions : list of (row, col)
@@ -128,26 +128,26 @@ def export_to_excel(results, Contexte):
 
     with pd.ExcelWriter(Contexte.postprocess_config.file_name, engine='openpyxl') as writer:
 
-        write_sheet(writer, results.flows, "Flows")
-        write_multiple_tables(writer,results.global_dispatching,"Global dispatching",positions=[(0, 0), (3, 0),(6, 0),(9, 0),(12, 0), (15, 0),],index=True)
-        write_sheet(writer, results.economic, "Financial outputs")
-        write_sheet(writer, results.technical, "Technical")
-        write_sheet(writer, results.storages, "Storages")
-        write_sheet(writer, results.environmental, "Environment outputs")
-        write_sheet(writer, results.SOC_distribution, "SOC distributions", index=False)
-        write_sheet(writer, results.timeseries, "TimeSeries", index=False)
-        write_sheet(writer, results.production, "Production", index=False)
-        write_sheet(writer, results.genset, "Genset", index=False)
-        write_multiple_tables(writer,results.demand_side_management,"Demand side management",positions=[(0, 0), (0, 7),(0, 13),], index=False)
-        write_multiple_tables(writer, results.time_balancing, "Balancing",positions=[(0, 0), (0, 7),(0, 14),(0, 21),], index=False)
+        _write_sheet(writer, results.flows, "Flows")
+        _write_multiple_tables(writer,results.global_dispatching,"Global dispatching",positions=[(0, 0), (3, 0),(6, 0),(9, 0),(12, 0), (15, 0),],index=True)
+        _write_sheet(writer, results.economic, "Financial outputs")
+        _write_sheet(writer, results.technical, "Technical")
+        _write_sheet(writer, results.storages, "Storages")
+        _write_sheet(writer, results.environmental, "Environment outputs")
+        _write_sheet(writer, results.SOC_distribution, "SOC distributions", index=False)
+        _write_sheet(writer, results.timeseries, "TimeSeries", index=False)
+        _write_sheet(writer, results.production, "Production", index=False)
+        _write_sheet(writer, results.genset, "Genset", index=False)
+        _write_multiple_tables(writer,results.demand_side_management,"Demand side management",positions=[(0, 0), (0, 7),(0, 13),], index=False)
+        _write_multiple_tables(writer, results.time_balancing, "Balancing",positions=[(0, 0), (0, 7),(0, 14),(0, 21),], index=False)
         
-        write_multiple_tables(writer, results.EMS, "EMS",positions=[(0, 0), (0, 1),(0, 3),(0, 6),(0, 9),(0, 11),], index=False)
+        _write_multiple_tables(writer, results.EMS, "EMS",positions=[(0, 0), (0, 1),(0, 3),(0, 6),(0, 9),(0, 11),], index=False)
     
         wb = writer.book
         for ws in wb.worksheets:
-            set_column_width(ws)
+            _set_column_width(ws)
     
-def build_timeseries(outputs_solution, solution, Contexte, datetime):
+def _build_timeseries(outputs_solution, solution, Contexte, datetime):
     """
     Build a standardized time series DataFrame from optimization outputs.
 
@@ -196,7 +196,7 @@ def build_timeseries(outputs_solution, solution, Contexte, datetime):
 
     return df
 
-def build_flows(outputs_solution, output_baseline, Contexte):
+def _build_flows(outputs_solution, output_baseline, Contexte):
     """
     Build a standardized flows DataFrame comparing optimization vs baseline.
 
@@ -241,25 +241,25 @@ def build_flows(outputs_solution, output_baseline, Contexte):
 
     return df
 
-def build_technical(outputs_solution, output_baseline):
+def _build_technical(outputs_solution, output_baseline):
     """
     Build technical comparison DataFrame.
     """
     return _build_comparison_block(outputs_solution, output_baseline, "Technical")
 
-def build_environmental(outputs_solution, output_baseline):
+def _build_environmental(outputs_solution, output_baseline):
     """
     Build environmental comparison DataFrame.
     """
     return _build_comparison_block(outputs_solution, output_baseline, "Environment")
 
-def build_genset(outputs_solution, output_baseline):
+def _build_genset(outputs_solution, output_baseline):
     """
     Build genset comparison DataFrame.
     """
     return _build_comparison_block(outputs_solution, output_baseline, "Genset")
 
-def build_global_dispatching(outputs_solution, output_baseline):
+def _build_global_dispatching(outputs_solution, output_baseline):
     """
     Build balancing comparison DataFrame.
     """
@@ -272,7 +272,7 @@ def build_global_dispatching(outputs_solution, output_baseline):
     
     return output_useprod,output_loadmeet,output_whenprod,output_whenload,output_gridexport,output_gridimport
 
-def build_demand_side_management(outputs_solution, output_baseline):
+def _build_demand_side_management(outputs_solution, output_baseline):
     """
     Build demand_side_management comparison DataFrame.
     """
@@ -285,7 +285,7 @@ def build_demand_side_management(outputs_solution, output_baseline):
    
     return Load_strategy,DSM_daily_strategy,DSM_yearly_strategy
 
-def build_economic(outputs_solution, output_baseline, Contexte):
+def _build_economic(outputs_solution, output_baseline, Contexte):
     """
     Build economic comparison DataFrame with NPV and Payback.
     """
@@ -305,7 +305,7 @@ def build_economic(outputs_solution, output_baseline, Contexte):
 
     return _build_comparison_block({"economics": econ_opt},{"economics": econ_base},"economics",)
 
-def build_production(solution, Contexte):
+def _build_production(solution, Contexte):
     """
     Build production assets DataFrame.
     """
@@ -316,13 +316,13 @@ def build_production(solution, Contexte):
         "Initial investment (€)": np.multiply(Contexte.production.specs_num[:,PROD_CAPEX],production_set),})
     return df
 
-def build_SOC_distribution(outputs_solution, output_baseline):
+def _build_SOC_distribution(outputs_solution, output_baseline):
     """
     Build distribution of depth of discharge storage DataFrame.
     """
     return pd.DataFrame(outputs_solution['Extra_outputs']['distribution_DOD'],index=range(100))
 
-def build_time_balancing(outputs_solution, output_baseline):
+def _build_time_balancing(outputs_solution, output_baseline):
     """
     Build time balancing DataFrames.
     """
@@ -334,7 +334,7 @@ def build_time_balancing(outputs_solution, output_baseline):
 
     return [daily_optim_time_balancing,daily_baseline_time_balancing,yearly_optim_time_balancing,yearly_baseline_time_balancing]
 
-def build_EMS(outputs_solution,Contexte):
+def _build_EMS(outputs_solution,Contexte):
     """
     Build EMS data.
     """
@@ -361,24 +361,21 @@ def build_results(solution, Contexte, datetime):
     outputs_solution['economics']["Payback (yrs.)"] = Payback
 
     # --- DataFrames ---
-    timeseries = build_timeseries(outputs_solution, solution, Contexte, datetime)
-    flows = build_flows(outputs_solution, output_baseline, Contexte)
-    technical=build_technical(outputs_solution, output_baseline)
-    economic=build_economic(outputs_solution, output_baseline, Contexte)
-    environmental=build_environmental(outputs_solution, output_baseline)
-    storages=pd.DataFrame(outputs_solution['Storages'], index=Contexte.storage.technologies)
-    production=build_production(solution, Contexte)
-    global_dispatching = build_global_dispatching(outputs_solution, output_baseline)
-    SOC_distribution = build_SOC_distribution(outputs_solution, output_baseline)
-    genset=build_genset(outputs_solution, output_baseline)
+    timeseries = _build_timeseries(outputs_solution, solution, Contexte, datetime)
+    flows = _build_flows(outputs_solution, output_baseline, Contexte)
+    technical = _build_technical(outputs_solution, output_baseline)
+    economic = _build_economic(outputs_solution, output_baseline, Contexte)
+    environmental = _build_environmental(outputs_solution, output_baseline)
+    storages = pd.DataFrame(outputs_solution['Storages'], index=Contexte.storage.technologies)
+    production = _build_production(solution, Contexte)
+    global_dispatching = _build_global_dispatching(outputs_solution, output_baseline)
+    SOC_distribution = _build_SOC_distribution(outputs_solution, output_baseline)
+    genset = _build_genset(outputs_solution, output_baseline)
+    demand_side_management = _build_demand_side_management(outputs_solution, output_baseline)
+    time_balancing = _build_time_balancing(outputs_solution, output_baseline)  
+    EMS = _build_EMS(outputs_solution,Contexte) 
     
-    demand_side_management = build_demand_side_management(outputs_solution, output_baseline)
-
-    time_balancing = build_time_balancing(outputs_solution, output_baseline)  
-    
-    EMS = build_EMS(outputs_solution,Contexte) 
-    
-    return PostProcessingResults(timeseries=timeseries,technical=technical,economic=economic,environmental=environmental,flows=flows,
+    return _PostProcessingResults(timeseries=timeseries,technical=technical,economic=economic,environmental=environmental,flows=flows,
         storages=storages,production=production,global_dispatching=global_dispatching,SOC_distribution=SOC_distribution,genset=genset,
         demand_side_management=demand_side_management,time_balancing=time_balancing,EMS=EMS)
 
@@ -393,7 +390,7 @@ def post_traitement(solution, Contexte, datetime):
         EgE.add_excel_charts(Contexte=Contexte,charts_config=charts_config)
 
 
-def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movable_load,Y_movable_load,storage_techs,specs_Id,Contract_Id,n_days,file_name_out,Contexte):
+#def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movable_load,Y_movable_load,storage_techs,specs_Id,Contract_Id,n_days,file_name_out,Contexte):
     """
     Post-process an energy system optimization solution and export detailed outputs to Excel.
     
@@ -432,139 +429,139 @@ def post_traitement(solution,datetime_data,evaluation_function,cost_base,D_movab
         Handles both "pro" (advanced) and standard optimization types.
         Uses `openpyxl` for Excel writing and chart generation.
     """               
-    production_set=solution.production_set 
-    outputs_solution = evaluation_function(solution,datetime_data,Contexte.storage_characteristics,Contexte.time_resolution,Contexte.n_store,Contexte.duration_years,Contexte.specs_num,Contexte.prices_num,Contexte.fixed_premium,Contexte.Overrun,Contexte.Selling_price,Contexte.Non_movable_load,Contexte.total_D_Movable_load,D_movable_load, Contexte.total_Y_Movable_load,Y_movable_load,Contexte.Grid_Fossil_fuel_ratio,Contexte.Main_grid_PoF_ratio, Contexte.Main_grid_emissions,Contexte.prod_C,Contexte.prods_U,Contexte.Bounds_prod ,Contexte.constraint_num,Contexte.constraint_level,Contexte.cost_constraint,Contexte.n_bits,Contexte.Connexion,Contexte.DG_fuel_consumption,Contexte.DG_fuel_cost,Contexte.DG_unit_cost,Contexte.DG_lifetime,Contexte.DG_maintenance_cost,Contexte.DG_EROI,Contexte.fuel_CO2eq_emissions,storage_techs,n_days)       
-    datetime_excel = pd.to_datetime(datetime_data,unit='s').dt.tz_localize(None)
+#    production_set=solution.production_set 
+#    outputs_solution = evaluation_function(solution,datetime_data,Contexte.storage_characteristics,Contexte.time_resolution,Contexte.n_store,Contexte.duration_years,Contexte.specs_num,Contexte.prices_num,Contexte.fixed_premium,Contexte.Overrun,Contexte.Selling_price,Contexte.Non_movable_load,Contexte.total_D_Movable_load,D_movable_load, Contexte.total_Y_Movable_load,Y_movable_load,Contexte.Grid_Fossil_fuel_ratio,Contexte.Main_grid_PoF_ratio, Contexte.Main_grid_emissions,Contexte.prod_C,Contexte.prods_U,Contexte.Bounds_prod ,Contexte.constraint_num,Contexte.constraint_level,Contexte.cost_constraint,Contexte.n_bits,Contexte.Connexion,Contexte.DG_fuel_consumption,Contexte.DG_fuel_cost,Contexte.DG_unit_cost,Contexte.DG_lifetime,Contexte.DG_maintenance_cost,Contexte.DG_EROI,Contexte.fuel_CO2eq_emissions,storage_techs,n_days)       
+#    datetime_excel = pd.to_datetime(datetime_data,unit='s').dt.tz_localize(None)
 
-    load = outputs_solution['TimeSeries']['Optimized load (kW)']
-    output_baseline = cost_base(solution,datetime_data,Contexte.storage_characteristics,Contexte.time_resolution,Contexte.n_store,Contexte.duration_years,Contexte.specs_num,Contexte.prices_num[0],Contexte.fixed_premium[0],Contexte.Overrun[0],Contexte.Selling_price[0],Contexte.Non_movable_load,D_movable_load, Y_movable_load,Contexte.Grid_Fossil_fuel_ratio,Contexte.Main_grid_PoF_ratio,Contexte.Main_grid_emissions,Contexte.prod_C,Contexte.prods_U,Contexte.Bounds_prod ,Contexte.constraint_num,Contexte.constraint_level,Contexte.cost_constraint,Contexte.n_bits,Contexte.Connexion,Contexte.DG_fuel_consumption,Contexte.DG_fuel_cost,Contexte.DG_unit_cost,Contexte.DG_lifetime,Contexte.DG_maintenance_cost,Contexte.DG_EROI,Contexte.fuel_CO2eq_emissions,storage_techs,n_days)
+#    load = outputs_solution['TimeSeries']['Optimized load (kW)']
+#    output_baseline = cost_base(solution,datetime_data,Contexte.storage_characteristics,Contexte.time_resolution,Contexte.n_store,Contexte.duration_years,Contexte.specs_num,Contexte.prices_num[0],Contexte.fixed_premium[0],Contexte.Overrun[0],Contexte.Selling_price[0],Contexte.Non_movable_load,D_movable_load, Y_movable_load,Contexte.Grid_Fossil_fuel_ratio,Contexte.Main_grid_PoF_ratio,Contexte.Main_grid_emissions,Contexte.prod_C,Contexte.prods_U,Contexte.Bounds_prod ,Contexte.constraint_num,Contexte.constraint_level,Contexte.cost_constraint,Contexte.n_bits,Contexte.Connexion,Contexte.DG_fuel_consumption,Contexte.DG_fuel_cost,Contexte.DG_unit_cost,Contexte.DG_lifetime,Contexte.DG_maintenance_cost,Contexte.DG_EROI,Contexte.fuel_CO2eq_emissions,storage_techs,n_days)
 
     
-    losses = pd.DataFrame(outputs_solution['TimeSeries']['Losses (kW)'] ,index=[storage_techs[i]+' losses' for i in range(Contexte.n_store)],columns=None).T   
-    power_storages = pd.DataFrame(outputs_solution['TimeSeries']['Storage_TS (kW)'],index=[storage_techs[i]+' power (kW)' for i in range(Contexte.n_store)],columns=None).transpose()
-    power_storage = power_storages.sum(axis=1)
+#    losses = pd.DataFrame(outputs_solution['TimeSeries']['Losses (kW)'] ,index=[storage_techs[i]+' losses' for i in range(Contexte.n_store)],columns=None).T   
+#    power_storages = pd.DataFrame(outputs_solution['TimeSeries']['Storage_TS (kW)'],index=[storage_techs[i]+' power (kW)' for i in range(Contexte.n_store)],columns=None).transpose()
+#    power_storage = power_storages.sum(axis=1)
       
-    SOCs=pd.DataFrame(outputs_solution['TimeSeries']['SOCs (%)'],index=[storage_techs[i]+' SOC' for i in range(Contexte.n_store)],columns=None).transpose()   
-    production = outputs_solution['TimeSeries']['production (kW)']
-    Grid_trading = outputs_solution['TimeSeries']['Grid trading (kW)']
+#    SOCs=pd.DataFrame(outputs_solution['TimeSeries']['SOCs (%)'],index=[storage_techs[i]+' SOC' for i in range(Contexte.n_store)],columns=None).transpose()   
+#    production = outputs_solution['TimeSeries']['production (kW)']
+#    Grid_trading = outputs_solution['TimeSeries']['Grid trading (kW)']
 
     #Technical
     
     #Environmental
     
-    DG_production_solution = outputs_solution['TimeSeries']['DG production (kW)']
+#    DG_production_solution = outputs_solution['TimeSeries']['DG production (kW)']
         
-    curtailment_solution = outputs_solution['TimeSeries']['Curtailment (kW)']
+#    curtailment_solution = outputs_solution['TimeSeries']['Curtailment (kW)']
 
-    outputs_TS = pd.DataFrame(data={'Datetime':datetime_excel,'Load (kW)':load,'Power production (kW)':production},index=None)
-    outputs_TS = outputs_TS.join(power_storages)
-    outputs_TS = outputs_TS.join(losses)
-    outputs_TS = outputs_TS.join(pd.DataFrame(data={'Grid power (kW)':Grid_trading,'Grid price (€/kWh)':Contexte.prices_num[solution.contract],'Diesel production (kW)':DG_production_solution,'Curtailment (kW)':curtailment_solution,'Imbalance (kW)':production + power_storage + Grid_trading - load - curtailment_solution + DG_production_solution}))    
-    outputs_TS = outputs_TS.join(SOCs)
+#    outputs_TS = pd.DataFrame(data={'Datetime':datetime_excel,'Load (kW)':load,'Power production (kW)':production},index=None)
+#    outputs_TS = outputs_TS.join(power_storages)
+#    outputs_TS = outputs_TS.join(losses)
+#    outputs_TS = outputs_TS.join(pd.DataFrame(data={'Grid power (kW)':Grid_trading,'Grid price (€/kWh)':Contexte.prices_num[solution.contract],'Diesel production (kW)':DG_production_solution,'Curtailment (kW)':curtailment_solution,'Imbalance (kW)':production + power_storage + Grid_trading - load - curtailment_solution + DG_production_solution}))    
+#    outputs_TS = outputs_TS.join(SOCs)
     
 
-    Technical_outputs=pd.concat((pd.DataFrame(outputs_solution['Technical'],index=['Optimization']),pd.DataFrame(output_baseline['Technical'],index=['Baseline'])))
-    Environmental_outputs=pd.concat((pd.DataFrame(outputs_solution['Environment'],index=['Optimization']),pd.DataFrame(output_baseline['Environment'],index=['Baseline'])))
-    NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['Technical']['Installation lifetime (yrs.)']
-    Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
-    if Payback<0 : 
-        Payback = np.nan
+#    Technical_outputs=pd.concat((pd.DataFrame(outputs_solution['Technical'],index=['Optimization']),pd.DataFrame(output_baseline['Technical'],index=['Baseline'])))
+#    Environmental_outputs=pd.concat((pd.DataFrame(outputs_solution['Environment'],index=['Optimization']),pd.DataFrame(output_baseline['Environment'],index=['Baseline'])))
+#    NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['Technical']['Installation lifetime (yrs.)']
+#    Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
+#    if Payback<0 : 
+#        Payback = np.nan
         
-    outputs_solution['economics']["NPV (€)"] = NPV
-    outputs_solution['economics']["Payback (yrs.)"] = Payback
+#    outputs_solution['economics']["NPV (€)"] = NPV
+#    outputs_solution['economics']["Payback (yrs.)"] = Payback
 
-    output_baseline['economics']["NPV (€)"] = 0
-    output_baseline['economics']["Payback (yrs.)"] = np.nan
-    Economic_outputs=pd.concat((pd.DataFrame(outputs_solution['economics'],index=['Optimization']),pd.DataFrame(output_baseline['economics'],index=['Baseline'])))
+#    output_baseline['economics']["NPV (€)"] = 0
+#    output_baseline['economics']["Payback (yrs.)"] = np.nan
+#    Economic_outputs=pd.concat((pd.DataFrame(outputs_solution['economics'],index=['Optimization']),pd.DataFrame(output_baseline['economics'],index=['Baseline'])))
     
     
-    Output_production = pd.DataFrame(data={'ID':specs_Id,'Number of units':production_set,'Coverage ratio':production_set/Contexte.specs_num[:,3],'Initial investment (€)':np.multiply(Contexte.specs_num[:,0],production_set)})
-    dist_DOD = outputs_solution['Extra_outputs']['distribution_DOD']
-    output_storages = pd.DataFrame(outputs_solution['Storages'],index=storage_techs)
+#    Output_production = pd.DataFrame(data={'ID':specs_Id,'Number of units':production_set,'Coverage ratio':production_set/Contexte.specs_num[:,3],'Initial investment (€)':np.multiply(Contexte.specs_num[:,0],production_set)})
+#    dist_DOD = outputs_solution['Extra_outputs']['distribution_DOD']
+#    output_storages = pd.DataFrame(outputs_solution['Storages'],index=storage_techs)
     
-    output_useprod = pd.concat((outputs_solution['Extra_outputs']['Uses']['useprod'],output_baseline['Extra_outputs']['Uses']['useprod']))
-    output_loadmeet = pd.concat((outputs_solution['Extra_outputs']['Uses']['Loadmeet'],output_baseline['Extra_outputs']['Uses']['Loadmeet']))
-    output_whenprod = pd.concat((outputs_solution['Extra_outputs']['Uses']['when_prod'],output_baseline['Extra_outputs']['Uses']['when_prod']))
-    output_whenload = pd.concat((outputs_solution['Extra_outputs']['Uses']['when_load'],output_baseline['Extra_outputs']['Uses']['when_load']))
-    output_gridexport = pd.concat((outputs_solution['Extra_outputs']['Grid usage']['export'],output_baseline['Extra_outputs']['Grid usage']['export']))
-    output_gridimport = pd.concat((outputs_solution['Extra_outputs']['Grid usage']['import'],output_baseline['Extra_outputs']['Grid usage']['import']))
+#    output_useprod = pd.concat((outputs_solution['Extra_outputs']['Uses']['useprod'],output_baseline['Extra_outputs']['Uses']['useprod']))
+#    output_loadmeet = pd.concat((outputs_solution['Extra_outputs']['Uses']['Loadmeet'],output_baseline['Extra_outputs']['Uses']['Loadmeet']))
+#    output_whenprod = pd.concat((outputs_solution['Extra_outputs']['Uses']['when_prod'],output_baseline['Extra_outputs']['Uses']['when_prod']))
+#    output_whenload = pd.concat((outputs_solution['Extra_outputs']['Uses']['when_load'],output_baseline['Extra_outputs']['Uses']['when_load']))
+#    output_gridexport = pd.concat((outputs_solution['Extra_outputs']['Grid usage']['export'],output_baseline['Extra_outputs']['Grid usage']['export']))
+#    output_gridimport = pd.concat((outputs_solution['Extra_outputs']['Grid usage']['import'],output_baseline['Extra_outputs']['Grid usage']['import']))
 
-    output_useprod.index,output_loadmeet.index,output_whenprod.index,output_whenload.index,output_gridexport.index,output_gridimport.index = [['Optimization','Baseline'] for i in range(6)]
+#    output_useprod.index,output_loadmeet.index,output_whenprod.index,output_whenload.index,output_gridexport.index,output_gridimport.index = [['Optimization','Baseline'] for i in range(6)]
 
     
-    Flows = pd.concat((pd.DataFrame(outputs_solution['Flows'],index=['Optimization']),pd.DataFrame(output_baseline['Flows'],index=['Baseline'])))
-    for i in range(len(storage_techs)):
-        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual stored energy (kWh)' : outputs_solution['Flows storages']['Annual stored energy (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual stored energy (kWh)' : output_baseline['Flows storages']['Annual stored energy (kWh)'][i]},index=['Baseline'] ))))
-        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual reported energy (kWh)' : outputs_solution['Flows storages']['Annual reported energy (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual reported energy (kWh)' : output_baseline['Flows storages']['Annual reported energy (kWh)'][i]},index=['Baseline'] ))))
-        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual losses (kWh)' : outputs_solution['Flows storages']['Annual losses (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual losses (kWh)' : output_baseline['Flows storages']['Annual losses (kWh)'][i]},index=['Baseline'] ))))
+#    Flows = pd.concat((pd.DataFrame(outputs_solution['Flows'],index=['Optimization']),pd.DataFrame(output_baseline['Flows'],index=['Baseline'])))
+#    for i in range(len(storage_techs)):
+#        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual stored energy (kWh)' : outputs_solution['Flows storages']['Annual stored energy (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual stored energy (kWh)' : output_baseline['Flows storages']['Annual stored energy (kWh)'][i]},index=['Baseline'] ))))
+#        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual reported energy (kWh)' : outputs_solution['Flows storages']['Annual reported energy (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual reported energy (kWh)' : output_baseline['Flows storages']['Annual reported energy (kWh)'][i]},index=['Baseline'] ))))
+#        Flows = Flows.join(pd.concat((pd.DataFrame(data={storage_techs[i] + ' annual losses (kWh)' : outputs_solution['Flows storages']['Annual losses (kWh)'][i]},index=['Optimization']),pd.DataFrame(data={storage_techs[i] + ' annual losses (kWh)' : output_baseline['Flows storages']['Annual losses (kWh)'][i]},index=['Baseline'] ))))
     
-    if (Contexte.type_optim=='pro'):
-        PMS_D_DSM_min_levels = pd.DataFrame({'Hour': np.arange(24)+1, 'min. level (%)': 100*np.concatenate((outputs_solution['PMS']['D_DSM min. levels'],np.array([1.])))})
-        PMS_Y_DSM_min_levels = pd.DataFrame({'Month': np.arange(12)+1, 'min. level (%)': 100*np.concatenate((outputs_solution['PMS']['Y_DSM min. levels'],np.array([1.])))})
-        discharge_order = pd.DataFrame({'Order':np.arange(Contexte.n_store)+1,'Storage':storage_techs[outputs_solution['PMS']['discharge order']]})
-        taking_over = pd.DataFrame({'effective SOC (%)':10*(np.arange(9,0,-1)),'Taking over level (%)':100*outputs_solution['PMS']['taking over'][0],'DG taking over level (%)' if Contexte.Connexion=='Off-grid' else 'Grid taking over level (%)' :100*outputs_solution['PMS']['taking over'][1]})
+#    if (Contexte.type_optim=='pro'):
+#        PMS_D_DSM_min_levels = pd.DataFrame({'Hour': np.arange(24)+1, 'min. level (%)': 100*np.concatenate((outputs_solution['PMS']['D_DSM min. levels'],np.array([1.])))})
+#        PMS_Y_DSM_min_levels = pd.DataFrame({'Month': np.arange(12)+1, 'min. level (%)': 100*np.concatenate((outputs_solution['PMS']['Y_DSM min. levels'],np.array([1.])))})
+#        discharge_order = pd.DataFrame({'Order':np.arange(Contexte.n_store)+1,'Storage':storage_techs[outputs_solution['PMS']['discharge order']]})
+#        taking_over = pd.DataFrame({'effective SOC (%)':10*(np.arange(9,0,-1)),'Taking over level (%)':100*outputs_solution['PMS']['taking over'][0],'DG taking over level (%)' if Contexte.Connexion=='Off-grid' else 'Grid taking over level (%)' :100*outputs_solution['PMS']['taking over'][1]})
         
-    DG=pd.concat((pd.DataFrame(outputs_solution['DG'],index=['Optimization']),pd.DataFrame(output_baseline['DG'],index=['Baseline'])))
-    outputs_solution['Demand-side management']['Load strategy']['Datetime']=datetime_excel
+#    DG=pd.concat((pd.DataFrame(outputs_solution['DG'],index=['Optimization']),pd.DataFrame(output_baseline['DG'],index=['Baseline'])))
+#    outputs_solution['Demand-side management']['Load strategy']['Datetime']=datetime_excel
     
-    with pd.ExcelWriter(file_name_out,engine='openpyxl') as writer:
-        Flows.to_excel(writer,sheet_name='Flows')
-        output_useprod.to_excel(writer,sheet_name='Balancing')
-        output_loadmeet.to_excel(writer,sheet_name='Balancing',startrow=3)
-        output_whenprod.to_excel(writer,sheet_name='Balancing',startrow=6)
-        output_whenload.to_excel(writer,sheet_name='Balancing',startrow=9)
-        output_gridexport.to_excel(writer,sheet_name='Balancing',startrow=12)
-        output_gridimport.to_excel(writer,sheet_name='Balancing',startrow=15)
-        Economic_outputs.to_excel(writer,sheet_name='Financial outputs')
-        Technical_outputs.to_excel(writer,sheet_name='Technical')        
-        pd.DataFrame(output_storages).to_excel(writer,sheet_name='Storages')
-        Environmental_outputs.to_excel(writer,sheet_name='Environment outputs')
-        dist_DOD.to_excel(writer,sheet_name='SOC distributions',index=None)
-        outputs_TS.to_excel(writer,sheet_name='TimeSeries',index=None)
-        Output_production.to_excel(writer,sheet_name='Production',index=None)
-        if (Contexte.type_optim=='pro'):
-            pd.DataFrame(data={'Strategy':outputs_solution['PMS']['strategy']},index=[0]).to_excel(writer,sheet_name='EMS',index=None)
-            pd.DataFrame(data={'DSM coefficient':outputs_solution['PMS']['surplus repartition coefficient']},index=[0]).to_excel(writer,sheet_name='EMS',index=None,startrow=3)
-            PMS_D_DSM_min_levels.to_excel(writer,sheet_name='EMS',startcol = 2,index=None)
-            PMS_Y_DSM_min_levels.to_excel(writer,sheet_name='EMS',startcol = 5,index=None)
-            discharge_order.to_excel(writer,sheet_name='EMS',startcol = 8,index=None)
-            taking_over.to_excel(writer,sheet_name='EMS',startcol = 11,index=None)
-        DG.to_excel(writer,sheet_name='DG')
-        outputs_solution['Demand-side management']['Load strategy'].to_excel(writer,sheet_name='DSM',index=None)
-        outputs_solution['Demand-side management']['DSM daily strategy'].to_excel(writer,sheet_name='DSM',index=None,startcol=7)
-        outputs_solution['Demand-side management']['DSM yearly strategy'].to_excel(writer,sheet_name='DSM',index=None,startcol=13)
-        outputs_solution['Balancing']['daily time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None)
-        output_baseline['Balancing']['daily time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=7)
-        outputs_solution['Balancing']['yearly time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=14)
-        output_baseline['Balancing']['yearly time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=21)
-        
+#    with pd.ExcelWriter(file_name_out,engine='openpyxl') as writer:
+#        Flows.to_excel(writer,sheet_name='Flows')
+#        output_useprod.to_excel(writer,sheet_name='Balancing')
+#        output_loadmeet.to_excel(writer,sheet_name='Balancing',startrow=3)
+#        output_whenprod.to_excel(writer,sheet_name='Balancing',startrow=6)
+#        output_whenload.to_excel(writer,sheet_name='Balancing',startrow=9)
+#        output_gridexport.to_excel(writer,sheet_name='Balancing',startrow=12)
+#        output_gridimport.to_excel(writer,sheet_name='Balancing',startrow=15)
+#        Economic_outputs.to_excel(writer,sheet_name='Financial outputs')
+#        Technical_outputs.to_excel(writer,sheet_name='Technical')        
+#        pd.DataFrame(output_storages).to_excel(writer,sheet_name='Storages')
+#        Environmental_outputs.to_excel(writer,sheet_name='Environment outputs')
+#        dist_DOD.to_excel(writer,sheet_name='SOC distributions',index=None)
+#        outputs_TS.to_excel(writer,sheet_name='TimeSeries',index=None)
+#        Output_production.to_excel(writer,sheet_name='Production',index=None)
+#        if (Contexte.type_optim=='pro'):
+#            pd.DataFrame(data={'Strategy':outputs_solution['PMS']['strategy']},index=[0]).to_excel(writer,sheet_name='EMS',index=None)
+#            pd.DataFrame(data={'DSM coefficient':outputs_solution['PMS']['surplus repartition coefficient']},index=[0]).to_excel(writer,sheet_name='EMS',index=None,startrow=3)
+#            PMS_D_DSM_min_levels.to_excel(writer,sheet_name='EMS',startcol = 2,index=None)
+#            PMS_Y_DSM_min_levels.to_excel(writer,sheet_name='EMS',startcol = 5,index=None)
+#            discharge_order.to_excel(writer,sheet_name='EMS',startcol = 8,index=None)
+#            taking_over.to_excel(writer,sheet_name='EMS',startcol = 11,index=None)
+#        DG.to_excel(writer,sheet_name='DG')
+#        outputs_solution['Demand-side management']['Load strategy'].to_excel(writer,sheet_name='DSM',index=None)
+#        outputs_solution['Demand-side management']['DSM daily strategy'].to_excel(writer,sheet_name='DSM',index=None,startcol=7)
+#        outputs_solution['Demand-side management']['DSM yearly strategy'].to_excel(writer,sheet_name='DSM',index=None,startcol=13)
+#        outputs_solution['Balancing']['daily time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None)
+#        output_baseline['Balancing']['daily time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=7)
+#        outputs_solution['Balancing']['yearly time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=14)
+#        output_baseline['Balancing']['yearly time balancing'].to_excel(writer,sheet_name='Time_balancing',index=None,startcol=21)
+#        
     #Output Charts
-    wb = openpyxl.load_workbook(file_name_out)
+#    wb = openpyxl.load_workbook(file_name_out)
     
-    set_column_width(wb['Flows'])
+#    set_column_width(wb['Flows'])
     
-    ws = wb['Balancing']
-    c01 = openpyxl.chart.BarChart()
-    c01.title = "Use of production"
-    c01.grouping='stacked'
-    c01.overlap=100
-    c01.add_data(openpyxl.chart.Reference(ws,min_col=2, min_row=1, max_col=4, max_row=3), titles_from_data=True)
-    c01.set_categories(openpyxl.chart.Reference(ws,min_col=1, min_row=2, max_col=1, max_row=3))
-    c01.x_axis.title = 'Scenario'
-    c01.y_axis.title = 'Energy (kWh)'
-    c01.layout = openpyxl.chart.layout.Layout(manualLayout=openpyxl.chart.layout.ManualLayout(x=0.025, y=0.005,w=0.6, h=0.75))
-    c01.layout.layoutTarget = "inner" 
-    c01.y_axis.scaling.min = 0
-    c01.y_axis.scaling.max = 1.3*max(sum(production),sum(load))/Contexte.time_resolution
-    c01.x_axis.delete = False
-    c01.y_axis.delete = False
-    c01.height = 7.5
-    c01.width = 20
-    c01.legend.overlay = False
-    c01.x_axis.tickLblPos = "low"
-    c01.x_axis.tickLblPos = "low"
-    ws.add_chart(c01, "A1")   
-    
+#    ws = wb['Balancing']
+#    c01 = openpyxl.chart.BarChart()
+#    c01.title = "Use of production"
+#    c01.grouping='stacked'
+#    c01.overlap=100
+#    c01.add_data(openpyxl.chart.Reference(ws,min_col=2, min_row=1, max_col=4, max_row=3), titles_from_data=True)
+#    c01.set_categories(openpyxl.chart.Reference(ws,min_col=1, min_row=2, max_col=1, max_row=3))
+#    c01.x_axis.title = 'Scenario'
+#    c01.y_axis.title = 'Energy (kWh)'
+#    c01.layout = openpyxl.chart.layout.Layout(manualLayout=openpyxl.chart.layout.ManualLayout(x=0.025, y=0.005,w=0.6, h=0.75))
+#    c01.layout.layoutTarget = "inner" 
+#    c01.y_axis.scaling.min = 0
+#    c01.y_axis.scaling.max = 1.3*max(sum(production),sum(load))/Contexte.time_resolution
+#    c01.x_axis.delete = False
+#    c01.y_axis.delete = False
+#    c01.height = 7.5
+#    c01.width = 20
+#    c01.legend.overlay = False
+#    c01.x_axis.tickLblPos = "low"
+#    c01.x_axis.tickLblPos = "low"
+#    ws.add_chart(c01, "A1")   
+def old_post_processing(): 
     c02 = openpyxl.chart.BarChart()
     c02.title = "Load response"
     c02.grouping='stacked'

@@ -92,8 +92,32 @@ class _DispatchingBlock:
     
     Attributes:
         
-        Defined_items (np.ndarray):
+        defined_items (np.ndarray):
             List of non-controllable dispatching features.
+            
+        energy_use_coefficient (float):
+            Utilization of the produced energy.
+            
+        Y_DSM_minimum_levels (np.ndarray):
+            Minimum amount of yearly dispatchable energy that is used per month.
+            
+        D_DSM_minimum_levels (np.ndarray):
+            Minimum amount of daily dispatchable energy that is used per hour.
+            
+        DG_strategy (str):
+            Control strategy of the genset unit.
+            
+        DG_min_runtime (int):
+            Minimum runtime of the genset unit.
+            
+        DG_min_production (float):
+            Minimum production level of the genset unit.
+            
+        discharge_order (np.ndarray):
+            Discharge order of the different storage units.
+            
+        overlaps (np.ndarray):
+            Overlaps levels between the different storage units, and between the storage units and the grid or the genset unit.
     """
     __slots__ = (
         "defined_items",
