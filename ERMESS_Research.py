@@ -139,19 +139,16 @@ def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
     replaced_indices = np.random.choice(len_pop - N_TOP, N_RAND+N_TOP, replace = False)+N_TOP
     return(replaced_indices)
 
-def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):
-    chunk_size = len(incomers) // n_core
-    for i in range(n_core):
-        
-        start = chunk_size * i 
-        end = chunk_size * (i + 1)
+def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):     
     
-        incomers_chunk = incomers[start:end]
-        if len(killed_indices) != len(incomers_chunk):
-            raise ValueError("Mismatch migration sizes")
-        for j in range(len(killed_indices)) :
- #           local_populations[i][killed_indices[j]] = incomers_chunk[j]
-            safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
+    if len(n_core*killed_indices) != len(incomers):
+        raise ValueError("Mismatch migration sizes")
+    for j in range(n_core*len(killed_indices)) :
+        core = j//len(killed_indices)
+        local_populations[core][killed_indices[j]] = incomers[j]
+        if (type(incomers[j])==list):
+            print('detected list incomer')
+   #         safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
     
     return(local_populations)
 
@@ -280,8 +277,6 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             migrants = [ item for sublist in local_migrants for item in sublist ]
             inspect(migrants, "migrants")
             
-            for i, m in enumerate(migrants):
-                inspect(m, f"migrants[{i}]")
 
             for i, m in enumerate(migrants):
                 if isinstance(m, list):
@@ -293,9 +288,6 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
             TRACER.check(potential_incomers, "potential_incomers")
-            
-            for i, x in enumerate(potential_incomers):
-                inspect(x, f"potential_incomers[{i}]")
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
