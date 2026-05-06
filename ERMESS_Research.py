@@ -149,8 +149,8 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
         core = j//len(killed_indices)
         index = j%len(killed_indices)
         local_populations[core][index] = incomers[j]
-        if (type(incomers[j])==list):
-            print('detected list incomer',j)
+   #     if (type(incomers[j])==list):
+   #         print('detected list incomer',j)
    #         safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
     
     return(local_populations)
@@ -281,13 +281,14 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             for i in range(n_core) :
                 inspect(local_migrants[i], "local_migrants")
             migrants = [ item for sublist in local_migrants for item in sublist ]
-            inspect(migrants, "migrants")
+            for mig in migrants : 
+                if type(mig)==list : 
+                    print('MIG NOK',ere)
             
             write_migrants(migrants, node_id, ere)
 
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
-            TRACER.check(potential_incomers, "potential_incomers")
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
