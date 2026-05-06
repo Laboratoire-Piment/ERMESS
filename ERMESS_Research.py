@@ -150,7 +150,8 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
         if len(killed_indices) != len(incomers_chunk):
             raise ValueError("Mismatch migration sizes")
         for j in range(len(killed_indices)) :
-            local_populations[i][killed_indices[j]] = incomers_chunk[j]
+ #           local_populations[i][killed_indices[j]] = incomers_chunk[j]
+            safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
     
     return(local_populations)
 
@@ -193,6 +194,30 @@ def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
             return files
 
         time.sleep(sleep_time)
+
+import traceback
+
+def inspect(obj, name="obj"):
+    """
+    Détecte et trace toute apparition de list au lieu de Individual_res.
+    """
+    if isinstance(obj, list):
+        print("\n💥 LIST DETECTED:", name)
+        print("   type:", type(obj))
+        print("   len:", len(obj))
+        print("   stack trace:")
+        traceback.print_stack(limit=5)
+        return "LIST"
+
+    return "OK"
+
+def safe_assign(local_populations, i, j, value):
+    if isinstance(value, list):
+        print("\n💥 INVALID ASSIGNMENT DETECTED at", i, j)
+        inspect(value, "ASSIGNED_VALUE")
+        raise ValueError("Attempt to inject list instead of Individual_res")
+
+    local_populations[i][j] = value
     
 
 def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
@@ -235,10 +260,10 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
             local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
             migrants = [ item for sublist in local_migrants for item in sublist ]
-            for d in range(len(migrants)) :
-                if type(migrants[d])==list:
-                    print('migrant NOK ',d)
-            print('migrants ', type(migrants),len(migrants),type(migrants[0]))
+            inspect(migrants, "migrants")
+            
+            for i, m in enumerate(migrants):
+                inspect(m, f"migrants[{i}]")
 
             for i, m in enumerate(migrants):
                 if isinstance(m, list):
@@ -249,14 +274,15 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
-            for d in range(len(potential_incomers)) :
-                if type(potential_incomers[d])==list:
-                    print('potential_incomers NOK ',d)
-                    break
+            inspect(potential_incomers, "potential_incomers")
+            
+            for i, x in enumerate(potential_incomers):
+                inspect(x, f"potential_incomers[{i}]")
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
-            print('incomers ', type(incomers),len(incomers))
+            for x in incomers:
+                inspect(x, "incomer_before_injection")
 
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
             for x in incomers:
