@@ -219,6 +219,23 @@ def safe_assign(local_populations, i, j, value):
 
     local_populations[i][j] = value
     
+class StructureTracer:
+    def check(self, obj, path="root"):
+        if hasattr(obj, "production_set"):
+            return
+
+        if isinstance(obj, list):
+            for i, x in enumerate(obj):
+                self.check(x, f"{path}[{i}]")
+            return
+
+        print("\n💥 STRUCTURE CORRUPTION DETECTED")
+        print("Path:", path)
+        traceback.print_stack(limit=15)
+
+        raise TypeError(f"Invalid structure at {path}: expected Individual_res")
+
+    
 
 def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
@@ -234,6 +251,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
     print('debut ', type(Initial_populations),len(Initial_populations),type(Initial_populations[0]),len(Initial_populations[0]))
     
     for ere in range(nb_ere):
+        TRACER = StructureTracer()
         print(ere)
 
         # -----------------------
@@ -274,23 +292,20 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
-            inspect(potential_incomers, "potential_incomers")
+            TRACER.check(potential_incomers, "potential_incomers")
             
             for i, x in enumerate(potential_incomers):
                 inspect(x, f"potential_incomers[{i}]")
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
-            for x in incomers:
-                inspect(x, "incomer_before_injection")
+            TRACER.check(incomers, "incomers")
 
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
-            for x in incomers:
-                if isinstance(x, list):
-                    print("incomer déjà LISTE avant injection")
-                    break
+            for i, x in enumerate(incomers):
+                TRACER.check(x, f"incomers[{i}]")
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
-            print('after migration ', type(local_populations),len(local_populations),type(local_populations[0]),len(local_populations[0]))
+            TRACER.check(local_populations, "local_populations")
 
         
         Initial_populations = local_populations
