@@ -189,6 +189,7 @@ def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
     
     if len(files)<n_nodes : 
         time.sleep(sleep_time)
+        files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
 
     if time.time() - start_time > timeout:
         print(f"[WARNING] Timeout atteint à l'ère {ere}. {len(files)}/{n_nodes} fichiers trouvés.")
