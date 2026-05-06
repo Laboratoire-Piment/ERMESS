@@ -62,6 +62,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     migration_bin = True
     
     if (initialisation) : 
+        print('initialisation ON')
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
         migration_bin = False
         
@@ -147,17 +148,12 @@ def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
 def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):     
     
     if (n_core*len(killed_indices) != len(incomers)):
-        print(n_core,killed_indices)
-        print(len(incomers))
         raise ValueError("Mismatch migration sizes")
     for j in range(n_core*len(killed_indices)) :
         core = j//len(killed_indices)
         index = j%len(killed_indices)
         local_populations[core][index] = incomers[j]
-   #     if (type(incomers[j])==list):
-   #         print('detected list incomer',j)
-   #         safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
-    
+  
     return(local_populations)
 
 def select_migrants_intranode(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE):
@@ -179,7 +175,7 @@ def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_
                 local_populations[i][idx] = migrants_pool[mask[j]]
         return(local_populations)
     
-def _find_migrant_files(n_nodes):
+def find_migrant_files(n_nodes):
     """
     Find all migrant files to be present.
     """
@@ -202,14 +198,11 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
         Initial_populations = pickle.load(infile)  
 
     if (migration_bin):
-        files = _find_migrant_files(n_nodes)
+        files = find_migrant_files(n_nodes)
         potential_incomers = load_migrants(files)
-
         len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
         incomers = collect_migrants(potential_incomers,len_incomers)
-
         killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
-
         Initial_populations = replace_population_internodes (n_core,len_pop,Initial_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
     
     for ere in range(nb_ere):
@@ -219,16 +212,13 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
         # -----------------------
 
         args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
-        local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)
-
-        
+        local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)      
 
         # -----------------------
         # 2. intra-node mix
         # -----------------------
         local_populations = migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core)
         Initial_populations = local_populations
-
 
     # -----------------------
     # 3. Migration selection & writing
@@ -238,38 +228,14 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
     local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
     migrants = [ item for sublist in local_migrants for item in sublist ]
     write_migrants(migrants, node_id, ere)
-
-
-        
+       
     
     node_population = [ item for sublist in local_populations for item in sublist ]
     best_score = min(ind.fitness for ind in node_population)
     print('best score : ',best_score)
     Eri.write_node_population(node_id,node_population)
-        
-#    print('Fin de l\'algorithme évolutif ',time.time())
-#    world_population3 = [item for sublist in local_populations_1 for item in sublist[0]]
-#    scores3 = tuple(world_population3[i].fitness for i in range(len(world_population3)))
-#    shuffled_population = sorted(world_population3, key=lambda x: np.random.rand())
-        
-#    for file_number in range(n_nodes):
-#        os.remove("pop_"+str(num_node)+'_for_'+str(file_number)+".dat")
-#        with open("pop_"+str(num_node)+'_for_'+str(file_number)+".dat", "wb") as f:
-#                pickle.dump(shuffled_population[int(file_number*n_pop*n_core/n_nodes):int((file_number+1)*n_pop*n_core/n_nodes)], f)    
-    
-#    try:
-#        os.remove("operators_"+str(num_node)+".dat")
-#    except OSError:
-#        pass
-    
-#    with open("operators_"+str(num_node)+".dat", "wb") as f:
-#        pickle.dump(operators, f)
-
-#    t6=time.time()
-#    print('fin ',t6-t5)    
-#    print('temps total : ',t6-t1)      
-
 
 if __name__ == '__main__':
+    print(sys.argv[1] ,  sys.argv[2], sys.argv[3])
     ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3])
 

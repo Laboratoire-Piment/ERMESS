@@ -17,6 +17,22 @@ import time
 
 
 def _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str):
+    """
+    Load and preprocess ERA5 meteorological data from local files.
+    
+    This function reads ERA5-Land meteorological data files (NetCDF or GRIB)
+    previously downloaded and stored locally. It extracts relevant variables,
+    computes derived quantities (e.g., wind speed and direction), performs
+    unit conversions, applies timezone localization, and formats the data
+    into structures suitable for photovoltaic (PV) and wind energy models.
+
+    Warning:
+        - The function does not verify completeness of the dataset.
+        - Missing variables will result in incomplete output DataFrames.
+        - Solar radiation conversion assumes cumulative ERA5 values.
+    
+    """
+    
     path = os.path.join(output_dir, folder_name)
 
     files = [f for f in os.listdir(path) if f.endswith(".nc") or f.endswith(".grib")]
