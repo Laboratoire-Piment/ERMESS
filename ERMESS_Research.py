@@ -257,7 +257,10 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             print('incomers ', type(incomers),len(incomers))
 
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
-            
+            for x in incomers:
+                if isinstance(x, list):
+                    print("incomer déjà LISTE avant injection")
+                    break
             local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
             print('after migration ', type(local_populations),len(local_populations),type(local_populations[0]),len(local_populations[0]))
 
