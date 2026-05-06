@@ -147,9 +147,10 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
         raise ValueError("Mismatch migration sizes")
     for j in range(n_core*len(killed_indices)) :
         core = j//len(killed_indices)
-        local_populations[core][killed_indices[j]] = incomers[j]
+        index = j%len(killed_indices)
+        local_populations[core][index] = incomers[j]
         if (type(incomers[j])==list):
-            print('detected list incomer')
+            print('detected list incomer',j)
    #         safe_assign(local_populations, i, killed_indices[j], incomers_chunk[j])
     
     return(local_populations)
