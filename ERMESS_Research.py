@@ -59,11 +59,14 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     ##============================================================================
               
     Context=Dbl.build_environment(structured_data)
-        
+    migration_bin = True
+    
     if (initialisation) : 
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
+        migration_bin = False
         
-    run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes)
+        
+    run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes, migration_bin)
         
         
 #    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
@@ -176,84 +179,40 @@ def migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_
                 local_populations[i][idx] = migrants_pool[mask[j]]
         return(local_populations)
     
-def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
+def _find_migrant_files(n_nodes):
     """
-    Wait for all migrant files to be present.
+    Find all migrant files to be present.
     """
-    start_time = time.time()
-    prefix = f"migrants_node_"
-    suffix = f"_ere_{ere}.pkl"
+    prefix = "migrants_node_"
+    suffix = ".pkl"
     directory = "." 
 
     files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
     
-    if len(files)<n_nodes : 
-        time.sleep(sleep_time)
-        files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
+    return files
 
-    if time.time() - start_time > timeout:
-        print(f"[WARNING] Timeout atteint à l'ère {ere}. {len(files)}/{n_nodes} fichiers trouvés.")
-        return files
-
-import traceback
-
-def inspect(obj, name="obj"):
-    """
-    Détecte et trace toute apparition de list au lieu de Individual_res.
-    """
-    for o in obj:
-        if isinstance(o, list):
-            print("\n💥 LIST DETECTED:", name)
-            print("   type:", type(o))
-            print("   len:", len(o))
-            print("   stack trace:")
-            traceback.print_stack(limit=5)
-            return "LIST"
-
-    return "OK"
-
-def safe_assign(local_populations, i, j, value):
-    if isinstance(value, list):
-        print("\n💥 INVALID ASSIGNMENT DETECTED at", i, j)
-        inspect(value, "ASSIGNED_VALUE")
-        raise ValueError("Attempt to inject list instead of Individual_res")
-
-    local_populations[i][j] = value
-    
-class StructureTracer:
-    def check(self, obj, path="root"):
-        if hasattr(obj, "production_set"):
-            return
-
-        if isinstance(obj, list):
-            for i, x in enumerate(obj):
-                self.check(x, f"{path}[{i}]")
-            return
-
-        print("\n💥 STRUCTURE CORRUPTION DETECTED")
-        print("Path:", path)
-        traceback.print_stack(limit=15)
-
-        raise TypeError(f"Invalid structure at {path}: expected Individual_res")
-
-    
-
-def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
+def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin):
 
     MIGRATION_TOP_RATE = 0.05    
     MIGRATION_RANDOM_RATE = 0.05    
-    INTERVAL_EXCHANGE = 4
     len_pop = Context.hyperparameters.n_pop
     Initial_populations = []
     population_file = f"population_node_{node_id}.pkl"
     with open(population_file, "rb") as infile:
         Initial_populations = pickle.load(infile)  
 
-    print('debut ', type(Initial_populations),len(Initial_populations),type(Initial_populations[0]),len(Initial_populations[0]))
+    if (migration_bin):
+        files = _find_migrant_files(n_nodes)
+        potential_incomers = load_migrants(files)
+
+        len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
+        incomers = collect_migrants(potential_incomers,len_incomers)
+
+        killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
+
+        Initial_populations = replace_population_internodes (n_core,len_pop,Initial_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
     
     for ere in range(nb_ere):
-        TRACER = StructureTracer()
-        print(ere)
 
         # -----------------------
         # 1. Local optimization
@@ -261,51 +220,27 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
         args_evolutionnary_algorithm = [(Context,Initial_populations[i]) for i in range(n_core)]  
         local_populations = ppGA.ere_evolutive_research_PARALLEL(args_evolutionnary_algorithm)
-        print('after ere ', type(local_populations),len(local_populations),type(local_populations[0]),len(local_populations[0]))
 
         
 
         # -----------------------
         # 2. intra-node mix
         # -----------------------
-        if ere % INTERVAL_EXCHANGE != 0:
-            local_populations = migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core)
+        local_populations = migration_process(local_populations, len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE, n_core)
+        Initial_populations = local_populations
 
-        # -----------------------
-        # 3. inter-nodes mix
-        # -----------------------
-        if ere % INTERVAL_EXCHANGE == 0:
 
-            migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
-            local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
-            for i in range(n_core) :
-                inspect(local_migrants[i], "local_migrants")
-            migrants = [ item for sublist in local_migrants for item in sublist ]
-            for mig in migrants : 
-                if type(mig)==list : 
-                    print('MIG NOK',ere)
-            
-            write_migrants(migrants, node_id, ere)
+    # -----------------------
+    # 3. Migration selection & writing
+    # -----------------------
 
-            files = wait_for_all(ere, n_nodes)
-            potential_incomers = load_migrants(files)
-            print('len POT ', len(potential_incomers))
-            for pot in potential_incomers : 
-                if type(pot)==list : 
-                    print('POT INC NOK',ere,len(pot))
+    migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
+    local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
+    migrants = [ item for sublist in local_migrants for item in sublist ]
+    write_migrants(migrants, node_id, ere)
 
-            len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
-            incomers = collect_migrants(potential_incomers,len_incomers)
-            TRACER.check(incomers, "incomers")
-
-            killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
-            for i, x in enumerate(incomers):
-                TRACER.check(x, f"incomers[{i}]")
-            local_populations = replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE)
-            TRACER.check(local_populations, "local_populations")
 
         
-        Initial_populations = local_populations
     
     node_population = [ item for sublist in local_populations for item in sublist ]
     best_score = min(ind.fitness for ind in node_population)
