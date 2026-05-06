@@ -238,6 +238,11 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
                     print('migrant NOK ',d)
             print('migrants ', type(migrants),len(migrants),type(migrants[0]))
 
+            for i, m in enumerate(migrants):
+                if isinstance(m, list):
+                    print(f"NODE {node_id} BUG avant write à l'index {i}")
+                    break
+
             write_migrants(migrants, node_id, ere)
 
             files = wait_for_all(ere, n_nodes)
@@ -245,6 +250,7 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             for d in range(len(potential_incomers)) :
                 if type(potential_incomers[d])==list:
                     print('potential_incomers NOK ',d)
+                    break
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
