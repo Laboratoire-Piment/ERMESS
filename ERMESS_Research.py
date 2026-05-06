@@ -111,11 +111,13 @@ def load_migrants(files):
     return pool
 
 def write_migrants(migrants, node_id, ere):
-    name = f"migrants_node_{node_id}_ere_{ere}.pkl"
-    with open(name, "wb") as f:
+    tmp_name = f"migrants_node_{node_id}_ere_{ere}.pkl.tmp"
+    final_name = f"migrants_node_{node_id}_ere_{ere}.pkl"
+
+    with open(tmp_name, "wb") as f:
         pickle.dump(migrants, f)
-        f.flush()
-        os.fsync(f.fileno())
+
+    os.rename(tmp_name, final_name) 
         
 def collect_migrants(migrants,len_incomers):
     selected_migrants = random.sample(migrants, len_incomers)
@@ -185,6 +187,12 @@ def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
 
     while True:
         files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
+        stable = False
+        while not stable:
+            sizes1 = [os.path.getsize(f) for f in files if os.path.exists(f)]
+            time.sleep(0.5)
+            sizes2 = [os.path.getsize(f) for f in files if os.path.exists(f)]
+            stable = sizes1 == sizes2 and len(sizes1) == n_nodes
 
         if len(files) >= n_nodes:
             return files
