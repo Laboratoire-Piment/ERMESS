@@ -200,13 +200,14 @@ def inspect(obj, name="obj"):
     """
     Détecte et trace toute apparition de list au lieu de Individual_res.
     """
-    if isinstance(obj, list):
-        print("\n💥 LIST DETECTED:", name)
-        print("   type:", type(obj))
-        print("   len:", len(obj))
-        print("   stack trace:")
-        traceback.print_stack(limit=5)
-        return "LIST"
+    for o in obj:
+        if isinstance(o, list):
+            print("\n💥 LIST DETECTED:", name)
+            print("   type:", type(o))
+            print("   len:", len(o))
+            print("   stack trace:")
+            traceback.print_stack(limit=5)
+            return "LIST"
 
     return "OK"
 
