@@ -141,7 +141,7 @@ def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
 
 def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):     
     
-    if len(n_core*killed_indices) != len(incomers):
+    if (n_core*len(killed_indices) != len(incomers)):
         print(n_core,killed_indices)
         print(len(incomers))
         raise ValueError("Mismatch migration sizes")
