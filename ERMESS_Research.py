@@ -114,6 +114,8 @@ def write_migrants(migrants, node_id, ere):
     name = f"migrants_node_{node_id}_ere_{ere}.pkl"
     with open(name, "wb") as f:
         pickle.dump(migrants, f)
+        f.flush()
+        os.fsync(f.fileno())
         
 def collect_migrants(migrants,len_incomers):
     selected_migrants = random.sample(migrants, len_incomers)
