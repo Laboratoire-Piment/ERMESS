@@ -289,6 +289,10 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
+            print('len POT ', len(potential_incomers))
+            for pot in potential_incomers : 
+                if type(pot)==list : 
+                    print('POT INC NOK',ere,len(pot))
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
