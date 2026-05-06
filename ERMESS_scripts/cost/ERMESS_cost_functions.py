@@ -888,7 +888,7 @@ def LCOE_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
         (economics_exportation,economics_importation,economics_overrun,economics_contract_power) = _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation)
         LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+economics_importation+economics_contract_power+economics_overrun+economics_exportation)/(den_Optimized_load/global_parameters.time_resolution/global_parameters.duration_years) 
 
-    gene.fitness=Compute_fitness(global_parameters,obtained_constraint_level,LCOE) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level,LCOE) 
 
     return(gene)
                                                         
@@ -926,7 +926,7 @@ def Self_consumption_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     obtained_self_consumption = 1+(sum(np.where(trades<0,trades,0))/sum(production))
-    gene.fitness=Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_consumption)  
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_consumption)  
     return(gene)
 
 @jit(nopython=True)
@@ -966,7 +966,7 @@ def Self_sufficiency_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     obtained_self_sufficiency = (1-sum(Grid_importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
-    gene.fitness=Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_sufficiency)   
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_sufficiency)   
     return(gene)
 
 @jit(nopython=True)
@@ -1002,7 +1002,7 @@ def Max_import_power_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     Max_import = max(importation)
-    gene.fitness=Compute_fitness(global_parameters,obtained_constraint_level,Max_import)  
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level,Max_import)  
     return(gene)
 
 @jit(nopython=True)
@@ -1037,7 +1037,7 @@ def Losses_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,gr
     
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     sum_losses = sum(losses)
-    gene.fitness=Compute_fitness(global_parameters,obtained_constraint_level,sum_losses)  
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level,sum_losses)  
     return(gene)
 
 @jit(nopython=True)
@@ -1084,7 +1084,7 @@ def Annual_net_benefits_pro(gene,RENSystems_parameters,global_parameters,Genset_
         (economics_exportation,economics_importation,economics_overrun,economics_contract_power) = _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation)
         Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
         
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, -Annual_net_benefits) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -Annual_net_benefits) 
     return(gene)
 
 @jit(nopython=True)
@@ -1140,7 +1140,7 @@ def NPV_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid_
 
     Lifetime_installation = np.nanmin(DG_lifetime_years,min(Lifetime),np.nanmin(np.where(gene.production_set>0,RENSystems_parameters.specs_prod[:,PROD_LIFETIME],np.nan)))
     NPV = Annual_net_benefits*Lifetime_installation
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, -NPV) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -NPV) 
     return(gene)
 
 @jit(nopython=True)
@@ -1178,7 +1178,7 @@ def Autonomy_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,
 
     Grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
     Autonomy = 1-sum(Grid_importation>0)/global_parameters.n_bits
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, -Autonomy) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -Autonomy) 
 
     return(gene)
 
@@ -1229,7 +1229,7 @@ def eqCO2_emissions_pro(gene,RENSystems_parameters,global_parameters,Genset_para
         annual_CO2eq_DG = 0.
 
     annual_eqCO2emissions = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, annual_eqCO2emissions) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, annual_eqCO2emissions) 
 
     return(gene)
 
@@ -1284,7 +1284,7 @@ def Fossil_fuel_consumption_pro(gene,RENSystems_parameters,global_parameters,Gen
         onsite_annual_fuel_consumption = 0
     
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+onsite_annual_fuel_consumption
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, annual_fossil_fuel_consumption) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, annual_fossil_fuel_consumption) 
 
     return(gene)
 
@@ -1337,7 +1337,7 @@ def EROI_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
         consumed_energy_DG = 0.
         
     EROI = (productible_energy+productible_energy_DG)/(consumed_energy_DG+consumed_energy_production+consumed_energy_storage)
-    gene.fitness = Compute_fitness(global_parameters,obtained_constraint_level, -EROI) 
+    gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -EROI) 
 
     return(gene)
 
@@ -1608,6 +1608,13 @@ def KPI_research(gene,datetime,storage_characteristics,time_resolution,n_store,d
 
 @jit(nopython=True)
 def _research_cost_base_indicators(gene,RENSystems_parameters,global_parameters):
+    """
+    Compute core energy balance indicators.
+    
+    Notes:
+        - Production is converted from W to kW using a factor of 1000.
+        - Trades include the effect of storage power flows.
+    """
     KILOS_CONVERSION_FACTOR = 1000
     production = ((RENSystems_parameters.unit_productions.T*gene.production_set).sum(axis=1)+RENSystems_parameters.current_production)/KILOS_CONVERSION_FACTOR    
     Optimized_Load = global_parameters.Non_movable_load+gene.Y_DSM+gene.D_DSM.flatten()   
@@ -1617,12 +1624,22 @@ def _research_cost_base_indicators(gene,RENSystems_parameters,global_parameters)
 
 @jit(nopython=True)
 def _compute_losses(gene,RENSystems_parameters):
+    """
+    Compute storage energy losses based on round-trip efficiency.
+    """
     losses = np.transpose(np.divide(np.transpose(gene.storage_TS),RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,:]))-gene.storage_TS 
     losses=np.where(losses>0,losses,0)
     return(losses)
 
 @jit(nopython=True)
 def _size_storage_power(gene,RENSystems_parameters):
+    """
+    Determine required storage power capacity.
+
+    Notes:
+        - Power is defined as the maximum absolute value between charge
+          and discharge over the time horizon.
+    """
     powers_out = [np.max(gene.storage_TS[i,:]) for i in range(RENSystems_parameters.n_store)]
     powers_in = [-np.min(gene.storage_TS[i,:]) for i in range(RENSystems_parameters.n_store)]
     size_power=np.array([max(powers_in[i],powers_out[i]) for i in range(RENSystems_parameters.n_store)])
@@ -1630,6 +1647,13 @@ def _size_storage_power(gene,RENSystems_parameters):
 
 @jit(nopython=True)
 def _Indicators_storage(gene,RENSystems_parameters,global_parameters,losses):
+    """
+    Compute storage energy capacity and lifetime indicators.
+    
+    Notes:
+        - Equivalent cycles are computed from total energy throughput.
+        - Lifetime is limited by either calendar life or cycle life.
+    """
     sum_diff_storages = [np.cumsum(gene.storage_TS[i,:]+losses[i,:])/global_parameters.time_resolution for i in range(RENSystems_parameters.n_store)]
     energy_storages = np.divide(np.array([np.max(sum_diff_storages[i]) - np.min(sum_diff_storages[i]) for i in range(RENSystems_parameters.n_store)]),RENSystems_parameters.specs_storage[STOR_DEPTH_OF_DISCHARGE,:])
     Equivalent_cycles =  np.array([np.sum(np.abs(gene.storage_TS[i,:]))/(2*global_parameters.time_resolution*max(energy_storages[i],np.float64(1e-15))*global_parameters.duration_years) for i in range(RENSystems_parameters.n_store)]) 
@@ -1638,6 +1662,13 @@ def _Indicators_storage(gene,RENSystems_parameters,global_parameters,losses):
 
 @jit(nopython=True)
 def _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation):
+    """
+    Compute diesel generator (genset) operational indicators.
+
+    Notes:
+        - Fuel consumption is estimated using discretized load levels.
+        - If no genset is used, fuel consumption is zero.
+    """
     DG_nominal_power = max(trades)
     DG_production=importation
     if (DG_nominal_power>0):
@@ -1649,6 +1680,15 @@ def _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importati
 
 @jit(nopython=True)
 def _Economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters):
+    """
+    Compute economic metrics of the diesel generator.
+    
+    This function evaluates annual fuel costs, capital expenditures (CAPEX),
+    operational expenditures (OPEX), and effective lifetime.
+
+    Notes:
+        - If the genset is not used, costs are set to zero and lifetime to NaN.
+    """
     if (sum(DG_production>0)):
         annual_total_fuel_cost = annual_fuel_consumption*Genset_parameters.fuel_cost
         DG_lifetime_years = Genset_parameters.lifetime/(sum(np.where(DG_production>0,1,0))/global_parameters.time_resolution/global_parameters.duration_years)
@@ -1661,6 +1701,15 @@ def _Economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Gen
 
 @jit(nopython=True)
 def _Economics_Grid(gene,global_parameters,grid_parameters,importation,exportation):
+    """
+    Compute economic metrics related to grid interactions.
+    
+    This function evaluates costs and revenues associated with electricity
+    import/export, contract power, and overrun penalties.
+
+    Notes:
+        - Contract power is defined as the maximum import power.
+    """
     Contract_power=max(0,max(importation))
     economics_exportation = np.multiply(exportation,grid_parameters.Selling_price[gene.contract,:]).sum()/global_parameters.time_resolution/global_parameters.duration_years
     economics_importation = np.multiply(importation,grid_parameters.prices[gene.contract,:]).sum()/global_parameters.time_resolution/global_parameters.duration_years
@@ -1670,6 +1719,16 @@ def _Economics_Grid(gene,global_parameters,grid_parameters,importation,exportati
 
 @jit(nopython=True)
 def _Economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power):
+    """
+    Compute economic metrics of storage systems.
+    
+    This function evaluates capital and operational costs of storage
+    based on power and energy sizing.
+
+    Notes:
+        - CAPEX includes power cost, energy cost, and installation cost.
+        - OPEX is proportional to installed power.
+    """
     CAPEX_storage_cost =  np.multiply(size_power,RENSystems_parameters.specs_storage[STOR_POWER_COST,:]) + np.multiply(energy_storages,RENSystems_parameters.specs_storage[STOR_ENERGY_COST,:]) + np.multiply(RENSystems_parameters.specs_storage[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,RENSystems_parameters.n_store)))
     economics_CAPEX_storage = sum(np.divide(CAPEX_storage_cost,Lifetime))
     economics_OPEX_storage = sum(np.multiply(RENSystems_parameters.specs_storage[STOR_OM_COST,:],size_power))
@@ -1761,7 +1820,7 @@ def LCOE_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level,LCOE)
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level,LCOE)
 
     return(fitness,trades)
 
@@ -1822,7 +1881,7 @@ def Annual_net_benefits_research(gene,RENSystems_parameters,global_parameters,Ge
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
 
     Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -Annual_net_benefits)
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -Annual_net_benefits)
 
     return(fitness,trades)
 
@@ -1884,7 +1943,7 @@ def NPV_research(gene,RENSystems_parameters,global_parameters,Genset_parameters,
     Lifetime_installation = min(DG_lifetime_years,min(Lifetime),np.nanmin(np.where(gene.production_set>0,RENSystems_parameters.specs_prod[:,PROD_LIFETIME],np.nan)))
     Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
     NPV=Annual_net_benefits*Lifetime_installation
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -NPV)
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -NPV)
     return(fitness,trades)
 
 @jit(nopython=True)
@@ -1920,7 +1979,7 @@ def Max_import_power_research(gene,RENSystems_parameters,global_parameters,Gense
     
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, Max_import)    
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, Max_import)    
     return(fitness,trades)
 
 
@@ -1959,7 +2018,7 @@ def Losses_research(gene,RENSystems_parameters,global_parameters,Genset_paramete
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)   
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, Annual_sum_losses)    
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, Annual_sum_losses)    
     
     return(fitness,trades)
 
@@ -2009,7 +2068,7 @@ def eqCO2_emissions_research(gene,RENSystems_parameters,global_parameters,Genset
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)  
     annual_CO2eq_total = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, annual_CO2eq_total)    
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, annual_CO2eq_total)    
     return(fitness,trades)
 
 @jit(nopython=True)
@@ -2045,7 +2104,7 @@ def Autonomy_research(gene,RENSystems_parameters,global_parameters,Genset_parame
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)  
     Autonomy = 1-sum(grid_importation>0)/global_parameters.n_bits
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -Autonomy)    
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -Autonomy)    
     
     return(fitness,trades)
 
@@ -2090,7 +2149,7 @@ def Fossil_fuel_consumption_research(gene,RENSystems_parameters,global_parameter
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production) 
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+annual_fuel_consumption
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, annual_fossil_fuel_consumption)    
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, annual_fossil_fuel_consumption)    
 
     return(fitness,trades)
 
@@ -2146,7 +2205,7 @@ def EROI_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     EROI = (productible_energy+productible_energy_DG)/(consumed_energy_DG+consumed_energy_production+consumed_energy_storage)
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -EROI)  
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -EROI)  
     return(fitness,trades)
 
 @jit(nopython=True)
@@ -2183,7 +2242,7 @@ def Self_consumption_research(gene,RENSystems_parameters,global_parameters,Gense
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     obtained_self_consumption = (1-sum(exportation)/sum(production))
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_consumption)  
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_consumption)  
     
     return(fitness,trades)
 
@@ -2225,7 +2284,7 @@ def Self_sufficiency_research(gene,RENSystems_parameters,global_parameters,Gense
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     obtained_self_sufficiency = (1-sum(Grid_importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
-    fitness = Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_sufficiency)  
+    fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -obtained_self_sufficiency)  
    
     return(fitness,trades)
        
