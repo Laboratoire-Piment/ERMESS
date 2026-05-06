@@ -142,6 +142,8 @@ def select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)
 def replace_population_internodes (n_core,len_pop,local_populations,incomers,killed_indices,MIGRATION_TOP_RATE,MIGRATION_RANDOM_RATE):     
     
     if len(n_core*killed_indices) != len(incomers):
+        print(n_core,killed_indices)
+        print(len(incomers))
         raise ValueError("Mismatch migration sizes")
     for j in range(n_core*len(killed_indices)) :
         core = j//len(killed_indices)
@@ -274,15 +276,11 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
 
             migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
             local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
+            for i in range(n_core) :
+                inspect(local_migrants[i], "local_migrants")
             migrants = [ item for sublist in local_migrants for item in sublist ]
             inspect(migrants, "migrants")
             
-
-            for i, m in enumerate(migrants):
-                if isinstance(m, list):
-                    print(f"NODE {node_id} BUG avant write à l'index {i}")
-                    break
-
             write_migrants(migrants, node_id, ere)
 
             files = wait_for_all(ere, n_nodes)
