@@ -233,19 +233,22 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes):
             migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
             local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
             migrants = [ item for sublist in local_migrants for item in sublist ]
+            for d in range(len(migrants)) :
+                if type(migrants[d])==list:
+                    print('migrant NOK ',d)
             print('migrants ', type(migrants),len(migrants),type(migrants[0]))
 
             write_migrants(migrants, node_id, ere)
 
             files = wait_for_all(ere, n_nodes)
             potential_incomers = load_migrants(files)
+            for d in range(len(potential_incomers)) :
+                if type(potential_incomers[d])==list:
+                    print('potential_incomers NOK ',d)
 
             len_incomers = int((MIGRATION_TOP_RATE+MIGRATION_RANDOM_RATE)*len_pop*n_core)
             incomers = collect_migrants(potential_incomers,len_incomers)
             print('incomers ', type(incomers),len(incomers))
-            for d in range(len(incomers)) :
-                if type(incomers[d])==list:
-                    print(d,incomers[d])
 
             killed_indices = select_replaced_internodes(len_pop, MIGRATION_TOP_RATE, len_incomers,n_core)           
             
