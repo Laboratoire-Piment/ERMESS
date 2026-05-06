@@ -185,23 +185,14 @@ def wait_for_all(ere, n_nodes, timeout=1200, sleep_time=5):
     suffix = f"_ere_{ere}.pkl"
     directory = "." 
 
-    while True:
-        files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
-        stable = False
-        while not stable:
-            sizes1 = [os.path.getsize(f) for f in files if os.path.exists(f)]
-            time.sleep(0.5)
-            sizes2 = [os.path.getsize(f) for f in files if os.path.exists(f)]
-            stable = sizes1 == sizes2 and len(sizes1) == n_nodes
-
-        if len(files) >= n_nodes:
-            return files
-
-        if time.time() - start_time > timeout:
-            print(f"[WARNING] Timeout atteint à l'ère {ere}. {len(files)}/{n_nodes} fichiers trouvés.")
-            return files
-
+    files = [f for f in os.listdir(directory) if f.startswith(prefix) and f.endswith(suffix)]
+    
+    if len(files)<n_nodes : 
         time.sleep(sleep_time)
+
+    if time.time() - start_time > timeout:
+        print(f"[WARNING] Timeout atteint à l'ère {ere}. {len(files)}/{n_nodes} fichiers trouvés.")
+        return files
 
 import traceback
 

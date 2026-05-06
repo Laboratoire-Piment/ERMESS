@@ -62,6 +62,13 @@ def _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str):
 
     return PV_meteo, Wind_meteo
 
+def _cache_valid(meta, date_from, date_to):
+    """Check if cached data fully covers requested interval."""
+    cached_start = datetime.datetime.strptime(meta["start"], "%Y-%m-%d")
+    cached_end = datetime.datetime.strptime(meta["end"], "%Y-%m-%d")
+
+    return cached_start <= date_from and cached_end >= date_to
+
 def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsapi_key):
     
     """
@@ -153,17 +160,18 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
 
     folder_name = f"ERA5_{latitude}_{longitude}_{strdates[0]}_to_{strdates[1]}"
     filename = "ERA5.zip"
+    
     folder_path = os.path.join(output_dir, folder_name)
-    
-    os.makedirs(os.path.join(output_dir, folder_name), exist_ok=True)
+    os.makedirs(folder_path, exist_ok=True)
 
-    
-    output_path = os.path.join(output_dir,folder_name, filename)    
+    output_path = os.path.join(folder_path, filename)    
     
     tmp_path = output_path + ".tmp"
 
     # -----------------------------
-    # CACHE CHECK     # -----------------------------
+    # CACHE CHECK     
+    # -----------------------------
+    
     if os.path.exists(output_path) and zipfile.is_zipfile(output_path):
         print("[METEO] Using cached ERA5")
         return _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str)
@@ -177,7 +185,7 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
 
     # Crée un client CDS
     c = cdsapi.Client(url='https://cds.climate.copernicus.eu/api',
-    key='0201efea-2d1b-45c6-b53d-74b4572667b5')
+    key=cdsapi_key)
 
 # Lancement de la requête
     max_retries = 3
@@ -229,7 +237,7 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
     with zipfile.ZipFile(output_path, 'r') as zip_ref:
         zip_ref.extractall(output_path)
 
-    return(_load_meteo((output_dir, folder_name, date_from, date_to, timezone_str)))
+    return(_load_meteo(output_dir, folder_name, date_from, date_to, timezone_str))
 
 
 
