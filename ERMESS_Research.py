@@ -151,6 +151,9 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
     for j in range(n_core*len(killed_indices)) :
         core = j//len(killed_indices)
         index = j%len(killed_indices)
+        print(index)
+        print(local_populations[core][index])
+        print(incomers[j])
         local_populations[core][index] = incomers[j]
   
     return(local_populations)
