@@ -550,9 +550,7 @@ def Reduce_storage_volume_operator(c,selected_storage,storage_characteristics,n_
         
         region_outside = np.concatenate((np.arange(start_idx), np.arange(end_idx, n_bits)))
         region_inside = np.arange(start_idx, end_idx)
-        
-        sub_storage = [region_outside,region_inside]
-        
+                
         changes_outside = np.random.choice(region_outside,np.random.randint(max(2, int(len(region_outside) / hyperparameters_operators_num[OPER_INV_LENGTH, RESEARCH_STORAGE_VOLUME]))),replace=False)
         changes_inside = np.random.choice(region_inside,np.random.randint(1,max(2, int(len(region_inside) / hyperparameters_operators_num[OPER_INV_LENGTH, RESEARCH_STORAGE_VOLUME]))),replace=False)
         

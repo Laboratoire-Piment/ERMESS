@@ -128,7 +128,7 @@ def pro_to_research(pop_pro,Context):
     
     Args:
         pop_pro (list of ECl.Individual_pro): List of professional individuals.
-        Contexte (object): Problem context containing required attributes:
+        Context (object): Problem context containing required attributes:
             - prods_U, prod_C
             - Non_movable_load, total_D_Movable_load, total_Y_Movable_load
             - n_bits, n_store, time_resolution, Connexion
@@ -150,18 +150,18 @@ def pro_to_research(pop_pro,Context):
         pop_res.append(ind_res)
     return (pop_res)
 
-def find_cost_function_research(Contexte, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters):
+def find_cost_function_research(Context, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters):
     """
     Determines the right loss function to apply to the optimization problem (RESEARCH).
     
     Args:
-        Contexte: Description of the constraints of the problem.
+        Context: Description of the constraints of the problem.
     
     Returns:
         int: ID of the appropriate cost function.
     """
     try:
-        criterion = CriterionEnum(Contexte.optimization.criterion_num)
+        criterion = CriterionEnum(Context.optimization.criterion_num)
         base_function = criterion.get_function_research()
     except KeyError:
         raise ValueError("No proper optimisation criterion found!")

@@ -24,12 +24,12 @@ def evolutionnary_algorithm_research(inputs):
     
    Args:
         inputs (tuple): Tuple containing:
-            - Contexte (object): Simulation context including microgrid parameters, constraints, and hyperparameters.
+            - Context (object): Simulation context including microgrid parameters, constraints, and hyperparameters.
             - unjitted_pop (list): List of unjitted individual solutions (Individual_res instances).
     
    Returns:
         final_pop: List of optimized individuals (Individual_res) after n_iter generations
-        operators_perf (optional): Array recording performance of operators per generation. Returned only if Contexte.tracking_ope == 1.
+        operators_perf (optional): Array recording performance of operators per generation. Returned only if Context.tracking_ope == 1.
    """
    (Context,nonjit_pop)=(inputs[i] for i in range(2))   
    pop = Efr.jitting_pop_res(nonjit_pop)
@@ -119,13 +119,13 @@ def evolutionnary_algorithm_pro(inputs):
     
    Args:
         inputs (tuple): Tuple containing:
-            - Contexte (object): Simulation context including microgrid parameters, constraints, storage characteristics, and operator hyperparameters.
+            - Context (object): Simulation context including microgrid parameters, constraints, storage characteristics, and operator hyperparameters.
             - pop (list): List of initial individual solutions (Individual_pro instances).
             - type_pop (str): Type of population; 'NON_JIT' indicates unjitted individuals requiring preprocessing.
     
    Returns:
         final_pop (list): List of optimized individuals (Individual_pro) after n_iter generations.
-        operators_perf (np.ndarray, optional): Array recording performance of genetic operators per generation. Returned only if Contexte.tracking_ope == 1.
+        operators_perf (np.ndarray, optional): Array recording performance of genetic operators per generation. Returned only if Context.tracking_ope == 1.
    
    Warning:
        PID parameters are tuned for stability.
@@ -234,7 +234,7 @@ def evolutionnary_algorithm_pro(inputs):
    pop_sorted = sorted(pop, key=lambda ind: ind.fitness)
 #   final_pop=pop
 #   if (type_pop=='NON_JIT'):
-#       final_pop = Efr.pro_to_research(final_pop, Contexte)
+#       final_pop = Efr.pro_to_research(final_pop, Context)
 
    operators_perf=np.array(operators_perf)
    if Context.tracking.tracking_operators :

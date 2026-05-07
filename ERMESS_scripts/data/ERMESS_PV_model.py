@@ -247,7 +247,6 @@ def pvmodel(site, weather, TempParam,
         'P_DC_mod': 'W',
         'poa_global': 'W'
     }
-    units_full = {col: units.get(col, '') for col in dfPowerOut.columns}
 
     # Use the timestamp format string as the first index row
     #units_row = pd.DataFrame([units_full], index=['%Y-%m-%d %H:%M:%S+00:00'])

@@ -7,7 +7,6 @@ Created on Tue Mar  3 15:32:46 2026
 import numpy as np
 from numba.experimental import jitclass
 from numba import float64, int64
-from enum import IntEnum
 
 
 from .ERMESS_functions_research import jitting_pop_res 
@@ -232,11 +231,11 @@ def _build_groups_matrix(groups_raw):
 
     return groups
 
-def build_numba_params(Contexte,type_optim):
+def build_numba_params(Context,type_optim):
     """Build all Numba-compatible parameter containers.
 
     Args:
-        Contexte: Global ERMESS context object.
+        Context: Global ERMESS context object.
         type_optim (str): Optimization mode.
     
     Returns:
@@ -246,39 +245,39 @@ def build_numba_params(Contexte,type_optim):
         ValueError: If the optimization or connexion type is unknown.
     """
     
-    pro_parameters = ProParams(Contexte.loads.total_D_movable,Contexte.loads.total_Y_movable)
+    pro_parameters = ProParams(Context.loads.total_D_movable,Context.loads.total_Y_movable)
     
-    if Contexte.optimization.connexion == 'On-grid':
+    if Context.optimization.connexion == 'On-grid':
         connexion_num = GRID_ON
-    elif Contexte.optimization.connexion == 'Off-grid':
+    elif Context.optimization.connexion == 'Off-grid':
         connexion_num = GRID_OFF
     else:
         raise ValueError("Unknown connexion type")
     
     if type_optim == 'pro':
-        hyperparameters = Contexte.hyperparameters_pro
+        hyperparameters = Context.hyperparameters_pro
     elif type_optim == 'research':
-        hyperparameters = Contexte.hyperparameters
+        hyperparameters = Context.hyperparameters
     else:
         raise ValueError("Unknown optim type")
     
-    global_parameters = GlobalParams(Contexte.time.n_bits,Contexte.time.time_resolution,Contexte.time.duration_years,Contexte.optimization.constraint_num,Contexte.optimization.constraint_level,hyperparameters.cost_constraint,connexion_num,Contexte.loads.non_movable)
-    if not (Contexte.grid == None):
-        grid_parameters = GridParams(Contexte.grid.prices, Contexte.grid.fixed_premium, Contexte.grid.overrun, Contexte.grid.selling_price, Contexte.grid.eqCO2emissions, Contexte.grid.fossil_fuel_ratio)      
+    global_parameters = GlobalParams(Context.time.n_bits,Context.time.time_resolution,Context.time.duration_years,Context.optimization.constraint_num,Context.optimization.constraint_level,hyperparameters.cost_constraint,connexion_num,Context.loads.non_movable)
+    if not (Context.grid == None):
+        grid_parameters = GridParams(Context.grid.prices, Context.grid.fixed_premium, Context.grid.overrun, Context.grid.selling_price, Context.grid.eqCO2emissions, Context.grid.fossil_fuel_ratio)      
     else :
         grid_parameters = GridParamsDummy()
-    RENSystems_parameters = RENSystemsParams(Contexte.production.current_prod, Contexte.production.unit_prods, Contexte.production.specs_num, Contexte.production.capacities, Contexte.storage.characteristics, Contexte.storage.n_store)
+    RENSystems_parameters = RENSystemsParams(Context.production.current_prod, Context.production.unit_prods, Context.production.specs_num, Context.production.capacities, Context.storage.characteristics, Context.storage.n_store)
     
-    if not (Contexte.genset == None):
-        Genset_parameters = GensetParams(Contexte.genset.fuel_cost, Contexte.genset.lifetime, Contexte.genset.unit_cost,Contexte.genset.maintenance_cost, Contexte.genset.fuel_consumption, Contexte.genset.fuel_CO2eq_emissions, Contexte.genset.EROI)
+    if not (Context.genset == None):
+        Genset_parameters = GensetParams(Context.genset.fuel_cost, Context.genset.lifetime, Context.genset.unit_cost,Context.genset.maintenance_cost, Context.genset.fuel_consumption, Context.genset.fuel_CO2eq_emissions, Context.genset.EROI)
     else :
         Genset_parameters = GensetParamsDummy()
     
-    groups = _build_groups_matrix(Contexte.production.groups)
-    groups_size = np.array([len(g) for g in Contexte.production.groups], dtype=np.int64)
+    groups = _build_groups_matrix(Context.production.groups)
+    groups_size = np.array([len(g) for g in Context.production.groups], dtype=np.int64)
 
-    n_contracts = Contexte.grid.n_contracts if Contexte.grid!=None else 0
-    mutation_parameters = MutationParams(groups, groups_size, Contexte.production.specs_num[:,ProdCharIdx.Volume], Contexte.loads.D_DSM_indexes,hyperparameters.operators_parameters, Contexte.config.defined_items, n_contracts )
+    n_contracts = Context.grid.n_contracts if Context.grid!=None else 0
+    mutation_parameters = MutationParams(groups, groups_size, Context.production.specs_num[:,ProdCharIdx.Volume], Context.loads.D_DSM_indexes,hyperparameters.operators_parameters, Context.config.defined_items, n_contracts )
 
     return pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, mutation_parameters
 
@@ -347,7 +346,7 @@ def find_cost_function_research(Context, global_parameters, grid_parameters, REN
     Determines the right loss function to apply to the optimization problem (RESEARCH).
     
     Args:
-        Contexte: Description of the constraints of the problem.
+        Context: Description of the constraints of the problem.
     
     Returns:
         int: ID of the appropriate cost function.
@@ -367,7 +366,7 @@ def find_cost_function_pro(Context,pro_parameters, global_parameters, grid_param
     Determines the right loss function to apply to the optimization problem (PRO).
     
     Args:
-        Contexte: Description of the constraints of the problem.
+        Context: Description of the constraints of the problem.
     
     Returns:
         int: ID of the appropriate cost function.
@@ -393,14 +392,14 @@ def fitness_list(inputs):
     Returns:
         jitted_pop (List of individuals objects): Population with updated fitness values.
     """
-    (population,Contexte)=tuple(inputs[i] for i in range(2))
+    (population,Context)=tuple(inputs[i] for i in range(2))
     
-    if (Contexte.type_optim == 'research' ):   
+    if (Context.type_optim == 'research' ):   
         jitted_pop = jitting_pop_res(population)
-    elif (Contexte.type_optim == 'pro' ):
+    elif (Context.type_optim == 'pro' ):
         jitted_pop = jitting_pop_pro(population)
                     
-    fitness_function=find_cost_functions_research(Contexte)
+    fitness_function=find_cost_functions_research(Context)
     
     for j in range(len(jitted_pop)):
         jitted_pop[j]=(fitness_function(jitted_pop[j])[0])

@@ -173,18 +173,18 @@ def unjitting_pop_pro(jitted_pop):
 
 
 
-def find_cost_function_pro(Contexte,pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters):
+def find_cost_function_pro(Context,pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters):
     """
     Determines the right loss function to apply to the optimization problem (PRO).
     
     Args:
-        Contexte: Description of the constraints of the problem.
+        Context: Description of the constraints of the problem.
     
     Returns:
         int: ID of the appropriate cost function.
     """    
     try:
-        criterion = CriterionEnum(Contexte.optimization.criterion_num)
+        criterion = CriterionEnum(Context.optimization.criterion_num)
         base_function = criterion.get_function_pro()
     except KeyError:
         raise ValueError("No proper optimisation criterion found!")

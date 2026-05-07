@@ -37,6 +37,8 @@ from ERMESS_scripts.data import data_builder as Dbl
 from ERMESS_scripts.evolutionnary_core import ERMESS_research_initialisation as Eri
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 
+from ERMESS_scripts.reporting import write_excel as Wex
+
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
@@ -67,7 +69,9 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
         migration_bin = False
         
         
-    run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes, migration_bin)
+    best = run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes, migration_bin)
+    print('best score : ',best.fitness)
+    Wex.post_traitement(solution=best, Context=Context, datetime=structured_data.time.datetime) 
         
         
 #    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)
@@ -233,8 +237,9 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
        
     
     node_population = [ item for sublist in local_populations for item in sublist ]
-    best_score = min(ind.fitness for ind in node_population)
-    print('best score : ',best_score)
+    best = np.argmin(ind.fitness for ind in node_population)
+
+    return(best)
 
 if __name__ == '__main__':
     ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3].lower()=="true")
