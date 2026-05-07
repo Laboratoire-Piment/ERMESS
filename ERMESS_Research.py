@@ -237,7 +237,8 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
        
     
     node_population = [ item for sublist in local_populations for item in sublist ]
-    best = np.argmin(ind.fitness for ind in node_population)
+    idx_best = np.argmin(ind.fitness for ind in node_population)
+    best = node_population[idx_best]
 
     return(best)
 

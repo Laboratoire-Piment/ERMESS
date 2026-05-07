@@ -369,7 +369,7 @@ def build_results(solution, Context, datetime):
     evaluation_function = Context.postprocess_config.evaluation_function
     evaluation_baseline = Context.postprocess_config.evaluation_base
 
-    output_baseline = evaluation_baseline(Context,datetime)
+    output_baseline = evaluation_baseline(Context,solution,datetime)
     outputs_solution = evaluation_function(solution,Context,datetime)
     NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline)
     outputs_solution['economics']["NPV (€)"] = NPV

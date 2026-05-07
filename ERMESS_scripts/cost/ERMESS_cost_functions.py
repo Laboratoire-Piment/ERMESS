@@ -206,7 +206,7 @@ class _GensetParamsDummy:
         self.fuel_CO2eq_emissions = np.float64(0)
         self.EROI = np.float64(0)
 
-def cost_baseline(Context,datetime):
+def cost_baseline(Context,solution,datetime):
     """
     Comprehensive cost and performance evaluation of the base scenario (current microgrid design without optimization).
     
@@ -262,6 +262,7 @@ def cost_baseline(Context,datetime):
     # =========================    
     TONS_CONVERSION_FACTOR = 1000000
     KILOS_CONVERSION_FACTOR = 1000
+    HOURS_PER_DAY = 24
     
     # =========================
     # LOAD & PRODUCTION
@@ -325,19 +326,99 @@ def cost_baseline(Context,datetime):
     Capacity_factor = sum(production)/(max(production)*n_bits) if max(production)>0 else np.nan
     
     # =========================
-    # GRID EXTREMA
+    # GRID PARAMETERS
     # =========================
     
     Max_power_from_grid = np.max(Grid_importation) 
-    Max_power_from_DG = np.max(DG_production) 
     Max_power_to_grid = np.max(Grid_exportation) 
-    Max_curtailment = np.max(curtailment)   
+    Max_curtailment = np.max(curtailment)  
+    
+    if (Context.config.connexion=='Off-grid'):       
+        Contract_power=0
+    elif (Context.config.connexion=='On-grid'):    
+        Contract_power=max(0,max(trades))
+  
+    # =========================
+    # Genset
+    # =========================  
+    if (Context.config.connexion=='Off-grid'):
+        DG_nominal_power = max(trades)
+        DG_production=importation
+        if (DG_nominal_power>0):
+            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Context.time.n_bits)])
+            annual_fuel_consumption = sum(DG_production*Context.genset.fuel_consumption[closest_levels]/Context.time.time_resolution/Context.time.duration_years)
+        else : 
+            closest_levels = np.array([np.nan for i in range(Context.time.n_bits)])
+            annual_fuel_consumption = 0
+        DG_lifetime_years = Context.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Context.time.time_resolution/Context.time.duration_years)
+    elif (Context.config.connexion=='On-grid'):  
+        DG_nominal_power = 0
+        DG_production=np.repeat(0,Context.time.n_bits)
+        closest_levels = 0
+        DG_lifetime_years = np.nan
+               
+    Max_power_from_DG = np.max(DG_production) 
+
+    
+    # =========================
+    # ENVIRONMENT
+    # =========================
+    if (Context.config.connexion=='Off-grid'):
+        annual_CO2eq_total = 0
+        annual_fossil_fuel_consumption = 0
+        annual_CO2eq_DG = annual_fuel_consumption*Context.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR   
+    elif (Context.config.connexion=='On-grid'):  
+        annual_CO2eq_DG = 0.
+        annual_fuel_consumption = 0
+        
+        
+    # =========================
+    # Energy return on investment
+    # =========================        
+    if (Context.config.connexion=='Off-grid'):
+        productible_energy_DG = sum(DG_production)/Context.time.time_resolution/Context.time.duration_years*DG_lifetime_years
+        consumed_energy_DG = productible_energy_DG/Context.genset.EROI
+    elif (Context.config.connexion=='On-grid'):  
+        productible_energy_DG = 0.
+        consumed_energy_DG = 0.
+        
+    # =========================
+    # STORAGE
+    # =========================  
+    size_power=np.zeros(n_store)
+
+             
+    # =========================
+    # ECONOMICS
+    # =========================    
+    if (Context.config.connexion=='Off-grid'):
+        economics_exportation = 0
+        economics_importation = 0
+        economics_overrun = 0
+        economics_contract_power = 0
+        DG_CAPEX_cost = DG_nominal_power*Context.genset.unit_cost/DG_lifetime_years
+        DG_OPEX_cost = sum(DG_production)*Context.genset.maintenance_cost/Context.time.time_resolution/Context.time.duration_years
+        annual_total_fuel_cost = annual_fuel_consumption*Context.genset.fuel_cost
+
+    elif (Context.config.connexion=='On-grid'):  
+        economics_exportation = np.multiply(exportation,Context.grid.selling_price[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_importation = np.multiply(importation,Context.grid.prices[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
+        economics_overrun = max(0,(max(importation)-Contract_power)*Context.grid.overrun[solution.contract])
+        economics_contract_power = Context.grid.fixed_premium[solution.contract]*Contract_power
+        DG_CAPEX_cost = 0
+        DG_OPEX_cost = 0   
+        annual_total_fuel_cost = 0
+        
+    # =========================
+    # Demand-side management
+    # =========================
+    indexes_hour = [[int(i + j * Context.time.time_resolution * HOURS_PER_DAY) for j in range(Context.time.n_days)] for i in range(int(Context.time.time_resolution * HOURS_PER_DAY))]
+    Daily_base_load = [np.mean(Context.loads.non_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
+
+
     
     
-    
-    size_power=np.array([0 for i in range(Context.storage.n_store)])
-    
-    D_DSM=np.repeat(0,Context.time.n_bits).reshape((int(Context.time.n_bits/(24*Context.time.time_resolution)),24*int(Context.time.time_resolution)))
+    D_DSM=np.repeat(0,Context.time.n_bits).reshape((int(Context.time.n_bits/(HOURS_PER_DAY*Context.time.time_resolution)),HOURS_PER_DAY*int(Context.time.time_resolution)))
     Y_DSM=np.repeat(0,Context.time.n_bits)
     
     EnR_fraction = Annual_REN_production/Annual_load
@@ -366,7 +447,6 @@ def cost_baseline(Context,datetime):
     energy_storages = np.repeat(0,Context.storage.n_store)
     powers_out = np.repeat(0,Context.storage.n_store)
     powers_in = np.repeat(0,Context.storage.n_store)
-    size_power=np.repeat(0,Context.storage.n_store)
     CAPEX_storage_cost = np.repeat(0,Context.storage.n_store)
     Equivalent_cycles = np.repeat(0.,Context.storage.n_store)
     Lifetime = np.repeat(0,Context.storage.n_store)
@@ -400,46 +480,7 @@ def cost_baseline(Context,datetime):
     consumed_energy_production = 0
     consumed_energy_storage = sum(np.nanmin(np.array([Context.storage.characteristics[STOR_CYCLE_LIFE,:],Context.storage.characteristics[STOR_LIFETIME,:]*Equivalent_cycles]),axis=0)*energy_storages/Context.storage.characteristics[STOR_ESOEI,:])
 
-    if (Context.config.connexion=='Off-grid'):
-        DG_nominal_power = max(trades)
-        DG_production=importation
-        if (DG_nominal_power>0):
-            closest_levels = np.array([int(10*(DG_production[i]/DG_nominal_power)-0.5) for i in range(Context.time.n_bits)])
-            annual_fuel_consumption = sum(DG_production*Context.genset.fuel_consumption[closest_levels]/Context.time.time_resolution/Context.time.duration_years)
-        else : 
-            closest_levels = np.array([np.nan for i in range(Context.time.n_bits)])
-            annual_fuel_consumption = 0
-        annual_total_fuel_cost = annual_fuel_consumption*Context.genset.fuel_cost
-        DG_lifetime_years = Context.genset.lifetime/(sum(np.where(DG_production>0,1,0))/Context.time.time_resolution/Context.time.duration_years)
-        DG_CAPEX_cost = DG_nominal_power*Context.genset.unit_cost/DG_lifetime_years
-        DG_OPEX_cost = sum(DG_production)*Context.genset.maintenance_cost/Context.time.time_resolution/Context.time.duration_years
-        Contract_power=0
-        economics_exportation = 0
-        economics_importation = 0
-        economics_overrun = 0
-        economics_contract_power = 0
-        annual_CO2eq_DG = annual_fuel_consumption*Context.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR   
-        productible_energy_DG = sum(DG_production)/Context.time.time_resolution/Context.time.duration_years*DG_lifetime_years
-        consumed_energy_DG = productible_energy_DG/Context.genset.EROI
 
-    elif (Context.config.connexion=='On-grid'):  
-        DG_nominal_power = 0
-        DG_production=np.repeat(0,Context.time.n_bits)
-        closest_levels = 0
-        annual_fuel_consumption = 0
-        annual_total_fuel_cost = 0
-        DG_lifetime_years = np.nan
-        DG_CAPEX_cost = 0
-        DG_OPEX_cost = 0          
-        Contract_power=max(0,max(trades))
-        economics_exportation = np.multiply(exportation,Context.grid.selling_price[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
-        economics_importation = np.multiply(importation,Context.grid.prices[solution.contract,:]).sum()/Context.time.time_resolution/Context.time.duration_years
-        economics_overrun = max(0,(max(importation)-Contract_power)*Context.grid.overrun[solution.contract])
-        economics_contract_power = Context.grid.fixed_premium[solution.contract]*Contract_power
-        annual_CO2eq_DG = 0.
-        productible_energy_DG = 0.
-        consumed_energy_DG = 0.
-        
 
         
     obtained_constraint_level = obtained_self_sufficiency if Context.optimization.constraint_num==CONS_Self_sufficiency else self_consumption if (Context.optimization.constraint_num==CONS_Self_consumption) else EnR_fraction if(Context.optimization.constraint_num==CONS_REN_fraction) else np.nan
@@ -448,7 +489,6 @@ def cost_baseline(Context,datetime):
 
         
     #Demand-side management
-    indexes_hour = [[int((i+j*Context.time.time_resolution*24)) for j in range(Context.time.n_days)] for i in range(int(Context.time.time_resolution*24))]
     Daily_base_load = [np.mean(Context.loads.non_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
     Daily_movable_loads = [np.mean(Context.loads.D_movable[indexes_hour[j]]+Context.loads.Y_movable[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
     Daily_final_loads = [np.mean(Optimized_Load[indexes_hour[j]]) for j in range(int(Context.time.time_resolution*24))]
