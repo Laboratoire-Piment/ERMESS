@@ -35,12 +35,6 @@ def _timeseries_interpolation(datetime_model,series_datetime,series_yvalue):
     y_values = np.float64(np.interp(np.array(datetime_model,dtype='float64'),np.array(series_datetime,dtype='float64'),np.array(series_yvalue,dtype='float64')))
     return(y_values)
 
-def load_excel(path):
-    """Load ERMESS input Excel file."""
-    xl = pd.ExcelFile(path)
-    data = {sheet: xl.parse(sheet) for sheet in xl.sheet_names}
-    xl.close()
-    return data
 
 
 

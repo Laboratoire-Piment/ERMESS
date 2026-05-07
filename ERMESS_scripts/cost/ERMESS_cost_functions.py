@@ -254,34 +254,97 @@ def cost_baseline(Context,datetime):
         This is the final evaluation function used to compute ERMESS outputs.
     """
     
+    annual_cost_production = 0
+
+    
+    # =========================
+    # CONSTANTS
+    # =========================    
     TONS_CONVERSION_FACTOR = 1000000
     KILOS_CONVERSION_FACTOR = 1000
     
+    # =========================
+    # LOAD & PRODUCTION
+    # =========================
     Load = Context.loads.non_movable+Context.loads.D_movable+Context.loads.Y_movable
     production = (Context.production.current_prod)/KILOS_CONVERSION_FACTOR    
+    Annual_load = sum(Load)/Context.time.time_resolution/Context.time.duration_years
     Annual_REN_production = sum(production)/Context.time.time_resolution/Context.time.duration_years
-    annual_cost_production = 0
+    
+    # =========================
+    # CORE ENERGY BALANCE
+    # =========================
+    trades=Load-production    
+    Optimized_Load = Load
+    importation=np.where(trades>0,trades,0)
+    exportation = np.where(trades<0,-trades,0)
+    signal =  Optimized_Load - production  
+
+    Annual_sum_importation=sum(importation)/Context.time.time_resolution/Context.time.duration_years
+    Annual_sum_exportation=sum(exportation)/Context.time.time_resolution/Context.time.duration_years    
+
+    # =========================
+    # STORAGE INITIALIZATION
+    # =========================
+    n_store = Context.storage.n_store
+    n_bits = Context.time.n_bits
+    
+    storage_TS = np.zeros((n_store, n_bits))
+    losses = np.zeros((n_store, n_bits))
+
+    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Context.time.time_resolution+losses[i,:]/Context.time.time_resolution) for i in range(Context.storage.n_store)])
+
+    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
+    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
+ 
+    power_storage = np.sum(storage_TS,axis=0)
+    Annual_sum_losses = np.sum(losses,axis=1)/Context.time.time_resolution/Context.time.duration_years    
+    
+    # =========================
+    # GRID FLOWS
+    # =========================
+
+    Grid_importation = importation if (Context.config.connexion=='On-grid') else np.zeros(n_bits)
+    Grid_exportation = exportation if (Context.config.connexion=='On-grid') else np.zeros(n_bits)
+    Grid_trading = trades if (Context.config.connexion=='On-grid') else np.zeros(n_bits)
+    
+    DG_production = importation if (Context.config.connexion=='Off-grid') else np.zeros(n_bits)
+    curtailment = exportation if (Context.config.connexion=='Off-grid') else np.zeros(n_bits)
+    
+    # =========================
+    # SELF-SUFFICIENCY / AUTONOMY
+    # =========================
+
+    obtained_self_sufficiency = (1-sum(Grid_importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
+    EnR_self_sufficiency = (1-sum(importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
+    self_consumption = (1-sum(exportation)/sum(production)) if sum(production )>0 else np.nan
+    REN_fraction = sum(production)/Annual_load if Annual_load>0 else np.nan
+    
+    Autonomy = 1-sum(Grid_importation>0)/n_bits
+    REN_autonomy = 1-sum(importation>0)/n_bits
+    Capacity_factor = sum(production)/(max(production)*n_bits) if max(production)>0 else np.nan
+    
+    # =========================
+    # GRID EXTREMA
+    # =========================
+    
+    Max_power_from_grid = np.max(Grid_importation) 
+    Max_power_from_DG = np.max(DG_production) 
+    Max_power_to_grid = np.max(Grid_exportation) 
+    Max_curtailment = np.max(curtailment)   
+    
+    
+    
     size_power=np.array([0 for i in range(Context.storage.n_store)])
-    losses=np.repeat(0,Context.time.n_bits*Context.storage.n_store).reshape((Context.storage.n_store,Context.time.n_bits))
-    Annual_sum_losses = np.sum(losses,axis=1)/Context.time.time_resolution/Context.time.duration_years      
     
     D_DSM=np.repeat(0,Context.time.n_bits).reshape((int(Context.time.n_bits/(24*Context.time.time_resolution)),24*int(Context.time.time_resolution)))
     Y_DSM=np.repeat(0,Context.time.n_bits)
-    trades=Load-production        
-    Optimized_Load = Load
-    Annual_load = sum(Optimized_Load)/Context.time.time_resolution/Context.time.duration_years
+    
     EnR_fraction = Annual_REN_production/Annual_load
-    storage_TS=np.repeat(0,Context.time.n_bits*Context.storage.n_store).reshape((Context.storage.n_store,Context.time.n_bits))
-    sum_diff_storages = np.array([-np.cumsum(storage_TS[i,:]/Context.time.time_resolution+losses[i,:]/Context.time.time_resolution) for i in range(Context.storage.n_store)])
-    reported_energy = np.sum(np.where(storage_TS>0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
-    stored_energy = -np.sum(np.where(storage_TS<0,storage_TS,0),axis=1)/Context.time.time_resolution/Context.time.duration_years
-    power_storage = np.sum(storage_TS,axis=0)
+
    
-    importation=np.where(trades>0,trades,0)
-    exportation = np.where(trades<0,-trades,0)
-    signal =  Optimized_Load - production      
-    Annual_sum_importation=sum(importation)/Context.time.time_resolution/Context.time.duration_years
-    Annual_sum_exportation=sum(exportation)/Context.time.time_resolution/Context.time.duration_years
+
+
         
     logicals_sells = np.where((trades<=0) & (signal<=0))[0]
     logicals_buys = np.where((trades>=0) & (signal>=0))[0]
@@ -324,11 +387,8 @@ def cost_baseline(Context,datetime):
         dist_DOD = dist_DOD.join(pd.DataFrame(data={'SOC distribution ' + Context.storage.technologies[i]:distribution_Depth_of_discharge[i]}))
 
 
-    Grid_trading = trades if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
-    Grid_importation = importation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)
-    Grid_exportation = exportation if (Context.config.connexion=='On-grid') else np.repeat(0,Context.time.n_bits)  
-    DG_production = importation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)
-    curtailment = exportation if (Context.config.connexion=='Off-grid') else np.repeat(0,Context.time.n_bits)  
+
+
         
     annual_CO2eq_prod = 0
     annual_CO2eq_importation = sum(Grid_importation)*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.config.connexion=='On-grid') else 0
@@ -380,20 +440,12 @@ def cost_baseline(Context,datetime):
         productible_energy_DG = 0.
         consumed_energy_DG = 0.
         
-    obtained_self_sufficiency = (1-sum(Grid_importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
-    EnR_self_sufficiency = (1-sum(importation)/sum(Optimized_Load)) if sum(Optimized_Load )>0 else np.nan
-    self_consumption = (1-sum(exportation)/sum(production)) if sum(production )>0 else np.nan
-    EnR_fraction = sum(production)/Annual_load if Annual_load>0 else np.nan
+
         
     obtained_constraint_level = obtained_self_sufficiency if Context.optimization.constraint_num==CONS_Self_sufficiency else self_consumption if (Context.optimization.constraint_num==CONS_Self_consumption) else EnR_fraction if(Context.optimization.constraint_num==CONS_REN_fraction) else np.nan
 
-    Autonomy = 1-sum(Grid_importation>0)/Context.time.n_bits
-    EnR_autonomy = 1-sum(importation>0)/Context.time.n_bits
-    Capacity_factor = sum(production)/(max(production)*Context.time.n_bits) if max(production)>0 else np.nan
-    Max_power_from_grid = max(Grid_importation) 
-    Max_power_from_DG = max(DG_production) 
-    Max_power_to_grid = max(Grid_exportation) 
-    Max_curtailment = max(curtailment)   
+
+
         
     #Demand-side management
     indexes_hour = [[int((i+j*Context.time.time_resolution*24)) for j in range(Context.time.n_days)] for i in range(int(Context.time.time_resolution*24))]

@@ -350,6 +350,21 @@ def _build_EMS(outputs_solution,Context):
 
 
 def build_results(solution, Context, datetime):
+    """Build all post-processing result tables for a solution.
+
+    This function evaluates the solution, computes comparison metrics
+    against the baseline scenario, and generates all post-processing
+    DataFrames used for exports and visualization.
+    
+    Args:
+        solution: Optimized solution object.
+        Context: Global ERMESS context object.
+        datetime (np.ndarray | pandas.DatetimeIndex): Simulation timestamps.
+    
+    Returns:
+        _PostProcessingResults: Container gathering all generated
+        post-processing tables and indicators.
+    """
 
     evaluation_function = Context.postprocess_config.evaluation_function
     evaluation_baseline = Context.postprocess_config.evaluation_base
@@ -380,6 +395,16 @@ def build_results(solution, Context, datetime):
         demand_side_management=demand_side_management,time_balancing=time_balancing,EMS=EMS)
 
 def post_traitement(solution, Context, datetime):
+    """Run the complete post-processing workflow.
+
+    This function generates post-processing results and exports them
+    according to the configuration defined in the context.
+    
+    Args:
+        solution: Optimized solution object.
+        Context: Global ERMESS context object.
+        datetime (np.ndarray | pandas.DatetimeIndex): Simulation timestamps.
+    """
 
     results = build_results(solution, Context, datetime)
 
