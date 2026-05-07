@@ -778,6 +778,23 @@ def _pro_update_storage_power(gene,RENSystems_parameters,storage_TS):
 
 @jit(nopython=True)
 def _pro_size_storage_power(gene,RENSystems_parameters):
+    """
+    Compute required storage power capacity.
+    
+    This function determines the maximum required power for each storage unit
+    based on charge and discharge profiles.
+    
+    Args:
+        gene:
+            Individual solution containing storage parameters.
+    
+        RENSystems_parameters:
+            Object containing number of storage units.
+    
+    Returns:
+        np.ndarray:
+            Storage power capacity (kW) for each unit.
+    """
     powers_out = gene.storages[INDIV_PRO_DISCHARGE_POWER,:]
     powers_in = gene.storages[INDIV_PRO_CHARGE_POWER,:]
     size_power=np.array([max(powers_in[i],powers_out[i]) for i in range(RENSystems_parameters.n_store)])
@@ -787,6 +804,34 @@ def _pro_size_storage_power(gene,RENSystems_parameters):
 
 @jit(nopython=True)
 def _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage_TS,losses):
+    """
+    Compute storage energy capacity and lifetime indicators.
+    
+    Args:
+        gene:
+            Individual solution containing storage sizing.
+    
+        RENSystems_parameters:
+            Object containing storage specifications.
+    
+        global_parameters:
+            Object containing simulation parameters.
+    
+        storage_TS (np.ndarray):
+            Storage power time series (kW).
+    
+        losses (np.ndarray):
+            Storage losses.
+    
+    Returns:
+        tuple:
+            - energy_storages (np.ndarray): Storage capacities (kWh)
+            - Lifetime (np.ndarray): Storage lifetimes (years)
+    
+    Notes:
+        - Energy capacity is derived from volume and depth of discharge.
+        - Lifetime is limited by cycle life or calendar life.
+    """
     energy_storages = gene.storages[INDIV_PRO_VOLUME,:]/RENSystems_parameters.specs_storage[STOR_DEPTH_OF_DISCHARGE,:]
     Equivalent_cycles =  np.array([np.sum(np.abs(storage_TS[i,:]))/(2*global_parameters.time_resolution*max(energy_storages[i],np.float64(1e-15))*global_parameters.duration_years) for i in range(RENSystems_parameters.n_store)]) 
     Lifetime = np.array([min(RENSystems_parameters.specs_storage[STOR_LIFETIME,i],RENSystems_parameters.specs_storage[STOR_CYCLE_LIFE,i]/max(1e-15,Equivalent_cycles[i])) for i in range(RENSystems_parameters.n_store)])

@@ -151,11 +151,6 @@ def replace_population_internodes (n_core,len_pop,local_populations,incomers,kil
     for j in range(n_core*len(killed_indices)) :
         core = j//len(killed_indices)
         index = j%len(killed_indices)
-        print(index)
-        print(type(local_populations[core]))
-        print(local_populations[core])
-        
-        print(incomers[j])
         local_populations[core][index] = incomers[j]
   
     return(local_populations)
@@ -228,6 +223,8 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
     # 3. Migration selection & writing
     # -----------------------
 
+    Eri.write_node_population(node_id,local_populations)
+
     migrant_internodes = select_migrants_internodes(len_pop, MIGRATION_TOP_RATE, MIGRATION_RANDOM_RATE,n_core)
     local_migrants = [[local_populations[i][j] for j in migrant_internodes] for i in range(n_core)]
     migrants = [ item for sublist in local_migrants for item in sublist ]
@@ -237,7 +234,6 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
     node_population = [ item for sublist in local_populations for item in sublist ]
     best_score = min(ind.fitness for ind in node_population)
     print('best score : ',best_score)
-    Eri.write_node_population(node_id,node_population)
 
 if __name__ == '__main__':
     ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3].lower()=="True")
