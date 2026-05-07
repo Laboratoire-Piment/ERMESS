@@ -306,7 +306,6 @@ def Mutate_storage_dailypattern_operator(c,selected_storage,time_resolution,n_bi
 
     steps_per_day = int(time_resolution * HOURS_PER_DAY)
     n_days = int(n_bits / (steps_per_day))
-    days_indices = np.arange(n_days)  
 
     num_mutated_hours = np.random.randint(1, steps_per_day)
                     
