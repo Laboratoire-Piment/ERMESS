@@ -23,7 +23,14 @@ pro_params = [
 
 @jitclass(pro_params)
 class ProParams:
+    """Container for movable load preprocessing parameters."""
     def __init__(self, total_D_Movable_load,total_Y_Movable_load):
+        """Initialize production-related parameters.
+
+        Args:
+            total_D_Movable_load (np.ndarray): Total energy of daily movable load.
+            total_Y_Movable_load (np.ndarray): Total energy of yearly movable load.
+        """
 
         self.total_D_Movable_load = total_D_Movable_load
         self.total_Y_Movable_load = total_Y_Movable_load
@@ -42,8 +49,20 @@ global_params = [
 
 @jitclass(global_params)
 class GlobalParams:
+    """Container for global optimization parameters."""
     def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connexion,Non_movable_load):
+        """Initialize global simulation parameters.
 
+        Args:
+            n_bits (int): Number of timesteps.
+            time_resolution (float): Simulation time resolution.
+            duration_years (float): Project duration in years.
+            constraint_num (int): Constraint identifier.
+            constraint_level (float): Constraint threshold value.
+            cost_constraint (float): Cost constraint factor.
+            Connexion (int): Grid connection mode.
+            Non_movable_load (np.ndarray): Non-movable load profile.
+        """
         self.n_bits = n_bits
         self.time_resolution = time_resolution
         self.duration_years = duration_years
@@ -64,8 +83,18 @@ specs_grid = [
 
 @jitclass(specs_grid)
 class GridParams:
+    """Container for grid-related parameters."""
     def __init__(self, prices, fixed_premium, Overrun, Selling_price, eqCO2emissions, fossil_fuel_ratio):
+        """Initialize grid parameters.
 
+        Args:
+            prices (np.ndarray): Electricity purchase prices.
+            fixed_premium (np.ndarray): Fixed subscription premiums.
+            Overrun (np.ndarray): Grid overrun penalties.
+            Selling_price (np.ndarray): Electricity selling price.
+            eqCO2emissions (float): Grid CO2 equivalent emissions factor.
+            fossil_fuel_ratio (float): Fossil fuel share of grid electricity.
+        """
         self.prices = prices
         self.fixed_premium = fixed_premium
         self.Overrun = Overrun
@@ -75,6 +104,7 @@ class GridParams:
         
 @jitclass(specs_grid)
 class GridParamsDummy:
+    """Fallback empty grid parameters container."""
     def __init__(self):
         self.prices = np.zeros((1, 1))
         self.fixed_premium = np.zeros(1)
@@ -94,7 +124,18 @@ REN_specs_systems = [
 
 @jitclass(REN_specs_systems)
 class RENSystemsParams:
+    """Container for renewable energy systems parameters."""
     def __init__(self, current_production, unit_productions, specs_prod, capacities, specs_storage, n_store):
+        """Initialize renewable systems parameters.
+        
+        Args:
+            current_production (np.ndarray): Existing production profile.
+            unit_productions (np.ndarray): Unit production profiles.
+            specs_prod (np.ndarray): Production system characteristics.
+            capacities (np.ndarray): Installed capacities.
+            specs_storage (np.ndarray): Storage system characteristics.
+            n_store (int): Number of storage systems.
+        """
 
         self.current_production = current_production
         self.unit_productions = unit_productions
@@ -114,7 +155,8 @@ mutation_extra_params = [
 ]
 
 @jitclass(mutation_extra_params)
-class mutationParams:
+class MutationParams:
+    """Container for mutation operator parameters."""
     def __init__(self, groups_production,groups_size, unit_production_volumes,D_DSM_indexes, hyperparameters_operators, defined_items, n_contracts):
 
         self.groups_production = groups_production
@@ -137,9 +179,20 @@ spec_genset = [
 
 @jitclass(spec_genset)
 class GensetParams:
+    """Container for genset-related parameters."""
     def __init__(self, fuel_cost, lifetime, unit_cost,
                  maintenance_cost, fuel_consumption, fuel_CO2eq_emissions, EROI):
+        """Initialize genset parameters.
 
+        Args:
+            fuel_cost (float): Fuel price.
+            lifetime (float): Equipment lifetime.
+            unit_cost (float): Investment cost.
+            maintenance_cost (float): Maintenance cost.
+            fuel_consumption (np.ndarray): Fuel consumption curve.
+            fuel_CO2eq_emissions (float): CO2 equivalent emissions factor.
+            EROI (float): Energy return on investment.
+        """
         self.fuel_cost = fuel_cost
         self.lifetime = lifetime
         self.unit_cost = unit_cost
@@ -150,6 +203,7 @@ class GensetParams:
         
 @jitclass(spec_genset)
 class GensetParamsDummy:
+    """Fallback empty genset parameters container."""
     def __init__(self):
         self.fuel_cost = np.float64(0)
         self.lifetime = np.float64(0)
@@ -160,7 +214,15 @@ class GensetParamsDummy:
         self.EROI = np.float64(0)
         
 
-def build_groups_matrix(groups_raw):
+def _build_groups_matrix(groups_raw):
+    """Convert variable-length groups into a padded NumPy matrix.
+
+    Args:
+        groups_raw (list[list[int]]): List of production groups.
+    
+    Returns:
+        np.ndarray: Padded 2D matrix of group indices.
+    """
     max_len = max(len(g) for g in groups_raw)
 
     groups = np.zeros((len(groups_raw), max_len), dtype=np.int64)-1
@@ -171,6 +233,18 @@ def build_groups_matrix(groups_raw):
     return groups
 
 def build_numba_params(Contexte,type_optim):
+    """Build all Numba-compatible parameter containers.
+
+    Args:
+        Contexte: Global ERMESS context object.
+        type_optim (str): Optimization mode.
+    
+    Returns:
+        tuple: Tuple containing all initialized parameter containers.
+    
+    Raises:
+        ValueError: If the optimization or connexion type is unknown.
+    """
     
     pro_parameters = ProParams(Contexte.loads.total_D_movable,Contexte.loads.total_Y_movable)
     
@@ -200,15 +274,26 @@ def build_numba_params(Contexte,type_optim):
     else :
         Genset_parameters = GensetParamsDummy()
     
-    groups = build_groups_matrix(Contexte.production.groups)
+    groups = _build_groups_matrix(Contexte.production.groups)
     groups_size = np.array([len(g) for g in Contexte.production.groups], dtype=np.int64)
 
     n_contracts = Contexte.grid.n_contracts if Contexte.grid!=None else 0
-    mutation_parameters = mutationParams(groups, groups_size, Contexte.production.specs_num[:,ProdCharIdx.Volume], Contexte.loads.D_DSM_indexes,hyperparameters.operators_parameters, Contexte.config.defined_items, n_contracts )
+    mutation_parameters = MutationParams(groups, groups_size, Contexte.production.specs_num[:,ProdCharIdx.Volume], Contexte.loads.D_DSM_indexes,hyperparameters.operators_parameters, Contexte.config.defined_items, n_contracts )
 
     return pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, mutation_parameters
 
-def get_function_pro(index_criterion):
+def _get_function_pro(index_criterion):
+    """Retrieve the production evaluation function for a criterion.
+
+    Args:
+        index_criterion (int): Criterion identifier.
+    
+    Returns:
+        callable: Associated production evaluation function.
+    
+    Raises:
+        ValueError: If the criterion is unknown.
+    """
         PRO = {
                 CRIT_LCOE: Cfc.LCOE_pro,
                 CRIT_Annual_net_benefits: Cfc.Annual_net_benefits_pro,
@@ -226,7 +311,18 @@ def get_function_pro(index_criterion):
             raise ValueError(f"Unknown criterion: {index_criterion}")
         return PRO[index_criterion]
         
-def get_function_research(index_criterion):
+def _get_function_research(index_criterion):
+    """Retrieve the research evaluation function for a criterion.
+
+    Args:
+        index_criterion (int): Criterion identifier.
+    
+    Returns:
+        callable: Associated research evaluation function.
+    
+    Raises:
+        ValueError: If the criterion is unknown.
+    """
     
         RESEARCH = {
                 CRIT_LCOE: Cfc.LCOE_research,
@@ -257,7 +353,7 @@ def find_cost_function_research(Context, global_parameters, grid_parameters, REN
         int: ID of the appropriate cost function.
     """
     try:
-        base_function = get_function_research(Context.optimization.criterion_num)
+        base_function = _get_function_research(Context.optimization.criterion_num)
     except KeyError:
         raise ValueError("No proper optimisation criterion found!")
                 
@@ -277,7 +373,7 @@ def find_cost_function_pro(Context,pro_parameters, global_parameters, grid_param
         int: ID of the appropriate cost function.
     """    
     try:
-        base_function = get_function_pro(Context.optimization.criterion_num)
+        base_function = _get_function_pro(Context.optimization.criterion_num)
     except KeyError:
         raise ValueError("No proper optimisation criterion found!")
                 

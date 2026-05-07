@@ -235,5 +235,5 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
     Eri.write_node_population(node_id,node_population)
 
 if __name__ == '__main__':
-    ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3].lower())
+    ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3].lower()=="True")
 

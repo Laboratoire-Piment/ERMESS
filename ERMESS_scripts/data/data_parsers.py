@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 import timezonefinder
 import datetime
-from ERMESS_scripts.utils.helpers import timeseries_interpolation
 from ERMESS_scripts.utils.constraints import compute_grid_prices
 
 from ERMESS_scripts.data.indices import ConstraintIdx, CriterionIdx
@@ -20,6 +19,23 @@ from . import data_classes as  Dcl
 from . import ERMESS_meteo as Eme
 from . import ERMESS_PV_model as EPV
 from . import ERMESS_Wind_model as EWi
+
+def _timeseries_interpolation(datetime_model,series_datetime,series_yvalue):
+    """
+    Interpolate a time series to match a target datetime grid.
+    
+    Args:
+        datetime_model (array_like): Target datetime array (numeric or float representation) for interpolation.
+        series_datetime (array_like): Original datetime array corresponding to the input series_yvalue.
+        series_yvalue (array_like): Original series values to interpolate.
+    
+    Returns:
+        np.ndarray: Interpolated series aligned with datetime_model.
+    """
+    y_values = np.float64(np.interp(np.array(datetime_model,dtype='float64'),np.array(series_datetime,dtype='float64'),np.array(series_yvalue,dtype='float64')))
+    return(y_values)
+
+
 
 def _build_production_characteristics(data):
     
@@ -76,7 +92,7 @@ def _compute_current_production(data, datetime_model, timezone):
     """
 
     series_datetime = pd.to_datetime(data["TimeSeries"]["Datetime"],format="%d/%m/%Y %H:%M").dt.tz_localize(timezone,nonexistent="shift_forward",ambiguous=False)
-    prod = timeseries_interpolation(datetime_model,series_datetime,data["TimeSeries"]["Current_production (W)"])
+    prod = _timeseries_interpolation(datetime_model,series_datetime,data["TimeSeries"]["Current_production (W)"])
     prod[prod < 0] = 0
 
     return prod
@@ -103,7 +119,7 @@ def _compute_production_manual(data, datetime_model):
     unit_prods = df.drop("Datetime", axis=1).to_numpy().T
     datetime_prods = pd.to_datetime(df["Datetime"],format="%d/%m/%Y %H:%M")
 
-    unit_prods = np.array([timeseries_interpolation(datetime_model,datetime_prods,unit_prods[i])
+    unit_prods = np.array([_timeseries_interpolation(datetime_model,datetime_prods,unit_prods[i])
         for i in range(len(unit_prods)) ])
 
     return unit_prods, datetime_prods
@@ -294,17 +310,17 @@ def _parse_loads(data, datetime_model, timezone):
         nonexistent="shift_forward",
         ambiguous=False)
 
-    non_movable = timeseries_interpolation(
+    non_movable = _timeseries_interpolation(
         datetime_model,
         series_datetime,
         data["TimeSeries"]["Non-controllable load (kW)"])
 
-    yearly = timeseries_interpolation(
+    yearly = _timeseries_interpolation(
         datetime_model,
         series_datetime,
         data["TimeSeries"]["Yearly movable load (kW)"] )
 
-    daily = timeseries_interpolation(
+    daily = _timeseries_interpolation(
         datetime_model,
         series_datetime,
         data["TimeSeries"]["Daily movable load (kW)"])
@@ -435,7 +451,17 @@ def _parse_production(data, site, datetime_model):
         numbers=numbers
     )
 
-def parse_constraint(value) :
+def _parse_constraint(value) :
+    """
+    Convert a constraint label into its associated ConstraintIdx enum.
+
+    Args:
+        value (str): Constraint label read from input data.
+    
+    Returns:
+        ConstraintIdx | None: Matching constraint enum value if found,
+        otherwise ``None``.
+    """
     mapping = {
         "Self-sufficiency": ConstraintIdx.Self_sufficiency,
         "Self-consumption": ConstraintIdx.Self_consumption,
@@ -444,7 +470,17 @@ def parse_constraint(value) :
     return mapping.get(value)
 
 
-def parse_criterion(value) :
+def _parse_criterion(value) :
+    """
+    Convert a criterion label into its associated CriterionIdx enum.
+
+    Args:
+        value (str): Criterion label read from input data.
+    
+    Returns:
+        CriterionIdx | None: Matching criterion enum value if found,
+        otherwise ``None``.
+    """
     mapping = {
         "LCOE": CriterionIdx.LCOE,
         "Annual net benefits": CriterionIdx.Annual_net_benefits,
@@ -479,8 +515,8 @@ def _parse_optimization(data):
     constraint_level = np.float64(data['Environment']['Constraint level'][0])
     criterion = data['Environment']['Optimisation criterion'][0]
     
-    constraint_num = parse_constraint(constraint_str)
-    criterion_num = parse_criterion(criterion)
+    constraint_num = _parse_constraint(constraint_str)
+    criterion_num = _parse_criterion(criterion)
             
     type_optim = data['Environment']['type'][0]   
     
@@ -507,8 +543,7 @@ def _parse_hyperparameters(data):
     r_cross,elitism_probability=np.float64(data['Hyperparameters']['Evolution values'][0:2])
     n_iter,nb_ere,n_pop,n_nodes,n_core,cost_constraint=np.int64(data['Hyperparameters']['Evolution values'][2:8])
     
-    hyperparameters_operators_num = np.float64(data['Hyperparameters'][['Contract','Production','Storage volume','Storage_global','Storage_power','Storage_trades_consistency','Storage_patterns','Inter_storages','Storage_mix','Curve_smoothing','Constraint_forcing','Interdaily_consistency','DSM_trades_consistency','DSM_noise']])
-         
+    hyperparameters_operators_num = np.float64(data['Hyperparameters'][['Contract','Production','Storage volume','Storage_global','Storage_power','Storage_trades_consistency','Storage_patterns','Inter_storages','Storage_mix','Curve_smoothing','Constraint_forcing','Interdaily_consistency','DSM_trades_consistency','DSM_noise']])        
                     
     return Dcl.HyperparametersData(n_iter=n_iter,n_iter_init=n_iter_init,elitism_probability_init=elitism_probability_init,nb_ere=nb_ere,n_pop=n_pop,r_cross=r_cross,r_cross_init=r_cross_init,n_nodes=n_nodes,n_core=n_core,cost_constraint=cost_constraint,elitism_probability=elitism_probability,operators_num=hyperparameters_operators_num)
 
@@ -526,22 +561,6 @@ def _parse_hyperparametersPro(data):
     r_cross_pro,elitism_probability = np.float64(data['Hyperparameters_pro']['Evolution values'][0:2])
     n_iter_pro,n_pop_pro,cost_constraint_pro = np.int64(data['Hyperparameters_pro']['Evolution values'][2:5])
     
- #   operator_contract_pro = np.float64(data['Hyperparameters_pro']['Contract'])
- #   operator_production_pro = np.float64(data['Hyperparameters_pro']['Production'])
- #   operator_strategy_pro = np.float64(data['Hyperparameters_pro']['Strategy'])
- #   operator_discharge_order_pro = np.float64(data['Hyperparameters_pro']['Discharge order'])
- #   operator_energy_use_pro = np.float64(data['Hyperparameters_pro']['Energy use'])
- #   operator_taking_over_pro = np.float64(data['Hyperparameters_pro']['Taking over'])
- #   operator_DSM_min_levels_pro = np.float64(data['Hyperparameters_pro']['DSM minimum levels'])
- #   operator_DG_min_runtime_pro = np.float64(data['Hyperparameters_pro']['DG min runtime'])
- #   operator_DG_min_production_pro = np.float64(data['Hyperparameters_pro']['DG min production'])
- #   operator_storages_capacity_pro = np.float64(data['Hyperparameters_pro']['storages capacity'])
- #   operator_storages_power_pro = np.float64(data['Hyperparameters_pro']['storages power'])
- #   operator_init_SOC_pro = np.float64(data['Hyperparameters_pro']['Initial SOC'])
-    
-
- #   hyperparameters_operators_names_pro = np.array(('Contract','Production','Strategy','Discharge order','Energy use','Taking over','DSM minimum levels','DG min runtime','DG min production','storages capacity','storages power','Initial SOC'))
- #   hyperparameters_operators_num_pro = np.array((operator_contract_pro,operator_production_pro,operator_strategy_pro,operator_discharge_order_pro,operator_energy_use_pro,operator_taking_over_pro,operator_DSM_min_levels_pro,operator_DG_min_runtime_pro,operator_DG_min_production_pro,operator_storages_capacity_pro,operator_storages_power_pro,operator_init_SOC_pro)).T
     hyperparameters_operators_num_pro = np.float64(data['Hyperparameters_pro'][['Contract','Production','Strategy','Discharge order','Energy use','Overlap','DSM minimum levels','DG control','storages capacity','storages power','Initial SOC']])
 
     return Dcl.HyperparametersProData(r_cross = r_cross_pro , n_pop = n_pop_pro , n_iter = n_iter_pro ,cost_constraint=cost_constraint_pro,elitism_probability=elitism_probability,operators_num=hyperparameters_operators_num_pro)
@@ -612,7 +631,6 @@ def _parse_ERMESSInputs(data):
         ERMESSInputs: Fully structured input object for the optimization model.
     """
 
-    # --- blocs obligatoires ---
     siteData = _parse_site(data)
     TimeData = _parse_datetime(data, siteData)
     loadsData = _parse_loads(data, TimeData.datetime, siteData.timezone)
