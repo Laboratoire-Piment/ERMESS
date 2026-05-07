@@ -727,14 +727,32 @@ def KPI_pro(solution,Context,datetime):
 
 @jit(nopython=True)
 def _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production):
+    """
+    Compute the constraint level based on the selected optimisation criterion.
+    
+    Notes:
+        - Self-sufficiency: ratio of local supply vs imports.
+        - Self-consumption: fraction of production locally consumed.
+        - Renewable fraction: ratio of production over load.
+        - Returns 0 if undefined (e.g., zero production).
+    """
     return(1-(sum(importation)/den_Optimized_load) if global_parameters.constraint_num==CONS_Self_sufficiency else (1+(sum(np.where(trades<0,trades,0))/sum(production)) if sum(production)>0 else 0) if (global_parameters.constraint_num==CONS_Self_consumption) else sum(production)/den_Optimized_load if(global_parameters.constraint_num==CONS_REN_fraction) else 0)
    
 @jit(nopython=True)
 def _pro_annual_cost_production(gene,RENSystems_parameters):
+    """
+    Compute annualized production system cost.
+    """
     return(np.sum((RENSystems_parameters.specs_prod[:,PROD_CAPEX]/RENSystems_parameters.specs_prod[:,PROD_LIFETIME]+RENSystems_parameters.specs_prod[:,PROD_OPEX])*(gene.production_set)))
 
 @jit(nopython=True)
 def _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters):
+    """
+    Compute base indicators for production-oriented optimisation.
+    
+    Notes:
+        - Uses EMS solver (`Eems.LFE_CCE`) for system balancing.
+    """
     KILOS_CONVERSION_FACTOR = 1000
     production = ((RENSystems_parameters.unit_productions.T*gene.production_set).sum(axis=1)+RENSystems_parameters.current_production)/KILOS_CONVERSION_FACTOR   
     (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_parameters)
@@ -743,6 +761,16 @@ def _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_p
 
 @jit(nopython=True)
 def _pro_update_storage_power(gene,RENSystems_parameters,storage_TS):
+    """
+    Update storage power capacities based on operation.
+    
+    This function updates charging and discharging power values in the
+    gene structure using observed storage time series.
+    
+    Notes:
+        - Charging power is stored as a positive value.
+        - Discharging power is the maximum positive output.
+    """
     for i in range(RENSystems_parameters.n_store):
         gene.storages[INDIV_PRO_CHARGE_POWER][i]=max(-(storage_TS[i]))   
         gene.storages[INDIV_PRO_DISCHARGE_POWER][i]=max(storage_TS[i])  

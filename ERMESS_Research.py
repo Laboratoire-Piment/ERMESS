@@ -62,7 +62,6 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     migration_bin = True
     
     if (initialisation) : 
-        print('initialisation ON')
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
         migration_bin = False
         
@@ -236,6 +235,5 @@ def run_ERMESS_research(Context, nb_ere, n_core, node_id, n_nodes, migration_bin
     Eri.write_node_population(node_id,node_population)
 
 if __name__ == '__main__':
-    print(sys.argv[1] ,  sys.argv[2], sys.argv[3])
-    ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3])
+    ERMESS_research(node_id = sys.argv[1] , input_file_path = sys.argv[2],initialisation = sys.argv[3].lower())
 
