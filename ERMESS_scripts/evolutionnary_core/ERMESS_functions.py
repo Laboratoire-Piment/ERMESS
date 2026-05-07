@@ -283,17 +283,17 @@ def build_numba_params(Contexte,type_optim):
     return pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, mutation_parameters
 
 def _get_function_pro(index_criterion):
-    """Retrieve the production evaluation function for a criterion.
-
-    Args:
-        index_criterion (int): Criterion identifier.
+        """Retrieve the production evaluation function for a criterion.
     
-    Returns:
-        callable: Associated production evaluation function.
-    
-    Raises:
-        ValueError: If the criterion is unknown.
-    """
+        Args:
+            index_criterion (int): Criterion identifier.
+        
+        Returns:
+            callable: Associated production evaluation function.
+        
+        Raises:
+            ValueError: If the criterion is unknown.
+        """
         PRO = {
                 CRIT_LCOE: Cfc.LCOE_pro,
                 CRIT_Annual_net_benefits: Cfc.Annual_net_benefits_pro,
@@ -312,18 +312,18 @@ def _get_function_pro(index_criterion):
         return PRO[index_criterion]
         
 def _get_function_research(index_criterion):
-    """Retrieve the research evaluation function for a criterion.
-
-    Args:
-        index_criterion (int): Criterion identifier.
+        """Retrieve the research evaluation function for a criterion.
     
-    Returns:
-        callable: Associated research evaluation function.
-    
-    Raises:
-        ValueError: If the criterion is unknown.
-    """
-    
+        Args:
+            index_criterion (int): Criterion identifier.
+        
+        Returns:
+            callable: Associated research evaluation function.
+        
+        Raises:
+            ValueError: If the criterion is unknown.
+        """
+        
         RESEARCH = {
                 CRIT_LCOE: Cfc.LCOE_research,
                 CRIT_Annual_net_benefits: Cfc.Annual_net_benefits_research,
