@@ -62,6 +62,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     migration_bin = True
     
     if (initialisation) : 
+        print('Initialisation OK')
         Eri.Initialize_ERMESS_research(Context , structured_data, node_id)
         migration_bin = False
         

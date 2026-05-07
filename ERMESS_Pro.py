@@ -26,26 +26,18 @@ Modules used:
 
 import sys
 import numpy as np
-import pandas as pd
-from multiprocessing import freeze_support,set_start_method
-import pickle
-import time
+from multiprocessing import freeze_support
 import warnings
 from tkinter import filedialog
 import logging
 
-from ERMESS_scripts.data import data_classes as Dcl
 from ERMESS_scripts.data import read_excel as Eex
 from ERMESS_scripts.data import data_parsers as Edp
 from ERMESS_scripts.data import data_builder as Dbl
 from ERMESS_scripts.data import data_validation as Edv
 
-from ERMESS_scripts.utils import constraints as Cons
-from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
-from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.evolutionnary_core import ERMESS_evolutionnary_algorithm as EA
-from ERMESS_scripts.cost import ERMESS_cost_functions as Cfc
 from ERMESS_scripts.reporting import write_excel as Wex
 
 warnings.simplefilter(action='ignore', category=UserWarning)

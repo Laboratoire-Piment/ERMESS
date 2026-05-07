@@ -840,6 +840,34 @@ def _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage
 
 @jit(nopython=True)
 def _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation):
+    """
+    Compute genset operational indicators.
+    
+    Args:
+        gene:
+            Individual solution.
+    
+        Genset_parameters:
+            Object containing generator specifications.
+    
+        global_parameters:
+            Object containing simulation parameters.
+    
+        trades (np.ndarray):
+            Net power exchanges (kW).
+    
+        importation (np.ndarray):
+            Genset production (kW).
+    
+    Returns:
+        tuple:
+            - DG_nominal_power (float): Required nominal power (kW)
+            - DG_production (np.ndarray): Production time series (kW)
+            - annual_fuel_consumption (float): Annual fuel consumption
+    
+    Notes:
+        - Uses discretized load levels for fuel estimation.
+    """
     DG_nominal_power = max(trades)
     DG_production=importation
     if (DG_nominal_power>0):
@@ -851,6 +879,34 @@ def _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,impor
 
 @jit(nopython=True)
 def _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters):
+    """
+    Compute economic metrics of the genset.
+    
+    Args:
+        annual_fuel_consumption (float):
+            Annual fuel consumption.
+    
+        DG_production (np.ndarray):
+            Genset production (kW).
+    
+        DG_nominal_power (float):
+            Installed capacity (kW).
+    
+        Genset_parameters:
+            Object containing cost parameters.
+    
+        global_parameters:
+            Object containing simulation parameters.
+    
+    Returns:
+        tuple:
+            - annual_total_fuel_cost (float)
+            - DG_CAPEX_cost (float)
+            - DG_OPEX_cost (float)
+    
+    Notes:
+        - CAPEX is prorated based on actual usage time.
+    """
     annual_total_fuel_cost = annual_fuel_consumption*Genset_parameters.fuel_cost   
     DG_CAPEX_cost = DG_nominal_power*Genset_parameters.unit_cost*sum(np.where(DG_production>0,1,0))/global_parameters.time_resolution/Genset_parameters.lifetime/global_parameters.duration_years
     DG_OPEX_cost = sum(DG_production)*Genset_parameters.maintenance_cost/global_parameters.time_resolution/global_parameters.duration_years
@@ -858,6 +914,33 @@ def _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power
     
 @jit(nopython=True)
 def _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power):
+    """
+    Compute economic metrics of storage systems.
+    
+    Args:
+        gene:
+            Individual solution.
+    
+        energy_storages (np.ndarray):
+            Storage capacities (kWh).
+    
+        RENSystems_parameters:
+            Object containing storage cost parameters.
+    
+        Lifetime (np.ndarray):
+            Storage lifetime (years).
+    
+        size_power (np.ndarray):
+            Storage power capacities (kW).
+    
+    Returns:
+        tuple:
+            - economics_CAPEX_storage (float)
+            - economics_OPEX_storage (float)
+    
+    Notes:
+        - Includes power, energy, and installation costs.
+    """
     CAPEX_storage_cost =  np.multiply(size_power,RENSystems_parameters.specs_storage[STOR_POWER_COST,:]) + np.multiply(energy_storages,RENSystems_parameters.specs_storage[STOR_ENERGY_COST,:]) + np.multiply(RENSystems_parameters.specs_storage[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,RENSystems_parameters.n_store)))
     economics_CAPEX_storage = sum(np.divide(CAPEX_storage_cost,Lifetime))
     economics_OPEX_storage = sum(np.multiply(RENSystems_parameters.specs_storage[STOR_OM_COST,:],size_power))
@@ -866,6 +949,35 @@ def _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,s
 
 @jit(nopython=True)
 def _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation):
+    """
+    Compute economic metrics of grid interaction.
+    
+    Args:
+        gene:
+            Individual solution containing contract choice.
+    
+        global_parameters:
+            Object containing simulation parameters.
+    
+        grid_parameters:
+            Object containing tariff structures.
+    
+        importation (np.ndarray):
+            Imported energy (kW).
+    
+        exportation (np.ndarray):
+            Exported energy (kW).
+    
+    Returns:
+        tuple:
+            - economics_exportation (float)
+            - economics_importation (float)
+            - economics_overrun (float)
+            - economics_contract_power (float)
+    
+    Notes:
+        - Contract power is based on maximum import.
+    """
     Contract_power=max(0,max(importation))
     economics_exportation = np.multiply(exportation,grid_parameters.Selling_price[gene.contract,:]).sum()/global_parameters.time_resolution/global_parameters.duration_years
     economics_importation = np.multiply(importation,grid_parameters.prices[gene.contract,:]).sum()/global_parameters.time_resolution/global_parameters.duration_years
@@ -877,6 +989,29 @@ def _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,expor
 
 @jit(nopython=True)
 def _Compute_fitness(global_parameters,obtained_constraint_level,criterion_value):
+    """
+    Compute fitness value for optimisation.
+    
+    This function combines the objective function value with a penalty
+    if the constraint level is not satisfied.
+    
+    Args:
+        global_parameters:
+            Object containing constraint settings and penalty coefficient.
+    
+        obtained_constraint_level (float):
+            Computed constraint value.
+    
+        criterion_value (float):
+            Objective function value (e.g., cost).
+    
+    Returns:
+        float:
+            Fitness value (penalized objective).
+    
+    Notes:
+        - A penalty is applied if the constraint is not met.
+    """
     return((global_parameters.cost_constraint*(global_parameters.constraint_level-obtained_constraint_level) if obtained_constraint_level<global_parameters.constraint_level else 0) + criterion_value)
 
 
