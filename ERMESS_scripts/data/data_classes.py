@@ -8,18 +8,15 @@ Created on Tue Mar  3 14:37:18 2026
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
-from typing import Optional, Callable
+from typing import Optional
 
 
 @dataclass
 class PostProcessConfig:
-    evaluation_function: Callable
-    evaluation_base: Callable
     file_name: str
 
     export_type: str
     export_charts: bool = True
-    include_baseline: bool = True
 
 @dataclass
 class SiteData:

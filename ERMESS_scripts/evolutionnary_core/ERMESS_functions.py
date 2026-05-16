@@ -231,7 +231,7 @@ def _build_groups_matrix(groups_raw):
 
     return groups
 
-def build_numba_params(Context,type_optim):
+def build_numba_params(Context):
     """Build all Numba-compatible parameter containers.
 
     Args:
@@ -254,9 +254,9 @@ def build_numba_params(Context,type_optim):
     else:
         raise ValueError("Unknown connexion type")
     
-    if type_optim == 'pro':
+    if Context.optimization.type_optim == 'pro':
         hyperparameters = Context.hyperparameters_pro
-    elif type_optim == 'research':
+    elif Context.optimization.type_optim == 'research':
         hyperparameters = Context.hyperparameters
     else:
         raise ValueError("Unknown optim type")

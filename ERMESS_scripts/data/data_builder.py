@@ -26,19 +26,24 @@ class _OptimBlock:
             
         connexion (str):
             Type of grid integration (On-grid , Off-grid).
+            
+        type_optim (str):
+            Type of optimization (pro , research).
     """
     __slots__ = (
         "constraint_num",
         "constraint_level",
         "criterion_num",
         "connexion",
+        "type_optim",
     )
 
-    def __init__(self, constraint_num, constraint_level, criterion_num, connexion):
+    def __init__(self, constraint_num, constraint_level, criterion_num, connexion, type_optim):
         self.constraint_num = np.int64(constraint_num)
         self.constraint_level = np.float64(constraint_level)
         self.criterion_num = np.int64(criterion_num)
         self.connexion = connexion
+        self.type_optim = type_optim
         
 class _HyperparametersBlock:
     """
@@ -251,12 +256,13 @@ class _LoadBlock:
 
     def __init__(self, non_movable, Y_movable, D_movable, time_resolution):
 
+        HOURS_PER_DAY = 24
         self.non_movable = non_movable
         self.D_movable = D_movable
         self.Y_movable = Y_movable
         self.total_Y_movable = np.sum(Y_movable)
-        self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * 24),np.int32((i + 1) * time_resolution * 24))])
-            for i in range( 0,np.int32(len(D_movable) / time_resolution / 24))], dtype=np.float64)
+        self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * HOURS_PER_DAY),np.int32((i + 1) * time_resolution * HOURS_PER_DAY))])
+            for i in range( 0,np.int32(len(D_movable) / time_resolution / HOURS_PER_DAY))], dtype=np.float64)
         self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
 
 class _StorageBlock:
@@ -547,6 +553,7 @@ def build_environment(structured_data):
         structured_data.optimization.constraint_level,
         structured_data.optimization.criterion_num,
         structured_data.connexion,
+        structured_data.optimization.type_optim,
     )
 
     if structured_data.optimization.type_optim=='research' : 
@@ -557,6 +564,8 @@ def build_environment(structured_data):
         structured_data.hyperparameters.operators_num,
         structured_data.hyperparameters.cost_constraint,
         structured_data.hyperparameters.elitism_probability,)
+    else : hyperparameters = None
+        
     
     hyperparameters_pro = _HyperparametersBlock(
     structured_data.hyperparameterspro.r_cross,

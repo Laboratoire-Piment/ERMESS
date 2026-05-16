@@ -150,6 +150,25 @@ def pro_to_research(pop_pro,Context):
         pop_res.append(ind_res)
     return (pop_res)
 
+def _build_baseline_solution_research(Context, HOURS_PER_DAY):
+    """
+    Build a dummy individual corresponding to the baseline solution.
+    
+    Warnings : 
+        The contract is by default 0 (i.e. the first given in the inputs)
+    """
+    
+    production_set_baseline = np.zeros(Context.production.n_units)
+    storage_sum_baseline = 0
+    storage_TS_baseline = np.zeros(Context.time.n_bits)
+    contract_baseline = 0
+    Y_DSM_baseline = Context.loads.Y_movable
+    D_DSM_baseline = Context.loads.D_movable.reshape(int(Context.time.time_resolution*HOURS_PER_DAY)) , int(Context.time.n_bits/Context.time.time_resolution/HOURS_PER_DAY)
+    fitness_baseline = np.nan
+    trades_baseline = np.zeros(Context.time.n_bits)
+    
+    return(Non_JIT_Individual_res(production_set_baseline,storage_sum_baseline,storage_TS_baseline,contract_baseline,Y_DSM_baseline,D_DSM_baseline,fitness_baseline,trades_baseline))
+
 def find_cost_function_research(Context, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters):
     """
     Determines the right loss function to apply to the optimization problem (RESEARCH).
@@ -609,6 +628,7 @@ def initial_population_research(inputs):
     PROB_UNUSED_STORAGE = 0.1
     MEAN_POWER_STORAGE_FACTOR = 2
     SD_POWER_STORAGE_FACTOR = 1
+    HOURS_PER_DAY = 24
     
     n_store = Context.storage.n_store
     n_bits = Context.time.n_bits
@@ -638,8 +658,8 @@ def initial_population_research(inputs):
     # Random Demand-side managements
     Initial_Y_DSM = [np.random.rand(n_bits) for i in range(population_size)]
     Initial_Y_DSM = [Initial_Y_DSM[i]/sum(Initial_Y_DSM[i])*sum(Context.loads.Y_movable) for i in range(population_size)]
-    Initial_D_DSM = [[np.random.rand(int(Context.time.time_resolution*24)) for j in range(int(n_bits/Context.time.time_resolution/24))] for i in range(population_size)]
-    Initial_D_DSM = [np.array([Initial_D_DSM[i][j]/sum(Initial_D_DSM[i][j])*np.sum(Context.loads.D_movable[j*int(Context.time.time_resolution*24):((j+1)*int(Context.time.time_resolution*24))]) for j in range(int(n_bits/Context.time.time_resolution/24))]) for i in range(population_size)]
+    Initial_D_DSM = [[np.random.rand(int(Context.time.time_resolution*HOURS_PER_DAY)) for j in range(int(n_bits/Context.time.time_resolution/HOURS_PER_DAY))] for i in range(population_size)]
+    Initial_D_DSM = [np.array([Initial_D_DSM[i][j]/sum(Initial_D_DSM[i][j])*np.sum(Context.loads.D_movable[j*int(Context.time.time_resolution*HOURS_PER_DAY):((j+1)*int(Context.time.time_resolution*24))]) for j in range(int(n_bits/Context.time.time_resolution/24))]) for i in range(population_size)]
     Initial_population = list()
     
     for j in range(population_size):

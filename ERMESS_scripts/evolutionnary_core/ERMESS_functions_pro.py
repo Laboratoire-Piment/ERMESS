@@ -170,6 +170,29 @@ def unjitting_pop_pro(jitted_pop):
         pop.append(Non_JIT_Individual_pro(np.int64(ind.production_set),np.array(ind.contract,dtype=np.int64),(ind.DG_strategy),np.array(ind.discharge_order,dtype=np.int64),np.float64(ind.energy_use_coefficient),np.array(ind.overlaps,dtype=np.float64),np.array(ind.D_DSM_minimum_levels,dtype=np.float64),np.array(ind.Y_DSM_minimum_levels,dtype=np.float64),np.float64(ind.DG_min_runtime),np.float64(ind.DG_min_production),np.array(ind.storages,dtype=np.float64),np.float64(ind.fitness)))
     return(pop)
 
+def _build_baseline_solution_pro(Context):
+    """
+    Build a dummy individual corresponding to the baseline solution.
+    
+    Warnings : 
+        The contract is by default 0 (i.e. the first given in the inputs)
+    """
+    HOURS_PER_DAY = 24
+    MONTH_PER_YEAR = 12
+    production_set_baseline = np.zeros(Context.production.n_units,dtype = np.int64)
+    contract_baseline = 0 if Context.optimization.connexion == 'On-grid' else -1
+    DG_strategy_baseline = 'LF'
+    discharge_order_baseline = np.arange(Context.storage.n_store,dtype=np.int64 )
+    energy_use_coefficient_baseline = 0.
+    overlaps_baseline = np.zeros((2,9))
+    D_DSM_minimum_levels_baseline = np.zeros(HOURS_PER_DAY-1)
+    Y_DSM_minimum_levels_baseline = np.zeros(MONTH_PER_YEAR-1)
+    DG_min_runtime_baseline = np.int64(0)
+    DG_min_production_baseline = 0.
+    storages_baseline = np.zeros((4,Context.storage.n_store))
+    fitness_baseline = np.nan
+    
+    return(Individual_pro(production_set_baseline,contract_baseline,DG_strategy_baseline,discharge_order_baseline,energy_use_coefficient_baseline,overlaps_baseline,D_DSM_minimum_levels_baseline,Y_DSM_minimum_levels_baseline,DG_min_runtime_baseline,DG_min_production_baseline,storages_baseline,fitness_baseline))
 
 
 

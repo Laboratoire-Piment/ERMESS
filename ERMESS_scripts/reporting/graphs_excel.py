@@ -131,12 +131,12 @@ def _build_timeseries_chart(ws, cfg, C):
 # MAIN FUNCTION
 # =========================
 
-def add_excel_charts(Contexte, charts_config):
+def add_excel_charts(Context, charts_configurations):
 
-    file_name = Contexte.postprocess_config.file_name
+    file_name = Context.postprocess_config.file_name
     wb = openpyxl.load_workbook(file_name)
 
-    for cfg in charts_config:
+    for cfg in charts_configurations:
 
         ws = wb[cfg["sheet"]]
 
@@ -144,7 +144,7 @@ def add_excel_charts(Contexte, charts_config):
         # TIMESERIES SPECIAL CASE
         # =========================
         if cfg["type"] == "series of lines":
-            chart = _build_timeseries_chart(ws, cfg, Contexte)
+            chart = _build_timeseries_chart(ws, cfg, Context)
 
         # =========================
         # STANDARD CHARTS
@@ -158,7 +158,7 @@ def add_excel_charts(Contexte, charts_config):
 
             # ----- DATA
             if "data" in cfg:
-                min_col, min_row, max_col, max_row = _resolve(cfg["data"], Contexte)
+                min_col, min_row, max_col, max_row = _resolve(cfg["data"], Context)
 
                 if max_row is None:
                     max_row = ws.max_row
@@ -171,7 +171,7 @@ def add_excel_charts(Contexte, charts_config):
 
             # ----- CATEGORIES
             if "categories" in cfg:
-                cmin_col, cmin_row, cmax_col, cmax_row = _resolve(cfg["categories"], Contexte)
+                cmin_col, cmin_row, cmax_col, cmax_row = _resolve(cfg["categories"], Context)
 
                 if cmax_row is None:
                     cmax_row = ws.max_row

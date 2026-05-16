@@ -14,6 +14,12 @@ from dataclasses import dataclass
 from ERMESS_scripts.data.indices import *
 from ERMESS_scripts.reporting import graphs_excel as EgE
 from ERMESS_scripts.reporting import charts_config as Ecc
+from ERMESS_scripts.reporting import ERMESS_KPI_functions as Ekpi
+
+from ERMESS_scripts.evolutionnary_core.ERMESS_functions_research import _build_baseline_solution_research
+from ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro import _build_baseline_solution_pro
+ 
+
 
 @dataclass
 class _PostProcessingResults:
@@ -99,7 +105,7 @@ def _build_comparison_block(outputs_solution, output_baseline, keys):
     return df
   
 def compute_economic_comparisons(outputs_solution, output_baseline):
-    NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['Technical']['Installation lifetime (yrs.)']
+    NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['technical']['Installation lifetime (yrs.)']
     Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
     if Payback<0 : 
         Payback = np.nan
@@ -165,26 +171,26 @@ def _build_timeseries(outputs_solution, solution, Context, datetime):
         Clean time series DataFrame ready for analysis/export.
     """
 
-    TS = outputs_solution["TimeSeries"]
+    TS = outputs_solution["timeseries"]
 
     # --- Datetime ---
     datetime_index = pd.to_datetime(datetime, unit="s").tz_localize(None)
 
     # --- Core signals ---
-    load = TS["Optimized load (kW)"]
+    load = TS["optimized load (kW)"]
     production = TS["production (kW)"]
-    grid = TS["Grid trading (kW)"]
-    dg = TS["DG production (kW)"]
-    curtailment = TS["Curtailment (kW)"]
+    grid = TS["grid trading (kW)"]
+    dg = TS["genset production (kW)"]
+    curtailment = TS["curtailment (kW)"]
 
     # --- Storages ---
-    power_storages = pd.DataFrame(TS["Storage_TS (kW)"],index=[f"{tech} power (kW)" for tech in Context.storage.technologies],).T
-    losses = pd.DataFrame(TS["Losses (kW)"],index=[f"{tech} losses (kW)" for tech in Context.storage.technologies],).T
-    socs = pd.DataFrame(TS["SOCs (%)"],index=[f"{tech} SOC (%)" for tech in Context.storage.technologies],).T
+    power_storages = pd.DataFrame(TS["storage_TS (kW)"],index=[f"{tech} power (kW)" for tech in Context.storage.technologies],).T
+    losses = pd.DataFrame(TS["losses (kW)"],index=[f"{tech} losses (kW)" for tech in Context.storage.technologies],).T
+    socs = pd.DataFrame(TS["SOC (%)"],index=[f"{tech} SOC (%)" for tech in Context.storage.technologies],).T
     power_storage_total = power_storages.sum(axis=1)
 
     # --- Grid price ---
-    grid_price = Context.grid.prices[solution.contract] if Context.config.connexion=="On-grid" else None
+    grid_price = Context.grid.prices[solution.contract] if Context.optimization.connexion=="On-grid" else None
 
     # --- Imbalance ---
     imbalance = (production+ power_storage_total+ grid- load- curtailment+ dg)
@@ -193,7 +199,6 @@ def _build_timeseries(outputs_solution, solution, Context, datetime):
     df = pd.concat([pd.DataFrame({"Datetime": datetime_index,"Load (kW)": load,"Power production (kW)": production,}),power_storages,losses,
                     pd.DataFrame({"Grid power (kW)": grid,"Grid price (€/kWh)": grid_price,"Diesel production (kW)": dg,
                     "Curtailment (kW)": curtailment,"Imbalance (kW)": imbalance,}),socs,],axis=1)
-
     return df
 
 def _build_flows(outputs_solution, output_baseline, Context):
@@ -212,15 +217,15 @@ def _build_flows(outputs_solution, output_baseline, Context):
     """
 
     # --- Base flows ---
-    flows_opt = pd.DataFrame(outputs_solution["Flows"], index=["Optimization"])
-    flows_base = pd.DataFrame(output_baseline["Flows"], index=["Baseline"])
+    flows_opt = pd.DataFrame(outputs_solution["storage flows"], index=["Optimization"])
+    flows_base = pd.DataFrame(output_baseline["storage flows"], index=["Baseline"])
 
     df = pd.concat([flows_opt, flows_base])
 
-    # --- Storage flows helper ---
+    # ---  helper ---
     def build_storage_metric(metric_name, label):
-        opt_values = outputs_solution["Flows storages"][metric_name]
-        base_values = output_baseline["Flows storages"][metric_name]
+        opt_values = outputs_solution["storage flows"][metric_name]
+        base_values = output_baseline["storage flows"][metric_name]
 
         data_opt = {f"{tech} {label}": opt_values[i] for i, tech in enumerate(Context.storage.technologies)}
         data_base = {f"{tech} {label}": base_values[i] for i, tech in enumerate(Context.storage.technologies)}
@@ -229,9 +234,9 @@ def _build_flows(outputs_solution, output_baseline, Context):
 
     # --- Storage metrics ---
     metrics = [
-        ("Annual stored energy (kWh)", "annual stored energy (kWh)"),
-        ("Annual reported energy (kWh)", "annual reported energy (kWh)"),
-        ("Annual losses (kWh)", "annual losses (kWh)"),
+        ("annual stored energy (kWh)", "annual stored energy (kWh)"),
+        ("annual reported energy (kWh)", "annual reported energy (kWh)"),
+        ("annual losses (kWh)", "annual losses (kWh)"),
     ]
 
     storage_blocks = [build_storage_metric(metric, label)for metric, label in metrics]
@@ -245,43 +250,43 @@ def _build_technical(outputs_solution, output_baseline):
     """
     Build technical comparison DataFrame.
     """
-    return _build_comparison_block(outputs_solution, output_baseline, "Technical")
+    return _build_comparison_block(outputs_solution, output_baseline, "technical")
 
 def _build_environmental(outputs_solution, output_baseline):
     """
     Build environmental comparison DataFrame.
     """
-    return _build_comparison_block(outputs_solution, output_baseline, "Environment")
+    return _build_comparison_block(outputs_solution, output_baseline, "environment")
 
 def _build_genset(outputs_solution, output_baseline):
     """
     Build genset comparison DataFrame.
     """
-    return _build_comparison_block(outputs_solution, output_baseline, "Genset")
+    return _build_comparison_block(outputs_solution, output_baseline, "genset")
 
-def _build_global_dispatching(outputs_solution, output_baseline):
+def _build_energy_allocation(outputs_solution, output_baseline):
     """
     Build balancing comparison DataFrame.
     """
-    output_useprod   = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','useprod'])
-    output_loadmeet  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','Loadmeet'])
-    output_whenprod  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','when_prod'])
-    output_whenload  = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Uses','when_load'])
-    output_gridexport = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Grid usage','export'])
-    output_gridimport = _build_comparison_block(outputs_solution, output_baseline, ['Extra_outputs','Grid usage','import'])
+    production_allocation   = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','flow_attribution','production_allocation'])
+    load_coverage  = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','flow_attribution','load_coverage'])
+    surplus_energy_actions  = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','actions','surplus_energy_actions'])
+    deficit_energy_actions  = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','actions','deficit_energy_actions'])
+    grid_export_sources = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','flow_attribution','grid_export_sources'])
+    grid_import_usage = _build_comparison_block(outputs_solution, output_baseline, ['energy_allocations','flow_attribution','grid_import_usage'])
     
-    return output_useprod,output_loadmeet,output_whenprod,output_whenload,output_gridexport,output_gridimport
+    return production_allocation,load_coverage,surplus_energy_actions,deficit_energy_actions,grid_export_sources,grid_import_usage
 
 def _build_demand_side_management(outputs_solution, output_baseline):
     """
     Build demand_side_management comparison DataFrame.
     """
-    Load_strategy = pd.DataFrame(outputs_solution['Demand-side management']['Load strategy'])
+    Load_strategy = pd.DataFrame(outputs_solution['demand-side management']['Load_strategy'])
     # Removing timezones of Load Strategy to enable excel export
     if pd.api.types.is_datetime64tz_dtype(Load_strategy['Datetime']):
         Load_strategy['Datetime'] = Load_strategy['Datetime'].dt.tz_convert(None)
-    DSM_daily_strategy = outputs_solution['Demand-side management']['DSM daily strategy']
-    DSM_yearly_strategy = outputs_solution['Demand-side management']['DSM yearly strategy']
+    DSM_daily_strategy = outputs_solution['demand-side management']['DSM_daily_strategy']
+    DSM_yearly_strategy = outputs_solution['demand-side management']['DSM_yearly_strategy']
    
     return Load_strategy,DSM_daily_strategy,DSM_yearly_strategy
 
@@ -294,7 +299,7 @@ def _build_economic(outputs_solution, output_baseline, Context):
     econ_base = output_baseline["economics"].copy()
     
     # --- External computation ---
-    NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline) if Context.postprocess_config.include_baseline else (np.nan,np.nan)
+    NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline) 
 
     # --- Assign ---
     econ_opt["NPV (€)"] = NPV
@@ -302,8 +307,14 @@ def _build_economic(outputs_solution, output_baseline, Context):
 
     econ_base["NPV (€)"] = 0
     econ_base["Payback (yrs.)"] = np.nan
-
-    return _build_comparison_block({"economics": econ_opt},{"economics": econ_base},"economics",)
+    
+    df = _build_comparison_block({"economics": econ_opt},{"economics": econ_base},"economics",)
+    df_reordered = df.loc[:, ['LCOE (€/kWh)', 'production (€/kWh)', 'OPEX storage (€/kWh)',
+    'CAPEX storage (€/kWh)', 'contract power (€/kWh)','overrun penalty (€/kWh)', 'energy importation (€/kWh)',
+    'genset fuel cost (€/kWh)', 'genset CAPEX cost (€/kWh)','genset OPEX cost (€/kWh)', 'energy exportation (€/kWh)', 
+    'Annual net benefits (€/yrs.)', 'Value (€)','Initial investment (€)', 'NPV (€)','Payback (yrs.)']]
+    
+    return df_reordered
 
 def _build_production(solution, Context):
     """
@@ -320,17 +331,17 @@ def _build_SOC_distribution(outputs_solution, output_baseline):
     """
     Build distribution of depth of discharge storage DataFrame.
     """
-    return pd.DataFrame(outputs_solution['Extra_outputs']['distribution_DOD'],index=range(100))
+    return pd.DataFrame(outputs_solution['distribution_DOD'],index=range(100))
 
 def _build_time_balancing(outputs_solution, output_baseline):
     """
     Build time balancing DataFrames.
     """
     
-    daily_optim_time_balancing = outputs_solution['Balancing']['daily time balancing']
-    daily_baseline_time_balancing = output_baseline['Balancing']['daily time balancing']
-    yearly_optim_time_balancing = outputs_solution['Balancing']['yearly time balancing']
-    yearly_baseline_time_balancing = output_baseline['Balancing']['yearly time balancing']
+    daily_optim_time_balancing = outputs_solution['balancing']['daily_time_balancing']
+    daily_baseline_time_balancing = output_baseline['balancing']['daily_time_balancing']
+    yearly_optim_time_balancing = outputs_solution['balancing']['yearly_time_balancing']
+    yearly_baseline_time_balancing = output_baseline['balancing']['yearly_time_balancing']
 
     return [daily_optim_time_balancing,daily_baseline_time_balancing,yearly_optim_time_balancing,yearly_baseline_time_balancing]
 
@@ -349,7 +360,7 @@ def _build_EMS(outputs_solution,Context):
     return [strategy,repartition_coefficient,D_DSM_minimum_levels,Y_DSM_minimum_levels,discharge_order,overlaps]
 
 
-def build_results(solution, Context, datetime):
+def build_results(solution, baseline_solution, Context, datetime):
     """Build all post-processing result tables for a solution.
 
     This function evaluates the solution, computes comparison metrics
@@ -366,11 +377,9 @@ def build_results(solution, Context, datetime):
         post-processing tables and indicators.
     """
 
-    evaluation_function = Context.postprocess_config.evaluation_function
-    evaluation_baseline = Context.postprocess_config.evaluation_base
-
-    output_baseline = evaluation_baseline(Context,solution,datetime)
-    outputs_solution = evaluation_function(solution,Context,datetime)
+    outputs_solution = Ekpi.compute_KPI(solution,Context,datetime)
+    output_baseline = Ekpi.compute_KPI(baseline_solution,Context,datetime)
+    
     NPV,Payback = compute_economic_comparisons(outputs_solution, output_baseline)
     outputs_solution['economics']["NPV (€)"] = NPV
     outputs_solution['economics']["Payback (yrs.)"] = Payback
@@ -381,14 +390,17 @@ def build_results(solution, Context, datetime):
     technical = _build_technical(outputs_solution, output_baseline)
     economic = _build_economic(outputs_solution, output_baseline, Context)
     environmental = _build_environmental(outputs_solution, output_baseline)
-    storages = pd.DataFrame(outputs_solution['Storages'], index=Context.storage.technologies)
+    storages = pd.DataFrame(outputs_solution['storages'], index=Context.storage.technologies)
     production = _build_production(solution, Context)
-    global_dispatching = _build_global_dispatching(outputs_solution, output_baseline)
+    global_dispatching = _build_energy_allocation(outputs_solution, output_baseline)
     SOC_distribution = _build_SOC_distribution(outputs_solution, output_baseline)
     genset = _build_genset(outputs_solution, output_baseline)
     demand_side_management = _build_demand_side_management(outputs_solution, output_baseline)
     time_balancing = _build_time_balancing(outputs_solution, output_baseline)  
-    EMS = _build_EMS(outputs_solution,Context) 
+    if Context.optimization.type_optim == 'pro':
+        EMS = _build_EMS(outputs_solution,Context) 
+    else :
+        EMS = None
     
     return _PostProcessingResults(timeseries=timeseries,technical=technical,economic=economic,environmental=environmental,flows=flows,
         storages=storages,production=production,global_dispatching=global_dispatching,SOC_distribution=SOC_distribution,genset=genset,
@@ -405,13 +417,19 @@ def post_traitement(solution, Context, datetime):
         Context: Global ERMESS context object.
         datetime (np.ndarray | pandas.DatetimeIndex): Simulation timestamps.
     """
+        
+    HOURS_PER_DAY=24
+    if Context.optimization.type_optim == 'research':
+        baseline_solution = _build_baseline_solution_research(Context)
+    elif Context.optimization.type_optim == 'pro':
+        baseline_solution = _build_baseline_solution_pro(Context)
 
-    results = build_results(solution, Context, datetime)
+    results = build_results(solution, baseline_solution, Context, datetime)
 
     if Context.postprocess_config.export_type=='Excel':
         export_to_excel(results, Context)
 
     if Context.postprocess_config.export_charts:
-        EgE.add_excel_charts(Context=Context,charts_config=charts_config)
+        EgE.add_excel_charts(Context=Context,charts_configurations=Ecc.charts_configurations)
 
 

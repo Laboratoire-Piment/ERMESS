@@ -5,7 +5,7 @@ Created on Mon Apr 13 21:17:59 2026
 @author: JoPHOBEA
 """
 
-charts_config = [
+charts_configurations = [
 
         # =========================
         # GLOBAL DISPATCHING
@@ -92,7 +92,7 @@ charts_config = [
             "sheet": "Financial outputs",
             "type": "bar",
             "title": "LCOE decomposition",
-            "data": (3, 1, 12, 3),
+            "data": (3, 1, 11, 3),
             "categories": (1, 2, 1, 3),
             "position": "B6",
             "y_title": "Cost (€/kWh)",
@@ -105,7 +105,7 @@ charts_config = [
             "sheet": "Financial outputs",
             "type": "bar",
             "title": "Exportation income",
-            "data": (13, 1, 13, 3),
+            "data": (12, 1, 12, 3),
             "categories": (1, 2, 1, 3),
             "position": "F6",
             "y_title": "Income (€/kWh)",

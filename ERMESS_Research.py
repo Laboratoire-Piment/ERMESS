@@ -37,7 +37,7 @@ from ERMESS_scripts.data import data_builder as Dbl
 from ERMESS_scripts.evolutionnary_core import ERMESS_research_initialisation as Eri
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 
-from ERMESS_scripts.reporting import write_excel as Wex
+from ERMESS_scripts.reporting import post_processing as Epp
 
 warnings.simplefilter(action='ignore', category=UserWarning)
 
@@ -71,7 +71,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
         
     best = run_ERMESS_research(Context, structured_data.hyperparameters.nb_ere, structured_data.hyperparameters.n_core, node_id, structured_data.hyperparameters.n_nodes, migration_bin)
     print('best score : ',best.fitness)
-    Wex.post_traitement(solution=best, Context=Context, datetime=structured_data.time.datetime) 
+    Epp.post_traitement(solution=best, Context=Context, datetime=structured_data.time.datetime) 
         
         
 #    run_ERMESS_research(Context, Initial_populations, nb_ere, n_iter, n_pop, structured_data.hyperparameters.n_core, node_id, n_nodes)

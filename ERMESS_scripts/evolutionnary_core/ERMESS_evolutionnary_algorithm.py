@@ -148,7 +148,7 @@ def evolutionnary_algorithm_pro(inputs):
    n_random_factors = 43
    n_random_choices = 13
 
-   pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context,'pro')
+   pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
    fitness_function_GA=Ef.find_cost_function_pro(Context,pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters)  
    
    for i in range(n_pop):

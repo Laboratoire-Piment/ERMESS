@@ -314,7 +314,8 @@ def _data_validation(data):
     # =========================
    hyperparameters_operators_num = np.float64(data['Hyperparameters'][['Contract','Production','Storage volume','Storage_global','Storage_power','Storage_trades_consistency','Storage_patterns','Inter_storages','Storage_mix','Curve_smoothing','Constraint_forcing','Interdaily_consistency','DSM_trades_consistency','DSM_noise']])
 
-   _validate_hyperparameters_matrix(hyperparameters_operators_num, used_indices, row_names=ROW_NAMES,
+   if env["type"][0]=="research":
+        _validate_hyperparameters_matrix(hyperparameters_operators_num, used_indices, row_names=ROW_NAMES,
     col_names=COL_NAMES)
 
     # =========================

@@ -12,8 +12,7 @@ import datetime
 from ERMESS_scripts.utils.constraints import compute_grid_prices
 
 from ERMESS_scripts.data.indices import ConstraintIdx, CriterionIdx
-from ERMESS_scripts.cost import ERMESS_cost_functions as Cfc
-
+from ERMESS_scripts.reporting import ERMESS_KPI_functions as EKPI
 
 from . import data_classes as  Dcl
 from . import ERMESS_meteo as Eme
@@ -221,18 +220,11 @@ def _parse_output_config(data):
     Returns:
         SiteData: Dataclass containing site information.
     """
-    type_optim = data['Environment']['type'][0]   
-    if type_optim == 'pro':
-        evaluation_function = Cfc.KPI_pro
-    elif type_optim =='research':
-        evaluation_function = Cfc.KPI_research
-    evaluation_base = Cfc.cost_baseline
     output_file_name = data["Outputs"]["File name"][0]
     export_type = data["Outputs"]["export type"][0]
     export_charts = data["Outputs"]["export charts"][0]
-    include_baseline = data["Outputs"]["include baseline"][0]
 
-    return Dcl.PostProcessConfig(evaluation_function,evaluation_base,output_file_name,export_type,export_charts,include_baseline)
+    return Dcl.PostProcessConfig(output_file_name,export_type,export_charts)
 
 
 def _parse_datetime(data, site):

@@ -79,6 +79,9 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
           determines the fitness evaluation of candidate microgrid configurations.
     """
     
+    MONTH_PER_YEAR = 12
+    HOURS_PER_DAY = 24
+    
     #---------------------------------------------------------------------------------
     # Recurrent variables
     #---------------------------------------------------------------------------------
@@ -106,13 +109,13 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
 
     # SIMULATION
     # --------------------------------------------------------------------------------------------
-    full_D_DSM_min_levels = np.interp(np.arange(0,24,1/time_resolution),np.arange(0.,24.),np.concatenate((gene.D_DSM_minimum_levels,np.array( [1.]))))
-    full_Y_DSM_min_levels = np.interp(np.arange(0,12+1/(n_bits),12/(n_bits)),np.arange(0.,13.),np.concatenate((np.array( [0.]),gene.Y_DSM_minimum_levels,np.array( [1.]))))
+    full_D_DSM_min_levels = np.interp(np.arange(0,HOURS_PER_DAY,1/time_resolution),np.arange(0.,HOURS_PER_DAY),np.concatenate((gene.D_DSM_minimum_levels,np.array( [1.]))))
+    full_Y_DSM_min_levels = np.interp(np.arange(0,MONTH_PER_YEAR+1/(n_bits),MONTH_PER_YEAR/(n_bits)),np.arange(0.,MONTH_PER_YEAR+1.),np.concatenate((np.array( [0.]),gene.Y_DSM_minimum_levels,np.array( [1.]))))
     day=-1
     D_DSM_count=0
     Y_DSM_count=0
     for i in range(n_bits-1):
-        if((i)%(time_resolution*24)==0):
+        if((i)%(time_resolution*HOURS_PER_DAY)==0):
             day = day+1
             D_DSM_needs = pro_parameters.total_D_Movable_load[day]
             D_DSM_count=0
