@@ -142,7 +142,7 @@ def pro_to_research(pop_pro,Context):
     pop_res = []
     for ind_pro in pop_pro:
         production = ((Context.production.unit_prods.T*ind_pro.production_set).sum(axis=1)+Context.production.current_prod)/KILOS_FACTOR_CONVERSION    
-        pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context,'research')
+        pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
         (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE(ind_pro, global_parameters, pro_parameters, production ,RENSystems_parameters)
         D_DSM = D_DSM.reshape((int(Context.time.n_bits/(Context.time.time_resolution*HOURS_PER_DAY)),int(Context.time.time_resolution*HOURS_PER_DAY)))
         storage_sum=np.array([-np.sum(np.where(storage_TS[i]<0,storage_TS[i],0)) for i in range(Context.storage.n_store)])
