@@ -37,7 +37,7 @@ def evolutionnary_algorithm_research(inputs):
    r_cross = Context.hyperparameters.r_cross
    n_pop = Context.hyperparameters.n_pop
 
-   pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context,'research')
+   pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
    fitness_function_GA=Ef.find_cost_function_research(Context, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters)
    activate_Y_DSM = Context.loads.total_Y_movable>0
    activate_D_DSM = (Context.time.time_resolution>1/24 and (len(extra_parameters.D_DSM_indexes)>0))
