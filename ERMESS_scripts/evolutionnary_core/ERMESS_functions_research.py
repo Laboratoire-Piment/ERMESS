@@ -8,7 +8,7 @@ Created on Thu Sep  7 19:23:34 2023
 import numpy as np
 from numba import jit
 from numba.experimental import jitclass
-from numba import int64, float64, types
+from numba import int64, float64
 
 from ERMESS_scripts.evolutionnary_core import ERMESS_evolutionnary_operators as Eop
 from ERMESS_scripts.energy_model import ERMESS_EMS_models as Eems

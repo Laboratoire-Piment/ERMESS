@@ -147,7 +147,8 @@ def export_to_excel(results, Context):
         _write_multiple_tables(writer,results.demand_side_management,"Demand side management",positions=[(0, 0), (0, 7),(0, 13),], index=False)
         _write_multiple_tables(writer, results.time_balancing, "Balancing",positions=[(0, 0), (0, 7),(0, 14),(0, 21),], index=False)
         
-        _write_multiple_tables(writer, results.EMS, "EMS",positions=[(0, 0), (0, 1),(0, 3),(0, 6),(0, 9),(0, 11),], index=False)
+        if (Context.optimization.type_optim == "pro") :
+            _write_multiple_tables(writer, results.EMS, "EMS",positions=[(0, 0), (0, 1),(0, 3),(0, 6),(0, 9),(0, 11),], index=False)
     
         wb = writer.book
         for ws in wb.worksheets:
