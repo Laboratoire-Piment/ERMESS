@@ -118,9 +118,9 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
             day = day+1
             D_DSM_needs = pro_parameters.total_D_Movable_load[day]
             D_DSM_count=0
-        SOC_eff = SOCs_eff[:,i-1] if i>0 else gene.storages[3,:]
+        SOC_eff = SOCs_eff[:,i-1] if i>0 else gene.storages[INDIV_PRO_SOC_INIT,:]
         P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
-        D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*24))]-D_DSM_count)
+        D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*HOURS_PER_DAY))]-D_DSM_count)
         Y_DSM[i] = max(0,pro_parameters.total_Y_Movable_load*full_Y_DSM_min_levels[i]-Y_DSM_count)
         P_net_2 = P_net[i] - D_DSM[i] - Y_DSM[i]
         D_DSM[i] = D_DSM[i] + max(0,min(P_net_2*gene.energy_use_coefficient,D_DSM_needs-D_DSM_count-D_DSM[i]))
@@ -135,7 +135,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
             while ((index<(n_store))) : 
                 index = index+1
                 store = gene.discharge_order[n_store-index]
-                if ((P_affordable>0) & (min(gene.storages[0:3,store])>0)):
+                if ((P_affordable>0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):
                     P_bat[store,i] = -ESM.battery_charge(gene.storages[:,store], SOC_eff[store],gene.overlaps[1,:] if (index==(n_store-1)) else (gene.overlaps[0,:]) , P_affordable, time_resolution) # battery charging 
                     P_affordable = P_affordable+P_bat[store,i]
                     SOCs_eff[store,i] = SOC_eff[store] - P_bat[store,i] /time_resolution / gene.storages[0,store]
@@ -150,7 +150,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
             while ((index<(n_store-1))) : 
                 index = index+1
                 store=gene.discharge_order[index]
-                if ((P_affordable<0) & (min(gene.storages[0:3,store])>0)):                                   
+                if ((P_affordable>0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):                                   
                     P_bat[store,i]=ESM.battery_discharge(gene.storages[:,store], SOC_eff[store], RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store],gene.overlaps[1,:] if (index==(n_store-2)) else (gene.overlaps[0,:]) , -P_affordable, time_resolution) # battery charging                
                     P_affordable=P_affordable+P_bat[store,i]
                     Losses[store,i]=P_bat[store,i]/RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store]-P_bat[store,i]
@@ -172,12 +172,12 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
     
     i=n_bits-1
   #Last timestep, storage loops are closed      
-    if((i)%(time_resolution*24)==0):
+    if((i)%(time_resolution*HOURS_PER_DAY)==0):
         day = day+1
         D_DSM_needs = pro_parameters.total_D_Movable_load[day]
         D_DSM_count=0
     P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
-    D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*24))]-D_DSM_count)
+    D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*HOURS_PER_DAY))]-D_DSM_count)
     Y_DSM[i] = max(0,pro_parameters.total_Y_Movable_load*full_Y_DSM_min_levels[i]-Y_DSM_count)
     P_net_2 = P_net[i] - D_DSM[i] - Y_DSM[i]
     D_DSM[i] = D_DSM[i] + max(0,min(P_net_2*gene.energy_use_coefficient,D_DSM_needs-D_DSM_count-D_DSM[i]))
@@ -190,7 +190,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
     store=-1
     while ((store<(n_store-1))) : 
             store = store+1
-            if( min(gene.storages[0:3,store])>0):
+            if( (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):
                 Diff = -(gene.storages[3,store] - SOCs_eff[store,i-1])*gene.storages[0,store]*time_resolution
                 P_bat[store,i] = Diff*RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store] if (Diff>0) else Diff
                 Losses[store,i]=P_bat[store,i]/RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store]-P_bat[store,i] if (Diff>0) else 0

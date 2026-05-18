@@ -11,8 +11,6 @@ from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
 
-from ERMESS_scripts.cost import ERMESS_cost_functions as Cfc
-
 # genetic algorithm
 def evolutionnary_algorithm_research(inputs):
    """
@@ -60,7 +58,6 @@ def evolutionnary_algorithm_research(inputs):
  # create the next generation
      children = list()
      
-     err_list = list()
      for i in range(0, n_pop, 2):
  # get selected parents in pairs
              p1, p2 = selected[i], selected[i+1]
@@ -68,34 +65,13 @@ def evolutionnary_algorithm_research(inputs):
  # crossover and mutation
              random_factors,choices = random_factors_set[gen,i,:],choices_set[gen,i,:]
              (p1_mut,p1_ope) = Efr.NON_JIT_mutation_contraintes_research(p1.copy() , random_factors, choices, activate_Y_DSM, activate_D_DSM, global_parameters, RENSystems_parameters, grid_parameters, extra_parameters)
-             if sum(sum(np.isnan(p1_mut.storage_TS))):
-                 print('stop p1mut',i)
-                 print(np.where(np.isnan(p1_mut.storage_TS)[0]))
-                 err_list.append([p1,p1_mut])
              random_factors,choices = random_factors_set[gen,i+1,:],choices_set[gen,i+1,:]
              (p2_mut,p2_ope) = Efr.NON_JIT_mutation_contraintes_research(p2.copy() , random_factors, choices, activate_Y_DSM, activate_D_DSM, global_parameters, RENSystems_parameters, grid_parameters, extra_parameters)
-             if sum(sum(np.isnan(p2_mut.storage_TS))):
-                 print('stop p2mut',i)
-                 print(np.where(np.isnan(p2_mut.storage_TS)[0]))
-                 err_list.append([p2,p2_mut])
 
              [c1,c2,ind] = Efr.crossover_reduit(p1_mut, p2_mut, r_cross,global_parameters,RENSystems_parameters,extra_parameters)
-             if sum(sum(np.isnan(c1.storage_TS))):
-                 print('stop c1')
-             if sum(sum(np.isnan(c2.storage_TS))):
-                 print('stop c2')
-                 err_list.append([p1_mut,p2_mut,c1,c2])
 
-  # Bouclage
-             c1=Efr.enforce_energy_consistency (c1,RENSystems_parameters,pro_parameters,extra_parameters,activate_Y_DSM )    
-             if sum(sum(np.isinf(c1.storage_TS))):
-                  print('inf boulage c1')
-                  err_list.append([c1])
-
-             if sum(sum(np.isnan(c1.storage_TS))):
-                       print('nan boulagec1')
-                       err_list.append([c1])
-             
+  # Energy consistency
+             c1=Efr.enforce_energy_consistency (c1,RENSystems_parameters,pro_parameters,extra_parameters,activate_Y_DSM )                
              (c1.fitness,c1.trades)=fitness_function_GA(c1)
 
                     
@@ -106,15 +82,8 @@ def evolutionnary_algorithm_research(inputs):
 
                  # store for next generation
              children.append(c1.copy())
+             
              c2=Efr.enforce_energy_consistency (c2,RENSystems_parameters,pro_parameters,extra_parameters,activate_Y_DSM)
-             if sum(sum(np.isinf(c2.storage_TS))):
-                  print('inf boulagec2')
-                  err_list.append([c2])
-
-             if sum(sum(np.isnan(c2.storage_TS))):
-                  print('nan boulagec2')
-                  err_list.append([c2])
-
              (c2.fitness,c2.trades)=fitness_function_GA(c2) 
  
              if c2.fitness < p2.fitness : 
@@ -126,10 +95,8 @@ def evolutionnary_algorithm_research(inputs):
 
  # replace population
      pop = children
-     print(gen,len(pop))
       
      if (random_elitism_prob[gen]<Context.hyperparameters.elitism_probability):
-         print ('rempl gen ', gen ,' ind ', random_elitism_choice[gen] , ' over ', len(pop))
          pop[random_elitism_choice[gen]]=Efr.Individual_res.copy(best)
     #On introduit de l'élitisme
    del pop[np.random.randint(len(pop))]
@@ -235,18 +202,11 @@ def evolutionnary_algorithm_pro(inputs):
  # crossover and mutation
              random_factors,choices = random_factors_set[gen,i,:],choices_set[gen,i,:]
              (p1_mut,p1_ope) = Efp.NON_JIT_mutation_contraintes_pro(p1 , random_factors , choices ,global_parameters, RENSystems_parameters ,grid_parameters ,extra_parameters )
-             if np.isinf(p1_mut.storages[0][0]) : 
-                 print('p1_mut')             
+           
              random_factors,choices = random_factors_set[gen,i+1,:],choices_set[gen,i+1,:]
              (p2_mut,p2_ope) = Efp.NON_JIT_mutation_contraintes_pro(p2 , random_factors , choices ,global_parameters, RENSystems_parameters ,grid_parameters ,extra_parameters)
-             if np.isinf(p2_mut.storages[0][0]) : 
-                 print('p2_mut')
 
              (c1,c2,ind) = Efp.crossover_reduit_pro(p1_mut, p2_mut, r_cross,RENSystems_parameters , extra_parameters)
-             if np.isinf(c1.storages[0][0]) : 
-                 print('c1')
-             if np.isinf(c2.storages[0][0]) : 
-                     print('c2')
 
              c1=fitness_function_GA(c1)
              
@@ -256,7 +216,9 @@ def evolutionnary_algorithm_pro(inputs):
                      best = Efp.Individual_pro.copy(c1)    
                      stagnation=0
              children.append(c1.copy()) # store for next generation
+             
              c2=fitness_function_GA(c2) 
+             
              if c2.fitness < p2.fitness : 
                  operators_perf.append(np.hstack((gen,p2_ope,ind)))
              if c2.fitness < best.fitness:
