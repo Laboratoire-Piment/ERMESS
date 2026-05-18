@@ -420,7 +420,7 @@ def post_traitement(solution, Context, datetime):
         
     HOURS_PER_DAY=24
     if Context.optimization.type_optim == 'research':
-        baseline_solution = _build_baseline_solution_research(Context)
+        baseline_solution = _build_baseline_solution_research(Context,HOURS_PER_DAY)
     elif Context.optimization.type_optim == 'pro':
         baseline_solution = _build_baseline_solution_pro(Context)
 
