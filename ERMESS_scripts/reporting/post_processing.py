@@ -431,6 +431,7 @@ def post_traitement(solution, Context, datetime):
         export_to_excel(results, Context)
 
     if Context.postprocess_config.export_charts:
-        EgE.add_excel_charts(Context=Context,charts_configurations=Ecc.charts_configurations)
+        charts_configurations = Ecc.get_charts_config(Context)
+        EgE.add_excel_charts(Context=Context,charts_configurations=charts_configurations)
 
 

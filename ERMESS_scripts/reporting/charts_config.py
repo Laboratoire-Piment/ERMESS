@@ -5,7 +5,8 @@ Created on Mon Apr 13 21:17:59 2026
 @author: JoPHOBEA
 """
 
-charts_configurations = [
+def get_charts_config(Context):
+        base_configurations = [
 
         # =========================
         # GLOBAL DISPATCHING
@@ -264,11 +265,17 @@ charts_configurations = [
             "categories": lambda C: (22, 2, 22, int(C.time.n_days)),
             "position": "V10",
             "legend_position": "b",
-        },
+        }
+        
+        ]
+
+        if Context.optimization.type_optim == "research":
+            return base_configurations
 
         # =========================
         # EMS
         # =========================
+        pro_configurations = [
         {
             "sheet": "EMS",
             "type": "series of lines",
@@ -316,5 +323,7 @@ charts_configurations = [
             "legend": False,
             "xmax":12,
             "ymax":100,
-        }
-    ]
+        }]
+        
+        return(base_configurations + pro_configurations)
+
