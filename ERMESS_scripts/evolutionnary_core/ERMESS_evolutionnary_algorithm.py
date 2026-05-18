@@ -121,7 +121,6 @@ def evolutionnary_algorithm_pro(inputs):
         inputs (tuple): Tuple containing:
             - Context (object): Simulation context including microgrid parameters, constraints, storage characteristics, and operator hyperparameters.
             - pop (list): List of initial individual solutions (Individual_pro instances).
-            - type_pop (str): Type of population; 'NON_JIT' indicates unjitted individuals requiring preprocessing.
     
    Returns:
         final_pop (list): List of optimized individuals (Individual_pro) after n_iter generations.

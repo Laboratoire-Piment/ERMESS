@@ -191,11 +191,11 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
     while ((store<(n_store-1))) : 
             store = store+1
             if( (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):
-                Diff = -(gene.storages[3,store] - SOCs_eff[store,i-1])*gene.storages[0,store]*time_resolution
+                Diff = -(gene.storages[INDIV_PRO_SOC_INIT,store] - SOCs_eff[store,i-1])*gene.storages[INDIV_PRO_VOLUME,store]*time_resolution
                 P_bat[store,i] = Diff*RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store] if (Diff>0) else Diff
                 Losses[store,i]=P_bat[store,i]/RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store]-P_bat[store,i] if (Diff>0) else 0
                 P_affordable = P_affordable + P_bat[store,i]
-                SOCs_eff[store,i] = SOCs_eff[store,i-1] - (P_bat[store,i]+Losses[store,i])  /time_resolution / gene.storages[0,store]
+                SOCs_eff[store,i] = SOCs_eff[store,i-1] - (P_bat[store,i]+Losses[store,i])  /time_resolution / gene.storages[INDIV_PRO_VOLUME,store]
             else :
                 SOCs_eff[store,i] = SOCs_eff[store,i-1]
     

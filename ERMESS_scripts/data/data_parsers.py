@@ -515,8 +515,6 @@ def _parse_optimization(data):
     
     return Dcl.OptimizationData(constraint_num=constraint_num,constraint_level=constraint_level,criterion_num=criterion_num,type_optim=type_optim)
 
-
-
 def _parse_hyperparameters(data):
     """
     Parse genetic algorithm hyperparameters.

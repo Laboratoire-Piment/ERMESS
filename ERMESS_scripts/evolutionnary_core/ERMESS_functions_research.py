@@ -160,7 +160,7 @@ def _build_baseline_solution_research(Context, HOURS_PER_DAY):
     
     production_set_baseline = np.zeros(Context.production.n_units, dtype=np.int64)
     storage_sum_baseline = np.zeros(Context.storage.n_store, dtype = np.int64)
-    storage_TS_baseline = np.zeros(Context.time.n_bits)
+    storage_TS_baseline = np.zeros((Context.storage.n_store,Context.time.n_bits))
     contract_baseline = 0
     Y_DSM_baseline = Context.loads.Y_movable
     D_DSM_baseline = Context.loads.D_movable.reshape(int(Context.time.n_bits/Context.time.time_resolution/HOURS_PER_DAY) , int(Context.time.time_resolution*HOURS_PER_DAY))
