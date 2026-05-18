@@ -1588,7 +1588,7 @@ def Mutate_storages_capacity_operator(c,hyperparameters_operators_num_pro,choice
     Returns:
         object: Mutated individual with updated storage capacity.
     """
-    MAX_LOG_FLOAT_PROTECTION = 700
+    MAX_LOG_FLOAT_PROTECTION = np.float64(700.)
     factor = np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_STORAGE_CAPACITIES])
     log_value = np.log(c.storages[INDIV_PRO_VOLUME,choice] + 0.1) * factor
     log_value = np.minimum(np.maximum(log_value, -MAX_LOG_FLOAT_PROTECTION, MAX_LOG_FLOAT_PROTECTION))
