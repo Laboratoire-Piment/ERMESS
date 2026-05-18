@@ -1591,7 +1591,7 @@ def Mutate_storages_capacity_operator(c,hyperparameters_operators_num_pro,choice
     MAX_LOG_FLOAT_PROTECTION = 700
     factor = np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_STORAGE_CAPACITIES])
     log_value = np.log(c.storages[INDIV_PRO_VOLUME,choice] + 0.1) * factor
-    log_value = np.clip(log_value, -MAX_LOG_FLOAT_PROTECTION, MAX_LOG_FLOAT_PROTECTION)
+    log_value = np.minimum(np.maximum(log_value, -MAX_LOG_FLOAT_PROTECTION, MAX_LOG_FLOAT_PROTECTION))
     c.storages[INDIV_PRO_VOLUME,choice] = max(0.,np.exp(log_value))
     return(c)
 
