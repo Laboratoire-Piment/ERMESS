@@ -325,126 +325,182 @@ def NON_JIT_mutation_contraintes_research(c , random_factors, choices, activate_
         ## DIMINUTION DE LA PUISSANCE DU CONTRAT
         if ((random_factors[RES_RF_POWER_CONTRACT]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CONTRACT]) and np.any(c.trades>0)) :
             c=Eop.reduce_power_trading_operator(c,choices[0],extra_parameters.hyperparameters_operators)
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 1')
             usage_ope[1]=1
               
         if (random_factors[RES_RF_PRODUCTION_MAIN]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_PRODUCTION]) :            
              c=Eop.Mutate_production_capacity_operator(c,choices[1],RENSystems_parameters.capacities,extra_parameters.groups_production,extra_parameters.groups_size,RENSystems_parameters.unit_productions,global_parameters.n_bits,extra_parameters.hyperparameters_operators)    
+             if sum(sum(np.isnan(c.storage_TS))):
+                 print('stop 2')
              usage_ope[2]=1             
              
         if (random_factors[RES_RF_PRODUCTION_TRANSFER]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_PRODUCTION]/2) :
              c=Eop.Transfer_production_capacity_operator(c,RENSystems_parameters.capacities)
+             if sum(sum(np.isnan(c.storage_TS))):
+                 print('stop 3')
              usage_ope[3]=1
                   
         if (random_factors[RES_RF_PRODUCTION_SWAP]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_PRODUCTION]/10) :
                   c=Eop.Switch_intragroup_productor_operator(c,RENSystems_parameters.capacities,extra_parameters.groups_production,extra_parameters.groups_size)
+                  if sum(sum(np.isnan(c.storage_TS))):
+                      print('stop 4')
                   usage_ope[4]=1
         
         #MUTATIONS DES SERIES TEMPORELLES
         #RANDOM OPERATORS
         if ((random_factors[RES_RF_MUTATION_STORAGE]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_PATTERNS])) :
                   c=Eop.Mutate_storage_points_operator(c,choices[2],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+                  if sum(sum(np.isnan(c.storage_TS))):
+                      print('stop 5')
                   usage_ope[5]=1
                    
         # Mutation aléatoire de la série temporelle sur des séquences voisines en respectant les sens
         if ((random_factors[RES_RF_STORAGE_WINDOWS_NOISE]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_PATTERNS])) :
                   c=Eop.Mutate_storage_windows_noise_operator(c,choices[3],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+                  if sum(sum(np.isnan(c.storage_TS))):
+                      print('stop 6')
                   usage_ope[6]=1
 
         if ((random_factors[RES_RF_STORAGE_PATTERNS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_PATTERNS]) and (global_parameters.time_resolution>LIMIT_RESOLUTION_DAILY_PATTERN)) :                  
                   c = Eop.Mutate_storage_dailypattern_operator(c,choices[4],global_parameters.time_resolution,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+                  if sum(sum(np.isnan(c.storage_TS))):
+                      print('stop 7')
                   usage_ope[7]=1
                               
         ##MODIFICATION DE L'UTILISATION GLOBALE DES STOCKAGES
         if ((random_factors[RES_RF_STORAGE_GLOBAL]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_GLOBAL])) :
               c=Eop.Mutate_storage_global_operator(c,choices[5],RENSystems_parameters.n_store,extra_parameters.hyperparameters_operators)
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 8')
               usage_ope[8]=1             
               
         ##MODIFICATION DE L'UTILISATION DES STOCKAGES SUR DES SOUS-ENSEMBLES
         if (random_factors[RES_RF_STORAGE_WINDOWS_SCALE]<(extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_GLOBAL])):
                c=Eop.Mutate_storage_windows_scaling_operator(c,choices[6],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+               if sum(sum(np.isnan(c.storage_TS))):
+                   print('stop 9')
                usage_ope[9]=1              
             
                #On introduit un transfert éventuel entre stockages
         if ((RENSystems_parameters.n_store>1) and (random_factors[RES_RF_STORAGE_MIX_POINTS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_MIX]) ) :
                c=Eop.Reallocate_storage_mix_points_operator(c,RENSystems_parameters.n_store,random_factors[RES_RF_STORAGE_MIX_POINTS_EFFECT],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+               if sum(sum(np.isnan(c.storage_TS))):
+                   print('stop 10')                  
                usage_ope[10]=1
                                                   
                 #On introduit un transfert éventuel entre stockages_v2  
         if ((RENSystems_parameters.n_store>1) and (random_factors[RES_RF_STORAGE_TRANSFER]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_MIX])) :
                  c=Eop.Transfer_storage_flows_operator(c,RENSystems_parameters.n_store,RENSystems_parameters.specs_storage,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+                 if sum(sum(np.isnan(c.storage_TS))):
+                     print('stop 11')
                  usage_ope[11]=1        
         
         ##SEMI-ORIENTED OPERATORS
         ## DIMINUTION DU VOLUME D'UN STOCKAGE ALEATOIRE  
         if ((random_factors[RES_RF_STORAGE_VOLUME]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_VOLUME]) and (sum(c.storage_TS[choices[6]])!=0)) :
             c=Eop.Reduce_storage_volume_operator(c,choices[7],RENSystems_parameters.specs_storage,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 12')
             usage_ope[12]=1                
 
         ## DIMINUTION DE LA PUISSANCE D'UN STOCKAGE ALEATOIRE
         if (random_factors[RES_RF_STORAGE_POWER]<(extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_POWER])) :
             c=Eop.Reduce_storage_power_operator(c,choices[8],global_parameters.n_bits,extra_parameters.hyperparameters_operators)        
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 13')
             usage_ope[13]=1
 
         ##ANNULATION DES MOUVEMENTS OPPOSES DE 2 STOCKAGES ALEATOIRES
         if (RENSystems_parameters.n_store>1) and (random_factors[RES_RF_STORAGE_OPPOSITE]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_INTER_STORAGES]):
               c=Eop.Merge_opposite_storage_flows_operator(c,RENSystems_parameters.n_store,extra_parameters.hyperparameters_operators)
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 14')
               usage_ope[14]=1
          
     ### ANNULATION DES DECHARGES/EXPORT ou CHARGES/IMPORTS 
         if (random_factors[RES_RF_STORAGE_TRADE_CONSISTENCY]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_TRADES_CONSISTENCY]):
              c=Eop.Force_storage_trade_consistency_operator(c,choices[9],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+             if sum(sum(np.isnan(c.storage_TS))):
+                 print('stop 15')
              usage_ope[15]=1   
 
         ## Long-term consistency
         if ((random_factors[RES_RF_STORAGE_INTERDAILY_SMOOTHING]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_INTERDAILY_CONSISTENCY]) and (global_parameters.duration_years>MIN_LIMIT_SMOOTHING)):
             c=Eop.Smooth_interdaily_storage_timeseries_operator(c,choices[10],random_factors[RES_RF_STORAGE_INTERDAILY_SMOOTHING_EFFECT],global_parameters.time_resolution,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 16')
             usage_ope[16]=1        
 
             ###Interdaily consistency
         if ((random_factors[RES_RF_STORAGE_COPY]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_INTERDAILY_CONSISTENCY]) and (global_parameters.duration_years>MIN_LIMIT_INTERDAILY)):
             c=Eop.Copy_interdaily_patterns_operator(c,choices[11],random_factors[RES_RF_STORAGE_COPY_EFFECT],global_parameters.n_bits,global_parameters.time_resolution)
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 17')
             usage_ope[17]=1
         
         ##Curve smoothing
         if (random_factors[RES_RF_STORAGE_SMOOTHING]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING]):
                c=Eop.Smooth_storage_noise_operator(c,choices[12],random_factors[RES_RF_STORAGE_SMOOTHING_EFFECT],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
+               if sum(sum(np.isnan(c.storage_TS))):
+                   print('stop 18')
                usage_ope[18]=1
                
         #Specification des rôles des stockages
         if  (RENSystems_parameters.n_store>1 and random_factors[RES_RF_STORAGE_DISTRIBUTION]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_STORAGE_MIX]):
             c=Eop.Distribute_storage_roles_operator(c,random_factors[RES_RF_STORAGE_DISTRIBUTION_EFFECT],RENSystems_parameters.n_store,RENSystems_parameters.specs_storage,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
             usage_ope[19]=1
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 19')
    
             ## OPERATEUR DE CONTRAINTE
         if (random_factors[RES_RF_STORAGE_CONSTRAINT]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CONSTRAINT_FORCING]) :
             c=Eop.Force_constraint_operator(c,global_parameters.constraint_num,choices[13],extra_parameters.hyperparameters_operators)
             usage_ope[20]=1
+            if sum(sum(np.isnan(c.storage_TS))):
+                print('stop 20')
                 
         #Mutation du DSM 
         if (activate_Y_DSM and (random_factors[RES_RF_YDSM_NOISE]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_DSM_NOISE])) :
               c=Eop.Mutate_YDSM_points_operator(c,global_parameters.n_bits,extra_parameters.hyperparameters_operators)
               usage_ope[21]=1
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 21')
         if (activate_Y_DSM and (random_factors[RES_RF_YDSM_WINDOWS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING])) :
               c=Eop.Smooth_YDSM_windows_operator(c,random_factors[RES_RF_YDSM_WINDOWS_EFFECT],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
               usage_ope[22]=1
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 22')
         if (activate_Y_DSM and (random_factors[RES_RF_YDSM_INTERDAILY_PATTERNS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_INTERDAILY_CONSISTENCY]) and (global_parameters.duration_years>MIN_LIMIT_INTERDAILY)):
               c=Eop.Copy_YDSM_interdaily_patterns_operator(c,random_factors[RES_RF_YDSM_INTERDAILY_PATTERNS_EFFECT],global_parameters.n_bits,global_parameters.time_resolution)
-              usage_ope[23]=1   
+              usage_ope[23]=1  
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 23')
         if (activate_Y_DSM and (random_factors[RES_RF_YDSM_TRADES_CONSISTENCY]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_DSM_TRADES_CONSISTENCY])):
               c=Eop.Force_YDSM_trades_consistency_operator(c,choices[14],random_factors[RES_RF_YDSM_TRADES_CONSISTENCY_EFFECT],global_parameters.n_bits,extra_parameters.hyperparameters_operators)
-              usage_ope[24]=1   
+              usage_ope[24]=1  
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 24')
         if (activate_D_DSM and (random_factors[RES_RF_DDSM_NOISE]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_DSM_NOISE])) :
                 c=Eop.Mutate_DDSM_points_operator(c,extra_parameters.D_DSM_indexes,extra_parameters.hyperparameters_operators)
                 usage_ope[25]=1 
+                if sum(sum(np.isnan(c.storage_TS))):
+                    print('stop 25')
         if (activate_D_DSM and (random_factors[RES_RF_DDSM_WINDOWS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING])) :
               c=Eop.Smooth_DDSM_points_operator(c,extra_parameters.D_DSM_indexes,random_factors[RES_RF_DDSM_WINDOWS_EFFECT],extra_parameters.hyperparameters_operators)
               usage_ope[26]=1
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 26')
         if (activate_D_DSM and (random_factors[RES_RF_DDSM_INTERDAILY_PATTERNS]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_INTERDAILY_CONSISTENCY]) and (global_parameters.duration_years>MIN_LIMIT_INTERDAILY)):
               c=Eop.Copy_DDSM_interdaily_patterns_operator(c,extra_parameters.D_DSM_indexes,random_factors[RES_RF_DDSM_INTERDAILY_PATTERNS_EFFECT],global_parameters.time_resolution)
-              usage_ope[27]=1       
+              usage_ope[27]=1   
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 27')
         if (activate_D_DSM and (random_factors[RES_RF_DDSM_TRADES_CONSISTENCY]<extra_parameters.hyperparameters_operators[OPER_PROBABILITY,RESEARCH_DSM_TRADES_CONSISTENCY])) :
               c=Eop.Force_DDSM_trades_consistency_operator(c,extra_parameters.D_DSM_indexes,global_parameters.time_resolution,choices[15],random_factors[RES_RF_DDSM_TRADES_CONSISTENCY_EFFECT],extra_parameters.hyperparameters_operators)
               usage_ope[28]=1
+              if sum(sum(np.isnan(c.storage_TS))):
+                  print('stop 28')
          
         return(c,usage_ope)
 
@@ -530,7 +586,7 @@ def enforce_energy_consistency(c,RENSystems_parameters,pro_parameters,extra_para
     storage_efficiency = RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF, :]
     D_DSM_indices = extra_parameters.D_DSM_indexes
 
-    #Remove non-bdirectional storage profiles
+    #Remove non-bidirectional storage profiles
     for i in range(n_store) : 
         if not (np.any(storage_timeseries[i]<0) and np.any(storage_timeseries[i]>0)) :
             storage_timeseries[i]=0
@@ -552,7 +608,7 @@ def enforce_energy_consistency(c,RENSystems_parameters,pro_parameters,extra_para
         active_stores = np.delete(np.arange(n_store), np.where(is_balanced)[0])      
         directions = np.sign(discharge_excess)
         
-        candidate_indices = [np.where(np.sign(storage_timeseries[s]) * directions[s] == -1)[0]for s in active_stores]
+        candidate_indices = [np.where(np.sign(storage_timeseries[s]) * directions[s] == -1)[0] for s in active_stores]
         candidate_lengths = np.array([len(idx) for idx in candidate_indices])
         n_selected = np.random.randint(1, 1 + np.min(candidate_lengths))
         selected_positions = np.random.choice(np.min(candidate_lengths),n_selected,replace=False)

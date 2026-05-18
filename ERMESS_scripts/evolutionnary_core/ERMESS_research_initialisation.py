@@ -110,6 +110,7 @@ def init_pro_population(Context, n_core, n_pop_pro):
     """
     Context_initialisation_pro = copy.deepcopy(Context)
     Context_initialisation_pro.hyperparameters.n_pop = n_pop_pro
+    Context_initialisation_pro.optimization.type_optim = 'pro'
     Context_initialisation_pro.tracking.tracking_operators = False
     
     #pro_initial_populations =  [Efp.initial_population_pro(Context_initialisation_pro) for _ in range(n_core)]

@@ -1,6 +1,7 @@
 # Fichiers temporaires
 *.log
 *.tmp
+*.pkl
 
 # Dossiers
 node_modules/
