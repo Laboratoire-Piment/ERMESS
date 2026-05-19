@@ -54,13 +54,13 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     
     data = Edr.load_excel(input_file_path)
     Edv._data_validation(data)
-    structured_data = Edp._parse_ERMESSInputs(data)
+    structured_data = Edp._parse_ERMESSInputs(data,node_id)
 
     ##============================================================================
     # 2. ENVIRONMENT INITIALIZATION
     ##============================================================================
               
-    Context=Dbl.build_environment(structured_data,node_id)
+    Context=Dbl.build_environment(structured_data)
     migration_bin = True
     
     if (initialisation) : 
