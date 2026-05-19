@@ -60,7 +60,7 @@ def ERMESS_research(node_id , input_file_path = None,initialisation = False) :
     # 2. ENVIRONMENT INITIALIZATION
     ##============================================================================
               
-    Context=Dbl.build_environment(structured_data)
+    Context=Dbl.build_environment(structured_data,node_id)
     migration_bin = True
     
     if (initialisation) : 

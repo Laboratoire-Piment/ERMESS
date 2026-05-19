@@ -9,6 +9,9 @@ import pandas as pd
 import numpy as np
 import timezonefinder
 import datetime
+from pathlib import Path
+
+
 from ERMESS_scripts.utils.constraints import compute_grid_prices
 
 from ERMESS_scripts.data.indices import ConstraintIdx, CriterionIdx
@@ -207,7 +210,7 @@ def _parse_site(data):
 
     return Dcl.SiteData(latitude=lat,longitude=lon,altitude=alt,timezone=tz)
 
-def _parse_output_config(data):
+def _parse_output_config(data,node_id=None):
     """
     Parse output configuration data.
 
@@ -220,7 +223,11 @@ def _parse_output_config(data):
     Returns:
         SiteData: Dataclass containing site information.
     """
-    output_file_name = data["Outputs"]["File name"][0]
+    if node_id is not None:
+        p = Path(data["Outputs"]["File name"][0])
+        output_file_name = f"{p.stem}_node_{node_id}{p.suffix}"
+    else  : 
+        output_file_name = data["Outputs"]["File name"][0]
     export_type = data["Outputs"]["export type"][0]
     export_charts = data["Outputs"]["export charts"][0]
 
@@ -601,7 +608,7 @@ def _parse_dispatching(data):
    
     return Dcl.DispatchingData(defined_items, Discharge_order, Overlaps, energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production)
 
-def _parse_ERMESSInputs(data):
+def _parse_ERMESSInputs(data,node_id=None):
     """
     Parse full ERMESS input data structure.
     
@@ -629,7 +636,7 @@ def _parse_ERMESSInputs(data):
     productionData = _parse_production(data, siteData, TimeData.datetime)
     
     optimizationData = _parse_optimization(data)
-    postProcessConfigData = _parse_output_config(data)
+    postProcessConfigData = _parse_output_config(data,node_id)
     
     if optimizationData.type_optim=='pro':
         hyperparametersProData = _parse_hyperparametersPro(data)
