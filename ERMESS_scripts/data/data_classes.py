@@ -44,12 +44,19 @@ class ProductionData:
     numbers: int
     
 @dataclass
-class StorageData:
+class ContinuousStorageData:
+    model: str
     n_store: int
     techs: np.ndarray
-    characteristics_num: np.ndarray
+    characteristics: np.ndarray
     
-
+@dataclass
+class DiscreteStorageData:
+    model: str
+    n_store: int
+    techs: np.ndarray
+    characteristics: np.ndarray
+    capacity: np.ndarray
 
 @dataclass
 class LoadData:
@@ -127,7 +134,8 @@ class DispatchingData:
 class ERMESSInputs:
     time: TimeData
     production: ProductionData
-    storage: StorageData
+    continu_storage: Optional[ContinuousStorageData]
+    discrete_storage: Optional[DiscreteStorageData]
     load: LoadData
     grid: Optional[GridData]
     genset: Optional[GensetData]
@@ -135,7 +143,7 @@ class ERMESSInputs:
     hyperparameters: Optional[HyperparametersData]
     hyperparameterspro: HyperparametersProData
     dispatching: DispatchingData
-    connexion: str
+    connection: str
     postProcessConfig: PostProcessConfig
     tracking: bool
 
@@ -146,7 +154,7 @@ class Non_JIT_Environnement():
 
     See `Environnement` for full attribute descriptions.
     """
-    def __init__(self,storage_characteristics,time_resolution,n_store,duration_years,specs_num,groups,n_bits,prices_num,fixed_premium,Overrun,Selling_price,Non_movable_load,Y_movable_load,D_movable_load,Main_grid_emissions,Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio,prod_C,prods_U,Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,constraint_num,constraint_level,criterion_num,cost_constraint,r_cross,n_iter,hyperparameters_operators,type_optim,Connexion,Defined_items,tracking_ope):
+    def __init__(self,storage_characteristics,time_resolution,n_store,duration_years,specs_num,groups,n_bits,prices_num,fixed_premium,Overrun,Selling_price,Non_movable_load,Y_movable_load,D_movable_load,Main_grid_emissions,Grid_Fossil_fuel_ratio,Main_grid_PoF_ratio,prod_C,prods_U,Volums_prod,Bounds_prod,DG_fuel_cost,DG_lifetime,DG_unit_cost,DG_maintenance_cost,DG_fuel_consumption,DG_EROI,fuel_CO2eq_emissions,constraint_num,constraint_level,criterion_num,cost_constraint,r_cross,n_iter,hyperparameters_operators,type_optim,Connection,Defined_items,tracking_ope):
         self.storage_characteristics = storage_characteristics
         self.time_resolution = time_resolution
         self.n_store = n_store
@@ -185,7 +193,7 @@ class Non_JIT_Environnement():
         self.r_cross = r_cross
         self.hyperparameters_operators = hyperparameters_operators 
         self.type_optim = type_optim    
-        self.Connexion = Connexion    
+        self.Connection = Connection    
         self.Defined_items = Defined_items
         self.tracking_ope = tracking_ope       
 

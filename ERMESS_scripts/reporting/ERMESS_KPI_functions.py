@@ -54,7 +54,7 @@ def _compute_energy_flows(Context,KPI_net_load,KPI_core):
     annual_REN_production = annualize(KPI_net_load["production"], Context)
 
 
-    if Context.optimization.connexion == "On-grid":
+    if Context.optimization.connection == "On-grid":
         grid_importation = KPI_core["importation"]
         grid_exportation = KPI_core["exportation"]
         grid_trading = KPI_core["trades (kW)"]
@@ -72,7 +72,7 @@ def _compute_energy_flows(Context,KPI_net_load,KPI_core):
 
     return {"global":{"annual load (kWh)": annual_load,"annual REN production (kWh)":annual_REN_production,"annual importation (kWh)": annualize(KPI_core["importation"], Context), "annual exportation (kWh)": annualize(KPI_core["exportation"], Context)},"timeseries":{"grid importation (kW)": grid_importation,"grid exportation (kW)": grid_exportation,"grid trading (kW)": grid_trading,"genset production (kW)": genset_production,"curtailment (kW)": curtailment,}}
 
-def _compute_storage_kpis(Context,dispatching_timeseries):
+def _compute_storage_kpis(solution, Context,dispatching_timeseries):
     """
     Compute storage KPIs.
     """
@@ -85,15 +85,19 @@ def _compute_storage_kpis(Context,dispatching_timeseries):
     reported_energy = annualize(np.where(storage_TS > 0, storage_TS, 0),Context)
     stored_energy = annualize(-np.where(storage_TS < 0, storage_TS, 0), Context)
     n_store = Context.storage.n_store
-    energy_storages = np.divide(np.array([np.max(cumulative_energy[i]) - np.min(cumulative_energy[i]) for i in range(n_store)]),Context.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:])
+    if Context.optimization.type_optim == "research":
+        energy_storages = np.divide(np.array([np.max(cumulative_energy[i]) - np.min(cumulative_energy[i]) for i in range(n_store)]),Context.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:])
+    else :
+        energy_storages = solution.storages[INDIV_PRO_VOLUME,:]
     powers_out = tuple((max(storage_TS[i]) for i in range(n_store)))
     powers_in = tuple((-min(storage_TS[i]) for i in range(n_store)))
     minSOCs=(1-Context.storage.characteristics[STOR_DEPTH_OF_DISCHARGE,:])/2 
     power_storages=np.array([max(powers_in[i],powers_out[i]) for i in range(n_store)])
     Equivalent_cycles =  np.array([np.sum(np.abs(storage_TS[i,:]))/(2*Context.time.time_resolution*max(energy_storages[i],np.float64(1e-15))*Context.time.duration_years) for i in range(n_store)]) 
     storage_lifetime = np.array([min(Context.storage.characteristics[STOR_LIFETIME,i],Context.storage.characteristics[STOR_CYCLE_LIFE,i]/max(1e-15,Equivalent_cycles[i])) for i in range(n_store)])
+    storage_discrete_set = solution.storage_discrete_set
 
-    return{"losses (kW)": losses,"cumulative_energy": cumulative_energy,"technology_indicators":{"Energy capacity (kWh)":energy_storages,"Power in (kW)":powers_in,"Power out (kW)":powers_out, "Min. SOC (%)" : minSOCs, "Equivalent cycles (/yrs.)" : Equivalent_cycles, "Storage lifetime (yrs.)" : storage_lifetime},"technology actions":{"annual reported energy (kWh)": reported_energy,"annual stored energy (kWh)": stored_energy,"annual losses (kWh)": annualize(losses, Context),},"annual total losses (kWh)":annual_total_losses, "Power storages (kW)":power_storages}
+    return{"losses (kW)": losses,"cumulative_energy": cumulative_energy,"technology_indicators":{"discrete storage set":storage_discrete_set,"Energy capacity (kWh)":energy_storages,"Power in (kW)":powers_in,"Power out (kW)":powers_out, "Min. SOC (%)" : minSOCs, "Equivalent cycles (/yrs.)" : Equivalent_cycles, "Storage lifetime (yrs.)" : storage_lifetime},"technology actions":{"annual reported energy (kWh)": reported_energy,"annual stored energy (kWh)": stored_energy,"annual losses (kWh)": annualize(losses, Context),},"annual total losses (kWh)":annual_total_losses, "Power storages (kW)":power_storages}
 
 def _compute_technical_kpis(Context,KPI_net_load,KPI_flows,KPI_core):
     """
@@ -122,9 +126,9 @@ def _compute_grid_kpis(Context, dispatching_timeseries, KPI_flows):
     Max_power_to_grid = max(KPI_flows["timeseries"]["grid exportation (kW)"]) 
     Max_curtailment = max(KPI_flows["timeseries"]["curtailment (kW)"])     
 
-    if (Context.optimization.connexion=='Off-grid'):
+    if (Context.optimization.connection=='Off-grid'):
         Contract_power=0
-    elif (Context.optimization.connexion=='On-grid'):          
+    elif (Context.optimization.connection=='On-grid'):          
         Contract_power=max(0,max(dispatching_timeseries["trades"]))
     
     return{"Max. power from grid (kW)":Max_power_from_grid, "Max. power to grid (kW)":Max_power_to_grid,"Max. curtailment (kW)": Max_curtailment,"Contract power (kW)": Contract_power}
@@ -135,7 +139,7 @@ def _compute_genset_kpis(Context, KPI_core, dispatching_timeseries):
     Compute genset indicators.
     """
 
-    if (Context.optimization.connexion=='Off-grid'):
+    if (Context.optimization.connection=='Off-grid'):
         DG_nominal_power = max(dispatching_timeseries["trades"])
         DG_production=KPI_core["importation"]
         if (DG_nominal_power>0):
@@ -147,7 +151,7 @@ def _compute_genset_kpis(Context, KPI_core, dispatching_timeseries):
             annual_fuel_consumption_DG = 0
             DG_lifetime_years = np.nan
             
-    elif (Context.optimization.connexion=='On-grid'):     
+    elif (Context.optimization.connection=='On-grid'):     
         
         DG_nominal_power = 0.
         DG_production=np.zeros(Context.time.n_bitsn_bits)
@@ -165,23 +169,23 @@ def _compute_environmental_kpis(Context, solution, dispatching_timeseries, KPI_f
     """
 
     #CO2 emissions
-    if (Context.optimization.connexion=='Off-grid'):
+    if (Context.optimization.connection=='Off-grid'):
         annual_CO2eq_DG = KPI_genset["Annual fossil fuel consumption from genset (kWh)"]*Context.genset.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR  
-    elif (Context.optimization.connexion=='On-grid'):          
+    elif (Context.optimization.connection=='On-grid'):          
         annual_CO2eq_DG = 0.
 
     annual_CO2eq_prod = sum(sum(np.multiply(np.array([solution.production_set[i]*Context.production.unit_prods[i,:] for i in range(len(solution.production_set))]).T/KILOS_CONVERSION_FACTOR,np.array(Context.production.specs_num[:,PROD_EMISSIONS]))))/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years
     annual_CO2eq_storage = annualize(np.inner(np.array([sum(np.where(dispatching_timeseries["storage_TS"][i]>0,dispatching_timeseries["storage_TS"][i],0)) for i in range(Context.storage.n_store)]),Context.storage.characteristics[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR,Context)
-    annual_CO2eq_importation = sum(KPI_flows["timeseries"]["grid importation (kW)"])*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.optimization.connexion=='On-grid') else 0
+    annual_CO2eq_importation = sum(KPI_flows["timeseries"]["grid importation (kW)"])*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.optimization.connection=='On-grid') else 0
        
     #fossil fuel consumption                                
-    annual_fossil_fuel_consumption_importation =  annualize(Context.grid.fossil_fuel_ratio*sum(KPI_flows["timeseries"]["grid importation (kW)"]),Context) if (Context.optimization.connexion=='On-grid') else 0
+    annual_fossil_fuel_consumption_importation =  annualize(Context.grid.fossil_fuel_ratio*sum(KPI_flows["timeseries"]["grid importation (kW)"]),Context) if (Context.optimization.connection=='On-grid') else 0
     
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+KPI_genset["Annual fossil fuel consumption from genset (kWh)"]
     annual_CO2eq_total = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
 
     #EROI
-    if (Context.optimization.connexion=='Off-grid' and KPI_genset["sizing"]["nominal_power (kW)"]>0):
+    if (Context.optimization.connection=='Off-grid' and KPI_genset["sizing"]["nominal_power (kW)"]>0):
         productible_energy_DG = annualize(sum(KPI_genset["genset production (kW)"]),Context)*KPI_genset["sizing"]["genset lifetime (yrs.)"]
         consumed_energy_DG = productible_energy_DG/Context.genset.EROI
     else : 
@@ -202,7 +206,8 @@ def _compute_storage_SOC_kpis(Context,KPI_storage):
     Compute storage state-of-charge indicators.
     """
     n_store = Context.storage.n_store
-    SOCs=(np.divide((KPI_storage["cumulative_energy"].T-np.min(KPI_storage["cumulative_energy"],axis=1)),KPI_storage["technology_indicators"]["Energy capacity (kWh)"]) + KPI_storage["technology_indicators"]["Min. SOC (%)"]).T
+    with np.errstate(divide='ignore', invalid='ignore'):
+        SOCs=(np.divide((KPI_storage["cumulative_energy"].T-np.min(KPI_storage["cumulative_energy"],axis=1)),KPI_storage["technology_indicators"]["Energy capacity (kWh)"]) + KPI_storage["technology_indicators"]["Min. SOC (%)"]).T
             
     storage_NULL=tuple(KPI_storage["technology_indicators"]["Energy capacity (kWh)"][i]==0 for i in range(n_store))
     State_SOCs=[np.searchsorted([(i+1)/100 for i in range(99)], SOCs[j,:]) for j in range(n_store)]
@@ -218,7 +223,14 @@ def _compute_storage_SOC_kpis(Context,KPI_storage):
 
 
 def _compute_installation_lifetime(Context,solution,KPI_genset,KPI_storage):
-    return np.nanmin(np.array([KPI_genset["sizing"]["genset lifetime (yrs.)"],min(KPI_storage["technology_indicators"]["Storage lifetime (yrs.)"]),np.nanmin(np.where(solution.production_set>0,Context.production.specs_num[:,PROD_LIFETIME],np.nan))]))    
+    prod_lifetime_vector = np.where(solution.production_set>0,Context.production.specs_num[:,PROD_LIFETIME],np.nan)
+    if np.all(np.isnan(prod_lifetime_vector)):
+        prod_lifetime = np.nan
+    else:
+        prod_lifetime = np.nanmin(prod_lifetime_vector) 
+    
+    installation_lifetime = np.nanmin(np.array([KPI_genset["sizing"]["genset lifetime (yrs.)"],min(KPI_storage["technology_indicators"]["Storage lifetime (yrs.)"]),prod_lifetime]))    
+    return installation_lifetime
 
 def _compute_economic_kpis (Context, solution, KPI_storage, KPI_genset, KPI_flows, KPI_grid, installation_lifetime):
     """
@@ -229,7 +241,7 @@ def _compute_economic_kpis (Context, solution, KPI_storage, KPI_genset, KPI_flow
     annual_cost_storage_CAPEX = sum(np.divide(CAPEX_storage_cost,KPI_storage['technology_indicators']["Storage lifetime (yrs.)"]))
     annual_cost_storage_OPEX = sum(np.multiply(Context.storage.characteristics[STOR_OM_COST,:],KPI_storage["Power storages (kW)"]))
 
-    if (Context.optimization.connexion=='Off-grid'):
+    if (Context.optimization.connection=='Off-grid'):
         if KPI_genset['sizing']["nominal_power (kW)"]>0 :
             annual_gain_exportation = 0.
             annual_cost_importation = 0.
@@ -247,7 +259,7 @@ def _compute_economic_kpis (Context, solution, KPI_storage, KPI_genset, KPI_flow
             annual_cost_genset_OPEX = 0.
             annual_total_fuel_cost = 0.
  
-    elif (Context.optimization.connexion=='On-grid'):   
+    elif (Context.optimization.connection=='On-grid'):   
         annual_gain_exportation = annualize(np.multiply(KPI_flows["timeseries"]["grid exportation (kW)"],Context.grid.selling_price[solution.contract,:]).sum(),Context)
         annual_cost_importation = annualize(np.multiply(KPI_flows["timeseries"]["grid importation (kW)"],Context.grid.prices[solution.contract,:]).sum(),Context)
         annual_cost_overrun = max(0,(max(KPI_flows["timeseries"]["grid exportation (kW)"])-KPI_grid["contract_power"])*Context.grid.overrun[solution.contract])
@@ -524,7 +536,7 @@ def compute_KPI(solution,Context,datetime):
     
     elif Context.optimization.type_optim == 'pro':
         
-        KPI_EMS = _compute_EMS_kpis(solution)
+        KPI_EMS = _compute_EMS_kpis(solution,Context)
         pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
         (storage_TS,trades,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = Eems.LFE_CCE(solution, global_parameters, pro_parameters, production ,RENSystems_parameters)
         
@@ -549,7 +561,7 @@ def compute_KPI(solution,Context,datetime):
     # STORAGE
     # =========================
     
-    KPI_storage = _compute_storage_kpis(Context,dispatching_timeseries)
+    KPI_storage = _compute_storage_kpis(solution, Context,dispatching_timeseries)
     
     if Context.optimization.type_optim == 'research': 
         dispatching_timeseries["losses"] = KPI_storage["losses (kW)"]

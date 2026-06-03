@@ -11,8 +11,6 @@ from numba import jit
 from ERMESS_scripts.energy_model import ERMESS_storages_model as ESM 
 from ERMESS_scripts.data.indices import *
 
-
-
 @jit(nopython=True)
 def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_parameters) :
     """
@@ -50,7 +48,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
         n_bits (int): Number of simulation time steps.
         n_store (int): Number of storage units.
         time_resolution (float): Simulation time step duration (hours).
-        Connexion (str): Grid connection mode ('On-grid' or 'Off-grid').
+        Connection (str): Grid connection mode ('On-grid' or 'Off-grid').
         storage_characteristics (numpy.ndarray): Storage technical parameters
             (including efficiencies).
     
@@ -119,7 +117,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
             D_DSM_needs = pro_parameters.total_D_Movable_load[day]
             D_DSM_count=0
         SOC_eff = SOCs_eff[:,i-1] if i>0 else gene.storages[INDIV_PRO_SOC_INIT,:]
-        P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
+        P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connection=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
         D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*HOURS_PER_DAY))]-D_DSM_count)
         Y_DSM[i] = max(0,pro_parameters.total_Y_Movable_load*full_Y_DSM_min_levels[i]-Y_DSM_count)
         P_net_2 = P_net[i] - D_DSM[i] - Y_DSM[i]
@@ -136,7 +134,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
                 index = index+1
                 store = gene.discharge_order[n_store-index]
                 if ((P_affordable>0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):
-                    P_bat[store,i] = -ESM.battery_charge(gene.storages[:,store], SOC_eff[store],gene.overlaps[1,:] if (index==(n_store-1)) else (gene.overlaps[0,:]) , P_affordable, time_resolution) # battery charging 
+                    P_bat[store,i] = -ESM.battery_charge(gene.storages[:,store], SOC_eff[store],gene.overlaps[1,:] if (index==(n_store-1)) else (gene.overlaps[0,:]) , P_affordable, time_resolution) 
                     P_affordable = P_affordable+P_bat[store,i]
                     SOCs_eff[store,i] = SOC_eff[store] - P_bat[store,i] /time_resolution / gene.storages[0,store]
                 else : 
@@ -150,8 +148,8 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
             while ((index<(n_store-1))) : 
                 index = index+1
                 store=gene.discharge_order[index]
-                if ((P_affordable>0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):                                   
-                    P_bat[store,i]=ESM.battery_discharge(gene.storages[:,store], SOC_eff[store], RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store],gene.overlaps[1,:] if (index==(n_store-2)) else (gene.overlaps[0,:]) , -P_affordable, time_resolution) # battery charging                
+                if ((P_affordable<0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):                                   
+                    P_bat[store,i]=ESM.battery_discharge(gene.storages[:,store], SOC_eff[store], RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store],gene.overlaps[1,:] if (index==(n_store-2)) else (gene.overlaps[0,:]) , -P_affordable, time_resolution)     
                     P_affordable=P_affordable+P_bat[store,i]
                     Losses[store,i]=P_bat[store,i]/RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store]-P_bat[store,i]
                     SOCs_eff[store,i] = SOC_eff[store]-(P_bat[store,i]+Losses[store,i]) /time_resolution / gene.storages[0,store]
@@ -161,7 +159,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
                 
 
         P_ext[i]=P_ext[i] -P_affordable
-        if ((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (0<P_ext[i]<gene.DG_min_production)):
+        if ((gene.DG_strategy=='CC') & (global_parameters.Connection=='Off-grid' ) & (0<P_ext[i]<gene.DG_min_production)):
             P_ext[i] = gene.DG_min_production
         if (i<(n_bits-1)):
             if(P_ext[i]<=0) :
@@ -176,7 +174,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
         day = day+1
         D_DSM_needs = pro_parameters.total_D_Movable_load[day]
         D_DSM_count=0
-    P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
+    P_ext[i] = gene.DG_min_production if((gene.DG_strategy=='CC') & (global_parameters.Connection=='Off-grid' ) & (P_ext_cur_runtime[i]<gene.DG_min_runtime)) else 0
     D_DSM[i] = max(0,D_DSM_needs*full_D_DSM_min_levels[int((i)%(time_resolution*HOURS_PER_DAY))]-D_DSM_count)
     Y_DSM[i] = max(0,pro_parameters.total_Y_Movable_load*full_Y_DSM_min_levels[i]-Y_DSM_count)
     P_net_2 = P_net[i] - D_DSM[i] - Y_DSM[i]
@@ -200,7 +198,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
                 SOCs_eff[store,i] = SOCs_eff[store,i-1]
     
     P_ext[i]=P_ext[i] -P_affordable
-    if ((gene.DG_strategy=='CC') & (global_parameters.Connexion=='Off-grid' ) & (0<P_ext[i]<gene.DG_min_production)):
+    if ((gene.DG_strategy=='CC') & (global_parameters.Connection=='Off-grid' ) & (0<P_ext[i]<gene.DG_min_production)):
         P_ext[i] = gene.DG_min_production
     
     # OUTPUT

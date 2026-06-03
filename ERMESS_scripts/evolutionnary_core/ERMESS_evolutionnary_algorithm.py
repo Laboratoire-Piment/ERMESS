@@ -11,6 +11,8 @@ from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_pro as Efp
 
+from ERMESS_scripts.data.indices import DISCRETE_MODEL
+
 # genetic algorithm
 def evolutionnary_algorithm_research(inputs):
    """
@@ -149,9 +151,14 @@ def evolutionnary_algorithm_pro(inputs):
 
    pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters, extra_parameters = Ef.build_numba_params(Context)
    fitness_function_GA=Ef.find_cost_function_pro(Context,pro_parameters, global_parameters, grid_parameters, RENSystems_parameters, Genset_parameters)  
-   
-   for i in range(n_pop):
-       pop[i]=fitness_function_GA(pop[i])
+  
+   if RENSystems_parameters.storage_model == DISCRETE_MODEL :
+       for i in range(n_pop):
+           pop[i].storages = Efp.convert_storage_configuration(pop[i], RENSystems_parameters)
+           pop[i]=fitness_function_GA(pop[i])
+   else :
+       for i in range(n_pop):
+           pop[i]=fitness_function_GA(pop[i])
    best = Efp.Individual_pro.copy(pop[np.argmin([pop[i].fitness for i in range(n_pop)])])
    
    operators_perf = []     
@@ -171,6 +178,7 @@ def evolutionnary_algorithm_pro(inputs):
 
  # enumerate generations
    for gen in range(n_iter):
+     print(gen," ",best.fitness)
            
                   
  #if needed, calculation of the diversity   
@@ -207,6 +215,8 @@ def evolutionnary_algorithm_pro(inputs):
 
              (c1,c2,ind) = Efp.crossover_reduit_pro(p1_mut, p2_mut, r_cross,RENSystems_parameters , extra_parameters)
 
+             if RENSystems_parameters.storage_model == DISCRETE_MODEL :
+                 c1.storages = Efp.convert_storage_configuration(c1, RENSystems_parameters)
              c1=fitness_function_GA(c1)
              
              if c1.fitness < p1.fitness : 
@@ -216,6 +226,8 @@ def evolutionnary_algorithm_pro(inputs):
                      stagnation=0
              children.append(c1.copy()) # store for next generation
              
+             if RENSystems_parameters.storage_model == DISCRETE_MODEL :
+                 c2.storages = Efp.convert_storage_configuration(c2, RENSystems_parameters)
              c2=fitness_function_GA(c2) 
              
              if c2.fitness < p2.fitness : 

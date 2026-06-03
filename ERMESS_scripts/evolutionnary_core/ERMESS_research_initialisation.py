@@ -5,7 +5,6 @@ Created on Thu Apr 16 12:51:20 2026
 @author: JoPHOBEA
 """
 
-from ERMESS_scripts.utils import constraints as Cons
 from ERMESS_scripts.evolutionnary_core import ERMESS_parallel_processing as ppGA
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions_research as Efr
 from ERMESS_scripts.data.indices import *
@@ -14,6 +13,73 @@ from ERMESS_scripts.data.indices import *
 import copy
 import numpy as np
 import pickle
+
+def adaptation_hyperparameters_initialisation(operators_parameters):
+    """
+    Automatically adjusts the values of the hyperparameters matrix in an initialization context (pre-optimization).
+    
+    Args:
+        operators_parameters (np.array): Initial matrix.
+    
+    Returns:
+        np.array: adaptated_hyperparameters_operators, the updated matrix.
+    """
+    INIT_RESEARCH_STORAGE_PATTERNS = 5
+    INIT_RESEARCH_STORAGE_MIX = 1
+    INIT_RESEARCH_CONSTRAINT_FORCING = 20
+    INIT_RESEARCH_STORAGE_POWER_FACTOR = 0.2
+    INIT_RESEARCH_CURVE_SMOOTHING_FACTOR = 0.7
+    adaptated_operators_parameters=copy.deepcopy(operators_parameters)
+    adaptated_operators_parameters[OPER_PROBABILITY,RESEARCH_STORAGE_POWER]=INIT_RESEARCH_STORAGE_POWER_FACTOR*operators_parameters[OPER_PROBABILITY,RESEARCH_STORAGE_POWER]
+    adaptated_operators_parameters[OPER_INV_LENGTH,RESEARCH_STORAGE_PATTERNS]=INIT_RESEARCH_STORAGE_PATTERNS
+    adaptated_operators_parameters[OPER_INV_LENGTH,RESEARCH_STORAGE_MIX]=INIT_RESEARCH_STORAGE_MIX
+    adaptated_operators_parameters[OPER_INV_LENGTH,RESEARCH_CONSTRAINT_FORCING]=INIT_RESEARCH_CONSTRAINT_FORCING
+    adaptated_operators_parameters[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING]=INIT_RESEARCH_CURVE_SMOOTHING_FACTOR*operators_parameters[OPER_PROBABILITY,RESEARCH_CURVE_SMOOTHING]
+
+    return (adaptated_operators_parameters)
+
+def find_constraint_levels(Context):
+    """
+    Compute the maximum achievable constraint level based on production, storage, and load.
+    
+    This function calculates the maximum self-sufficiency or self-consumption level
+    given production capacities, storage characteristics, and non-movable/movable loads.
+    
+    Args:
+        constraint_num (int): Number identifying the type of constraint
+            (1 = Self-sufficiency, 2 = Self-consumption, etc.).
+        Constraint_level (float): Target level of the constraint.
+        D_Non_movable_load (array-like): Non-movable load time series (kW).
+        D_Movable_load (array-like): Movable load time series (kW).
+        storage_characteristics (np.ndarray): Matrix with storage attributes.
+        prod_C (float): Current production at the site (W).
+        prods_U (np.ndarray): Unit production matrix (kW).
+        Bounds_prod (np.ndarray): Maximum capacity of production units (kW).
+    
+    Returns:
+        tuple[int, float, float]: Tuple of (constraint_num, Constraint_level, D_max_constraint_level).
+    """
+    KILOS_CONVERSION_FACTOR = 1000
+    max_production = (Context.production.current_prod+np.inner(Context.production.unit_prods.T,Context.production.capacities))/KILOS_CONVERSION_FACTOR 
+    total_load=sum(Context.loads.non_movable)+sum(Context.loads.Y_movable)+sum(Context.loads.D_movable)        
+    
+    if Context.optimization.constraint_num == CONS_Self_sufficiency :
+        extra_prod = np.where(max_production>Context.loads.non_movable,max_production-Context.loads.non_movable,0) 
+        sum_extra_prod = sum(extra_prod)-sum(Context.loads.non_movable)        
+        Instantaneous_energy=np.minimum(max_production,Context.loads.non_movable)
+        reportable_energy=max(Context.storage.characteristics[STOR_ROUND_TRIP_EFF,:])*sum_extra_prod
+        max_self_sufficiency = min(1,(sum(Instantaneous_energy)+reportable_energy)/total_load)
+        max_constraint_level = max_self_sufficiency
+    elif Context.optimization.constraint_num == CONS_SELF_CONSUMPTION :
+        ## The max. self-consumption is always 1 because we can always lose artificially energy using storage
+        max_self_consumption = 1
+        max_constraint_level = max_self_consumption
+    elif Context.optimization.constraint_num == CONS_REN_FRACTION :
+        max_REN_fraction = min(1,sum(max_production)/total_load)
+        max_constraint_level = max_REN_fraction
+    return(max_constraint_level)
+
+
 
         
 def write_node_population(node_id,node_population):
@@ -152,7 +218,7 @@ def init_low_res_population(Context_initialisation_Research, n_core, n_pop_resea
     """
 
     Context_initialisation_Research_LowRes = _build_LowRes_Context(Context_initialisation_Research)
-    possible_constraint_levels=Cons.find_constraint_levels(Context_initialisation_Research_LowRes)
+    possible_constraint_levels=find_constraint_levels(Context_initialisation_Research_LowRes)
     constraint_levels_LowRes = np.random.uniform(min(MIN_INIT_CONSTRAINT_LEVEL,possible_constraint_levels),possible_constraint_levels,n_core)
     
     args_pop_init_LowRes = [[Context_initialisation_Research_LowRes,  n_pop_research,constraint_levels_LowRes[i]] for i in range(n_core)]
@@ -287,7 +353,6 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
 
     n_core = structured_data.hyperparameters.n_core
     n_pop = Context.hyperparameters.n_pop
-    n_bins = structured_data.hyperparameters.n_nodes
     
     #Split the population in 2  groups : 0 : pro initialisation 1 : In-depth study of seasons and days
     
@@ -309,7 +374,7 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
     MIN_INIT_CONSTRAINT_LEVEL = 0.6
     
     Context_initialisation_Research = copy.deepcopy(Context)
-    Context_initialisation_Research.hyperparameters.operators_parameters = Cons.adaptation_hyperparameters_initialisation(Context_initialisation_Research.hyperparameters.operators_parameters)
+    Context_initialisation_Research.hyperparameters.operators_parameters = adaptation_hyperparameters_initialisation(Context_initialisation_Research.hyperparameters.operators_parameters)
     Context_initialisation_Research.hyperparameters.n_pop = n_pop_research
 
     #1. Solving at a Low time resolution (daily granularity), using ERMESS RESEARCH

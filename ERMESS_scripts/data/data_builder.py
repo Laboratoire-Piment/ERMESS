@@ -6,6 +6,7 @@ Created on Fri Mar 20 11:53:44 2026
 """
 
 import numpy as np
+from ERMESS_scripts.data.indices import *
 
 class _OptimBlock:
     """
@@ -24,7 +25,7 @@ class _OptimBlock:
         criterion_num (int):
             Encoded optimization objective.
             
-        connexion (str):
+        connection (str):
             Type of grid integration (On-grid , Off-grid).
             
         type_optim (str):
@@ -34,15 +35,15 @@ class _OptimBlock:
         "constraint_num",
         "constraint_level",
         "criterion_num",
-        "connexion",
+        "connection",
         "type_optim",
     )
 
-    def __init__(self, constraint_num, constraint_level, criterion_num, connexion, type_optim):
+    def __init__(self, constraint_num, constraint_level, criterion_num, connection, type_optim):
         self.constraint_num = np.int64(constraint_num)
         self.constraint_level = np.float64(constraint_level)
         self.criterion_num = np.int64(criterion_num)
-        self.connexion = connexion
+        self.connection = connection
         self.type_optim = type_optim
         
 class _HyperparametersBlock:
@@ -279,13 +280,52 @@ class _StorageBlock:
              Number of storage technologies in the system.
          technologies (np.ndarray):
              Names of the available storage technologies.
+         bounds (np.ndarray):
+             capacity of installation for each storage type.         
      """
-    __slots__ = ("characteristics","n_store","technologies",)
+    __slots__ = ("model","characteristics","n_store","technologies","bounds",)
 
-    def __init__(self, characteristics,n_store,technologies):
+    def __init__(self, model, characteristics,n_store,technologies,bounds):
+        self.model = model
         self.characteristics = characteristics
         self.n_store = n_store
         self.technologies = technologies
+        self.bounds = bounds        
+        
+def _convert_characteristic_arrays(discrete_characteristics,n_store):
+    n_specs = 15
+    continuous_characteristics = np.empty((n_specs , n_store))
+        
+    energy_cost = discrete_characteristics[:,STOR_UNIT_CAPEX_COST]/discrete_characteristics[:,STOR_UNIT_ENERGY]
+    normalisation_power = np.max((discrete_characteristics[:,STOR_UNIT_CHARGE_POWER],discrete_characteristics[:,STOR_UNIT_DISCHARGE_POWER]),axis=0)
+    pcs_cost = np.zeros(n_store)
+    bop_cost = np.zeros(n_store)
+    om_cost = discrete_characteristics[:,STOR_UNIT_OPEX_COST]/normalisation_power
+    round_trip_efficiency = discrete_characteristics[:,STOR_UNIT_ROUND_TRIP_EFF]
+    depth_of_discharge = discrete_characteristics[:,STOR_UNIT_DEPTH_OF_DISCHARGE]
+    emissions = discrete_characteristics[:,STOR_UNIT_EMISSIONS]/discrete_characteristics[:,STOR_UNIT_ENERGY]
+    lifetime = discrete_characteristics[:,STOR_UNIT_LIFETIME]
+    cycle_life = discrete_characteristics[:,STOR_UNIT_CYCLE_LIFE]
+    installation_cost = np.zeros(n_store)
+    esoei = discrete_characteristics[:,STOR_UNIT_ESOEI]
+    power_cost = np.zeros(n_store)
+ 
+    continuous_characteristics[STOR_ENERGY_COST,:] = energy_cost
+    continuous_characteristics[STOR_PCS_COST,:] = pcs_cost
+    continuous_characteristics[STOR_BOP_COST,:] = bop_cost
+    continuous_characteristics[STOR_OM_COST,:] = om_cost
+    continuous_characteristics[STOR_ROUND_TRIP_EFF,:] = round_trip_efficiency
+    continuous_characteristics[STOR_DEPTH_OF_DISCHARGE,:] = depth_of_discharge
+    continuous_characteristics[STOR_EMISSIONS,:] = emissions
+    continuous_characteristics[STOR_LIFETIME,:] = lifetime
+    continuous_characteristics[STOR_CYCLE_LIFE,:] = cycle_life
+    continuous_characteristics[STOR_INSTALLATION_COST,:] = installation_cost
+    continuous_characteristics[STOR_ESOEI,:] = esoei
+    continuous_characteristics[STOR_POWER_COST,:] = power_cost
+    continuous_characteristics[STOR_UNIFIED_ENERGY,:] = discrete_characteristics[:,STOR_UNIT_ENERGY]
+    continuous_characteristics[STOR_UNIFIED_CHARGE_POWER,:] = discrete_characteristics[:,STOR_UNIT_CHARGE_POWER]
+    continuous_characteristics[STOR_UNIFIED_DISCHARGE_POWER,:] = discrete_characteristics[:,STOR_UNIT_DISCHARGE_POWER]
+    return(continuous_characteristics)
 
 class _GridBlock:
     """
@@ -528,7 +568,22 @@ def build_environment(structured_data):
         called once before launching the optimization process.
     """
 
-    storage = _StorageBlock(structured_data.storage.characteristics_num,structured_data.storage.n_store,structured_data.storage.techs,)
+    if structured_data.continu_storage is not None :
+        storage = _StorageBlock(
+            structured_data.continu_storage.model, 
+            structured_data.continu_storage.characteristics, 
+            structured_data.continu_storage.n_store, 
+            structured_data.continu_storage.techs, 
+            np.zeros((structured_data.continu_storage.n_store))) 
+    elif structured_data.discrete_storage is not None :
+        adapted_characteristics = _convert_characteristic_arrays(structured_data.discrete_storage.characteristics,structured_data.discrete_storage.n_store)
+        storage = _StorageBlock(
+            structured_data.discrete_storage.model, 
+            adapted_characteristics, 
+            structured_data.discrete_storage.n_store, 
+            structured_data.discrete_storage.techs, 
+            structured_data.discrete_storage.capacity
+            ) 
 
     time = _TimeParametersBlock(structured_data.time.time_resolution,structured_data.time.duration_years,len(structured_data.time.datetime),structured_data.time.n_days)
 
@@ -552,7 +607,7 @@ def build_environment(structured_data):
         structured_data.optimization.constraint_num,
         structured_data.optimization.constraint_level,
         structured_data.optimization.criterion_num,
-        structured_data.connexion,
+        structured_data.connection,
         structured_data.optimization.type_optim,
     )
 

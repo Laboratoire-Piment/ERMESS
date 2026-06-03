@@ -22,6 +22,7 @@ from numba import jit
 
 from ERMESS_scripts.data.indices import *
 
+############################ COMMON OPERATORS ########################################################
 
 @jit(nopython=True)
 def switch_contract_operator(c,n_contracts):
@@ -39,6 +40,19 @@ def switch_contract_operator(c,n_contracts):
     """
     c.contract=np.random.randint(0,n_contracts,1)[0]
     return(c)
+
+@jit(nopython=True)
+def Mutate_storages_units_operator_research(c,hyperparameters_operators,bounds_storage):
+
+#    min_decrease = min(-2,-int(bounds_storage / hyperparameters_operators[OPER_INV_LENGTH, RESEARCH_PRODUCTION]))
+#    max_increase = max(3,int(bounds_storage / hyperparameters_operators[OPER_INV_LENGTH, RESEARCH_PRODUCTION]))
+        
+#    modifier=max(0,min(bounds_storage[selected_producer],c.production_set[selected_producer]+np.random.randint(min_decrease,max_increase)))
+
+#    c.storage_discrete_set = c.storage_discrete_set
+    return(c)
+
+################################# RESEARCH OPERATORS ########################################################
 
 @jit(nopython=True)
 def reduce_power_trading_operator(c,selected_storage,hyperparameters_operators):
@@ -1327,9 +1341,29 @@ def Force_YDSM_trades_consistency_operator(c,selected_storage,random_factors,n_b
     c.storage_TS[selected_storage][mutation_indices] = c.storage_TS[selected_storage][mutation_indices]+(delta)*random_factors[3]
     return(c)
 
-
-
 ################################### PRO OPERATORS ##########################################
+
+@jit(nopython=True)
+def Mutate_storages_units_operator_pro(c,bounds_storage,hyperparameters_operators_num_pro,choice0,choice1,choice2):
+    """
+    Mutates the set of storage systems (PRO operator, Discrete storage model).
+    
+    Args:
+        c (object): Candidate solution.
+    
+    Returns:
+        object: Mutated individual with updated discrete storage set.
+    """
+
+    for choice in [choice0,choice1,choice2] :
+        min_decrease = np.int64(min(-2,-(bounds_storage[choice] * hyperparameters_operators_num_pro[PRO_OPER_DEVIATION, PRO_STORAGE_CAPACITIES])))
+        max_increase = np.int64(max(3,int(bounds_storage[choice] * hyperparameters_operators_num_pro[PRO_OPER_DEVIATION, PRO_STORAGE_CAPACITIES])))
+        
+        modifier=max(0,min(bounds_storage[choice],c.storage_discrete_set[choice]+np.random.randint(min_decrease,max_increase)))
+
+        c.storage_discrete_set[choice] = modifier
+    return(c)
+
 @jit(nopython=True)
 def Switch_dispatching_strategy_operator(c):
     """
@@ -1461,9 +1495,20 @@ def Mutate_EMS_Overlap_operator(c,random_factors,hyperparameters_operators_num_p
         object: Mutated individual with updated PMS taking-over thresholds.
     """
     if (random_factors[0]<0.5):
-        c.overlaps[OVERLAP_INTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_INTERN,:]*np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9)+np.random.normal(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP]/5,9))))
-    if (random_factors[1]<0.5):
-        c.overlaps[OVERLAP_EXTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_EXTERN,:]*np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9)+np.random.normal(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP]/5,9))))
+        if (random_factors[1]<0.5):
+            c.overlaps[OVERLAP_INTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_INTERN,:]*np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9)+np.random.normal(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP]/5,9))))
+        elif (random_factors[1]<0.75):
+            c.overlaps[OVERLAP_INTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_INTERN,:]+np.random.uniform(-hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],0,9))))
+        else : 
+            c.overlaps[OVERLAP_INTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_INTERN,:]+np.random.uniform(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9))))
+    if (random_factors[2]<0.5):
+        if (random_factors[3]<0.5):
+            c.overlaps[OVERLAP_EXTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_EXTERN,:]*np.random.normal(1,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9)+np.random.normal(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP]/5,9))))
+        elif (random_factors[3]<0.75):
+            c.overlaps[OVERLAP_EXTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_EXTERN,:]+np.random.uniform(-hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],0,9))))
+        else : 
+            c.overlaps[OVERLAP_EXTERN,:] = np.sort(np.minimum(1,np.maximum(0,c.overlaps[OVERLAP_EXTERN,:]+np.random.uniform(0,hyperparameters_operators_num_pro[PRO_OPER_DEVIATION,PRO_OVERLAP],9))))
+ 
     return(c)
 
 @jit(nopython=True)

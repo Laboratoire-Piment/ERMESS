@@ -131,7 +131,7 @@ def pro_to_research(pop_pro,Context):
         Context (object): Problem context containing required attributes:
             - prods_U, prod_C
             - Non_movable_load, total_D_Movable_load, total_Y_Movable_load
-            - n_bits, n_store, time_resolution, Connexion
+            - n_bits, n_store, time_resolution, Connection
             - storage_characteristics
     
     Returns:

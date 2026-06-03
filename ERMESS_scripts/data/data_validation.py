@@ -158,7 +158,7 @@ def _data_validation(data):
     # =========================
     # 2. REQUIRED SHEETS
     # =========================
-   required_sheets = ["Environment","TimeSeries","PV_production_specs","WT_production_specs","Storages","Hyperparameters"]
+   required_sheets = ["Environment","TimeSeries","PV_production_specs","WT_production_specs","Hyperparameters","Outputs"]
 
    for sheet in required_sheets:
         if sheet not in data:
@@ -169,7 +169,7 @@ def _data_validation(data):
     # =========================
    env = data["Environment"]
 
-   required_env_cols = ["Constraint","Constraint level","Optimisation criterion","type","Latitude (°)","Longitude (°)","Altitude (m)","time resolution (steps/h)","Production","Meteo","Connexion","Tracking"]
+   required_env_cols = ["Constraint","Constraint level","Optimisation criterion","type","Latitude (°)","Longitude (°)","Altitude (m)","time resolution (steps/h)","Production","Meteo","Connection","Storage model","Tracking"]
 
    for col in required_env_cols:
         if col not in env:
@@ -190,8 +190,8 @@ def _data_validation(data):
    if env["Meteo"][0] not in ["automatic", "manual"]:
         raise ValueError("Meteo must be 'automatic' or 'manual'")
 
-   if env["Connexion"][0] not in ["On-grid", "Off-grid"]:
-        raise ValueError("Connexion must be 'On-grid' or 'Off-grid'")
+   if env["Connection"][0] not in ["On-grid", "Off-grid"]:
+        raise ValueError("Connection must be 'On-grid' or 'Off-grid'")
 
     # =========================
     # 4. TIMESERIES CHECKS
@@ -240,25 +240,25 @@ def _data_validation(data):
     # =========================
     # 7. GRID / GENSET
     # =========================
-   connexion = env["Connexion"][0]
+   connection = env["Connection"][0]
 
-   if connexion == "On-grid":
+   if connection == "On-grid":
         if "Grid_prices" not in data:
-            raise ValueError("Missing Grid_prices sheet for Grid connexion")
+            raise ValueError("Missing Grid_prices sheet for Grid connection")
             
-        required_connexion_cols = ['Contract_Id','Fixed premium (€/kW)','Peak (c€/kWh)','Summer full hours (c€/kWh)','Summer off-peak hours (c€/kWh)','Winter full hours (c€/kWh)','Winter off-peak hours (c€/kWh)','Power overrun (€/kW)','CSPE (c€/kWh)','CTA','TVA load','TVA CTA','Octroi de mer','TGCA','Winter months','Summer months','Workday peak hours','Workday full hours','Workday off-peak hours','Weekend peak hours','Weekend full hours','Weekend off-peak hours','Selling peak hours','Selling base price (c€/kWh)','Selling peak price (c€/kWh)']
-        connexion_sheet = data['Grid_prices']
+        required_connection_cols = ['Contract_Id','Fixed premium (€/kW)','Peak (c€/kWh)','Summer full hours (c€/kWh)','Summer off-peak hours (c€/kWh)','Winter full hours (c€/kWh)','Winter off-peak hours (c€/kWh)','Power overrun (€/kW)','CSPE (c€/kWh)','CTA','TVA load','TVA CTA','Octroi de mer','TGCA','Winter months','Summer months','Workday peak hours','Workday full hours','Workday off-peak hours','Weekend peak hours','Weekend full hours','Weekend off-peak hours','Selling peak hours','Selling base price (c€/kWh)','Selling peak price (c€/kWh)']
+        connection_sheet = data['Grid_prices']
         
-   if connexion == "Off-grid":
+   if connection == "Off-grid":
         if "Diesel generator" not in data:
             raise ValueError("Missing Diesel generator sheet")
             
-        required_connexion_cols = ['Parameter','Value','DG fuel consumption']
-        connexion_sheet = data['Diesel generator']
+        required_connection_cols = ['Parameter','Value','DG fuel consumption']
+        connection_sheet = data['Diesel generator']
             
-   for col in required_connexion_cols:
-         if col not in connexion_sheet:
-             raise ValueError(f"Missing column '{col}' in Connexion sheet")
+   for col in required_connection_cols:
+         if col not in connection_sheet:
+             raise ValueError(f"Missing column '{col}' in Connection sheet")
 
     # =========================
     # 8. PV / WT SPECS

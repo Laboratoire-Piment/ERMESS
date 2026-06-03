@@ -44,6 +44,7 @@ class PIDConfig:
            ('DG_min_production', float64),
            ('storages', float64[:,:]),
            ('fitness', float64),
+           ('storage_discrete_set', int64[:]),
            ])
 
 class Individual_pro(object):
@@ -65,7 +66,7 @@ class Individual_pro(object):
         storages (numpy.ndarray): Storage units.
         fitness (float): Fitness score of the individual.
     """
-    def __init__(self,production_set,contract,DG_strategy,discharge_order,energy_use_coefficient,overlaps,D_DSM_minimum_levels,Y_DSM_minimum_levels,DG_min_runtime,DG_min_production,storages,fitness):
+    def __init__(self,production_set,contract,DG_strategy,discharge_order,energy_use_coefficient,overlaps,D_DSM_minimum_levels,Y_DSM_minimum_levels,DG_min_runtime,DG_min_production,storages,fitness,storage_discrete_set):
         self.production_set = production_set
         self.contract = contract
         self.DG_strategy = DG_strategy
@@ -78,6 +79,7 @@ class Individual_pro(object):
         self.DG_min_production = DG_min_production       
         self.storages = storages
         self.fitness = fitness
+        self.storage_discrete_set = storage_discrete_set
     
     def copy(self):
         """
@@ -86,9 +88,17 @@ class Individual_pro(object):
         Returns:
             A JIT Individual PRO object
         """
-        return Individual_pro(self.production_set.copy(),self.contract,self.DG_strategy,self.discharge_order.copy(),self.energy_use_coefficient,self.overlaps.copy(),self.D_DSM_minimum_levels.copy(),self.Y_DSM_minimum_levels.copy(),self.DG_min_runtime,self.DG_min_production,self.storages.copy(),self.fitness)
+        return Individual_pro(self.production_set.copy(),self.contract,self.DG_strategy,self.discharge_order.copy(),self.energy_use_coefficient,self.overlaps.copy(),self.D_DSM_minimum_levels.copy(),self.Y_DSM_minimum_levels.copy(),self.DG_min_runtime,self.DG_min_production,self.storages.copy(),self.fitness,self.storage_discrete_set.copy())
 
-        
+@jit(nopython=True)
+def convert_storage_configuration(gene,RENSystems_parameters):
+    storages_SOCs_Init = gene.storages[INDIV_PRO_SOC_INIT]
+    storages_volumes = gene.storage_discrete_set * RENSystems_parameters.specs_storage[STOR_UNIFIED_ENERGY,:]
+    storages_charge_powers = gene.storage_discrete_set * RENSystems_parameters.specs_storage[STOR_UNIFIED_CHARGE_POWER,:]
+    storages_discharge_powers = gene.storage_discrete_set * RENSystems_parameters.specs_storage[STOR_UNIFIED_DISCHARGE_POWER,:]
+    
+    return np.vstack((storages_volumes,storages_charge_powers,storages_discharge_powers,storages_SOCs_Init)).reshape(4,RENSystems_parameters.n_store)
+                          
 class Non_JIT_Individual_pro():
     """
     Class representing an individual result in the optimization process (Production side).
@@ -180,7 +190,7 @@ def _build_baseline_solution_pro(Context):
     HOURS_PER_DAY = 24
     MONTH_PER_YEAR = 12
     production_set_baseline = np.zeros(Context.production.n_units,dtype = np.int64)
-    contract_baseline = 0 if Context.optimization.connexion == 'On-grid' else -1
+    contract_baseline = 0 if Context.optimization.connection == 'On-grid' else -1
     DG_strategy_baseline = 'LF'
     discharge_order_baseline = np.arange(Context.storage.n_store,dtype=np.int64 )
     energy_use_coefficient_baseline = 0.
@@ -191,8 +201,9 @@ def _build_baseline_solution_pro(Context):
     DG_min_production_baseline = 0.
     storages_baseline = np.zeros((4,Context.storage.n_store))
     fitness_baseline = np.nan
+    storage_discrete_set_baseline = np.zeros(Context.storage.n_store,dtype=np.int64 )
     
-    return(Individual_pro(production_set_baseline,contract_baseline,DG_strategy_baseline,discharge_order_baseline,energy_use_coefficient_baseline,overlaps_baseline,D_DSM_minimum_levels_baseline,Y_DSM_minimum_levels_baseline,DG_min_runtime_baseline,DG_min_production_baseline,storages_baseline,fitness_baseline))
+    return(Individual_pro(production_set_baseline,contract_baseline,DG_strategy_baseline,discharge_order_baseline,energy_use_coefficient_baseline,overlaps_baseline,D_DSM_minimum_levels_baseline,Y_DSM_minimum_levels_baseline,DG_min_runtime_baseline,DG_min_production_baseline,storages_baseline,fitness_baseline,storage_discrete_set_baseline))
 
 
 
@@ -218,10 +229,9 @@ def find_cost_function_pro(Context,pro_parameters, global_parameters, grid_param
     return(cost_function)
                             
 def initial_population_pro(Context):
-#,
-                           #n_bits, n_pop,n_store,time_resolution,Bounds_prod,groups,Non_movable_load,prod_C,prods_U,storage_characteristics,constraint_num,Constraint_level,n_contracts,Dispatching,specs_num,type_optim): 
+
     """
-    Generate the initial population for the pro mode of ERMESS.
+    Generate the initial population for the pro ERMESS mode.
     
     This function creates a population of individuals representing candidate
     microgrid configurations. Each individual includes:
@@ -235,40 +245,46 @@ def initial_population_pro(Context):
         
     The initialization combines structured seeding (first individuals scaled
     deterministically) and stochastic sampling to ensure both feasibility
-    and diversity in the search space.
+    and diversity in the search space. Depending on the configuration stored in ``Context.config.defined_items``,
+    some decision variables may be fixed from user-defined values instead of
+    being randomly initialized.
     
     Args:
-        n_bits (int): Length of the timeseries.
-        n_pop (int): Population size.
-        n_store (int): Number of storage technologies.
-        time_resolution (float): Time-resolution.
-        Bounds_prod (array-like): Upper bounds for each production unit (integer capacities).
-        groups (list of array-like): Mutually exclusive production groups. Only one unit per group
-            can be active.
-        Non_movable_load (ndarray): Time series of non-flexible electrical load.
-        prod_C (ndarray): Current on-site production timeseries (kW).
-        prods_U (ndarray): Unit production timeseries (kW per unit).
-        storage_characteristics (any): Technical characteristics of storage technologies (not directly
-            used here but required for compatibility).
-        constraint_num (any): Constraint identifiers (not directly applied here).
-        Constraint_level (any): Constraint levels (not directly applied here).
-        n_contracts (int): Number of available energy contracts.
-        Dispatching (tuple): User-Predefined dispatching parameters. If specific keywords are
-            present, corresponding parameters are fixed instead of randomized.
-        specs_num (any): Specification parameters (not directly used here).
-        type_optim ({'pro', 'research'}): If 'pro', returns JIT-compatible Individual_pro objects.
-            Otherwise, returns Non_JIT_Individual_pro objects.
+        Context (OptimizationContext):
+            Optimization context containing all data required for population
+            generation, including:
+
+            - Hyperparameters (population size),
+            - Production technologies and grouping constraints,
+            - Load profiles,
+            - Grid contract information,
+            - Storage model and characteristics,
+            - User-defined operational constraints and strategies.
+
     
     Returns:
-        List of initialized individuals (instances of Individual_pro or Non_JIT_Individual_pro).
+        list[Individual_pro]:
+            List of initialized individuals.
+
+    Raises:
+        ValueError:
+            If ``Context.storage.model`` is not one of
+            ``{"continuous", "discrete"}``.
     
-    Note:
-        Storage sizing is randomly distributed across units using normalized
-        random proportions.
-    
-    Note:
-        The first min(n_pop, 20) individuals are deterministically scaled
-        to improve initial coverage of the search space.
+   Notes:
+        Production units belonging to the same production group are treated
+        as mutually exclusive. For each group, a single technology is selected
+        and all others are set to zero.
+
+        For continuous storage models, total storage capacity and charge/
+        discharge powers are randomly generated and distributed among storage
+        technologies using normalized random proportions.
+
+        For discrete storage models, storage capacities are sampled directly
+        from their respective integer bounds.
+
+        If the grid is unavailable (``Context.grid is None``), all individuals
+        receive a contract value of ``-1``.
     """  
     n_pop = Context.hyperparameters_pro.n_pop
     Initial_prod_index = np.random.rand(n_pop,Context.production.n_units)
@@ -301,16 +317,25 @@ def initial_population_pro(Context):
         ones_prod=[Context.production.groups[i][np.argmax(Initial_prod_index[j][Context.production.groups[i]])] for i in range(len(Context.production.groups))]
         Initial_prod[j][np.array([i not in ones_prod for i in range(Context.production.n_units)])]=0
         prod = np.dot(Initial_prod[j],Context.production.unit_prods)/1000+Context.production.current_prod/1000
-        storage_total_capacity=np.random.uniform(0,max(abs(np.cumsum(prod-Context.loads.non_movable))))
-        storage_total_discharge_power=np.random.uniform(0,max(Context.loads.non_movable))
-        storage_total_charge_power=np.random.uniform(0,max(prod))
-        distributions = np.random.rand(Context.storage.n_store,3)
-        distributions = distributions/np.sum(distributions,axis=0)
-        storages_discharge_powers = storage_total_discharge_power*distributions[:,0]
-        storages_charge_powers = storage_total_charge_power*distributions[:,1]
-        storages_volumes = storage_total_capacity*distributions[:,2]
-        storages_SOCs_Init = Random_storages_init_SOCs[:,j]
-        storages_param = np.concatenate((storages_volumes,storages_charge_powers,storages_discharge_powers,storages_SOCs_Init)).reshape(4,Context.storage.n_store)
+        
+        if Context.storage.model == "continuous" :
+            storage_total_capacity=np.random.uniform(0,max(abs(np.cumsum(prod-Context.loads.non_movable))))
+            storage_total_discharge_power=np.random.uniform(0,max(Context.loads.non_movable))
+            storage_total_charge_power=np.random.uniform(0,max(prod))
+            distributions = np.random.rand(Context.storage.n_store,3)
+            distributions = distributions/np.sum(distributions,axis=0)
+            storages_discharge_powers = storage_total_discharge_power*distributions[:,0]
+            storages_charge_powers = storage_total_charge_power*distributions[:,1]
+            storages_volumes = storage_total_capacity*distributions[:,2]
+            storages_SOCs_Init = Random_storages_init_SOCs[:,j]
+            storages_param = np.concatenate((storages_volumes,storages_charge_powers,storages_discharge_powers,storages_SOCs_Init)).reshape(4,Context.storage.n_store)
+            storage_discrete_set = np.empty((0, 0), dtype=np.int64)
+        elif Context.storage.model == "discrete" :
+            storage_discrete_set = np.array([np.random.randint(0,Bound,1)[0] for Bound in Context.storage.bounds],dtype=np.int64)
+            storages_param = np.vstack((np.zeros((Context.storage.n_store, 3), dtype=np.float64)-1,Random_storages_init_SOCs[:,j]))
+        else :
+            raise ValueError("Unknown storage model")
+        
         
         if ('Discharge order' in Context.config.defined_items):
             discharge_order = np.array(Context.config.discharge_order,dtype=np.int64)
@@ -337,10 +362,7 @@ def initial_population_pro(Context):
             DG_min_runtime = Random_DG_min_runtime[j]
             DG_min_production = max(Context.loads.non_movable)*0.2*Random_DG_min_production[j]
 
-       # if (type_optim=='pro'): 
-        Init_pop_j=Individual_pro(production_set=np.array(Initial_prod[j],dtype=np.int64),contract=Initial_contracts[j],DG_strategy=DG_strategy,discharge_order=discharge_order,energy_use_coefficient=energy_use_coefficient,overlaps=overlaps,D_DSM_minimum_levels=D_DSM_minimum_levels,Y_DSM_minimum_levels=Y_DSM_minimum_levels,DG_min_runtime=DG_min_runtime,DG_min_production=DG_min_production,storages=storages_param,fitness=np.nan)
-      #  else :
-      #      Init_pop_j=Non_JIT_Individual_pro(production_set=Initial_prod[j],contract=Initial_contracts[j],PMS_strategy=PMS_strategy,PMS_discharge_order=PMS_Discharge_order,energy_use_repartition_DSM=energy_use_repartition_DSM,PMS_taking_over=PMS_taking_over,PMS_D_DSM_min_levels=PMS_D_DSM_min_levels,PMS_Y_DSM_min_levels=PMS_Y_DSM_min_levels,PMS_DG_min_runtime=PMS_DG_min_runtime,PMS_DG_min_production=PMS_DG_min_production,storages=storages_param,fitness=np.nan)
+        Init_pop_j=Individual_pro(production_set=np.array(Initial_prod[j],dtype=np.int64),contract=Initial_contracts[j],DG_strategy=DG_strategy,discharge_order=discharge_order,energy_use_coefficient=energy_use_coefficient,overlaps=overlaps,D_DSM_minimum_levels=D_DSM_minimum_levels,Y_DSM_minimum_levels=Y_DSM_minimum_levels,DG_min_runtime=DG_min_runtime,DG_min_production=DG_min_production,storages=storages_param,fitness=np.nan,storage_discrete_set=storage_discrete_set)
         Initial_population.append(Init_pop_j)
        
     return(Initial_population)   
@@ -455,12 +477,12 @@ def NON_JIT_mutation_contraintes_pro(c, random_factors, choices,global_parameter
         """      
         usage_ope = np.repeat(0, 17)
         
-        #MUTATION DU CONTRAT
-        if ((random_factors[RF_CONTRACT]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_CONTRACT]) and global_parameters.Connexion==GRID_ON) :  
+        #CONTRACT MUTATION
+        if ((random_factors[RF_CONTRACT]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_CONTRACT]) and global_parameters.Connection==GRID_ON) :  
               c=Eop.switch_contract_operator(c,extra_parameters.n_contracts)
               usage_ope[switch_contract]=1
                    
-        #Mutation de la production           
+        #PRODUCTION MUTATION           
         if (random_factors[RF_PRODUCTION_MAIN]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_PRODUCTION]) :            
              c=Eop.Mutate_production_capacity_operator_pro(c,RENSystems_parameters.capacities,extra_parameters.groups_production,extra_parameters.groups_size,extra_parameters.hyperparameters_operators)         
              usage_ope[Mutate_production_capacity_operator]=1
@@ -486,7 +508,7 @@ def NON_JIT_mutation_contraintes_pro(c, random_factors, choices,global_parameter
                 usage_ope[Mutate_DSM_storage_distribution]=1
                 
         if ((random_factors[RF_OVERLAP]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_OVERLAP]) and (DEFINED_STORAGE not in extra_parameters.defined_items)) :         
-                c=Eop.Mutate_EMS_Overlap_operator(c,random_factors[RF_OVERLAP_EFFECT_START : RF_OVERLAP_EFFECT_START+2],extra_parameters.hyperparameters_operators)
+                c=Eop.Mutate_EMS_Overlap_operator(c,random_factors[RF_OVERLAP_EFFECT_START : RF_OVERLAP_EFFECT_START+4],extra_parameters.hyperparameters_operators)
                 usage_ope[Mutate_EMS_Overlap]=1
 
         if ((random_factors[RF_DDSM]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_DSM_LEVELS]) and (DEFINED_DSM not in extra_parameters.defined_items)) :         
@@ -504,18 +526,23 @@ def NON_JIT_mutation_contraintes_pro(c, random_factors, choices,global_parameter
         if ((random_factors[RF_DG_PRODUCTION]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_DG_CONTROL]) and (DEFINED_GENSET not in extra_parameters.defined_items)) :         
                 c=Eop.Mutate_DG_min_production_operator(c,extra_parameters.hyperparameters_operators)
                 usage_ope[Mutate_DG_min_production]=1
-                
-        if (random_factors[RF_STORAGE_CAPACITY]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_CAPACITIES]) :         
-                c=Eop.Mutate_storages_capacity_operator(c,extra_parameters.hyperparameters_operators,choices[0])
-                usage_ope[Mutate_storages_capacity]=1
-                
-        if (random_factors[RF_STORAGE_INPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
-                c=Eop.Mutate_storages_inpower_operator(c,extra_parameters.hyperparameters_operators,choices[1])
-                usage_ope[Mutate_storages_inpower]=1
-                
-        if (random_factors[RF_STORAGE_OUTPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
-                c=Eop.Mutate_storages_outpower_operator(c,extra_parameters.hyperparameters_operators,choices[2])
-                usage_ope[Mutate_storages_outpower]=1
+        
+        if RENSystems_parameters.storage_model == CONTINUOUS_MODEL :
+            if (random_factors[RF_STORAGE_CAPACITY]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_CAPACITIES]) :         
+                    c=Eop.Mutate_storages_capacity_operator(c,extra_parameters.hyperparameters_operators,choices[0])
+                    usage_ope[Mutate_storages_capacity]=1
+                    
+            if (random_factors[RF_STORAGE_INPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
+                    c=Eop.Mutate_storages_inpower_operator(c,extra_parameters.hyperparameters_operators,choices[1])
+                    usage_ope[Mutate_storages_inpower]=1
+                    
+            if (random_factors[RF_STORAGE_OUTPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
+                    c=Eop.Mutate_storages_outpower_operator(c,extra_parameters.hyperparameters_operators,choices[2])
+                    usage_ope[Mutate_storages_outpower]=1
+        elif RENSystems_parameters.storage_model == DISCRETE_MODEL :
+            if (random_factors[RF_STORAGE_CAPACITY]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_CAPACITIES]) :         
+                    c=Eop.Mutate_storages_units_operator_pro(c,RENSystems_parameters.storage_bounds,extra_parameters.hyperparameters_operators,choices[0],choices[1],choices[2] )
+                    usage_ope[Mutate_storages_capacity]=1
                 
         if (random_factors[RF_INIT_SOC]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_INITIAL_SOC]) :         
                 c=Eop.Mutate_initSOC_operator(c,random_factors[RF_INIT_SOC_EFFECT],choices[3])
@@ -558,9 +585,8 @@ def crossover_reduit_pro(p1, p2, r_cross,RENSystems_parameters , extra_parameter
  
     # children are copies of parents by default
 
-    c1 = Individual_pro(p1.production_set.copy(),p1.contract,p1.DG_strategy,p1.discharge_order.copy(),p1.energy_use_coefficient,p1.overlaps.copy(),p1.D_DSM_minimum_levels.copy(),p1.Y_DSM_minimum_levels.copy(),p1.DG_min_runtime,p1.DG_min_production,p1.storages.copy(),p1.fitness)
-    c2 = Individual_pro(p2.production_set.copy(),p2.contract,p2.DG_strategy,p2.discharge_order.copy(),p2.energy_use_coefficient,p2.overlaps.copy(),p2.D_DSM_minimum_levels.copy(),p2.Y_DSM_minimum_levels.copy(),p2.DG_min_runtime,p2.DG_min_production,p2.storages.copy(),p2.fitness)
-
+    c1 = Individual_pro(p1.production_set.copy(),p1.contract,p1.DG_strategy,p1.discharge_order.copy(),p1.energy_use_coefficient,p1.overlaps.copy(),p1.D_DSM_minimum_levels.copy(),p1.Y_DSM_minimum_levels.copy(),p1.DG_min_runtime,p1.DG_min_production,p1.storages.copy(),p1.fitness,p1.storage_discrete_set.copy())
+    c2 = Individual_pro(p2.production_set.copy(),p2.contract,p2.DG_strategy,p2.discharge_order.copy(),p2.energy_use_coefficient,p2.overlaps.copy(),p2.D_DSM_minimum_levels.copy(),p2.Y_DSM_minimum_levels.copy(),p2.DG_min_runtime,p2.DG_min_production,p2.storages.copy(),p2.fitness,p2.storage_discrete_set.copy())
 
     cross_rand = np.random.rand()
  # check for recombination
@@ -588,27 +614,7 @@ def crossover_reduit_pro(p1, p2, r_cross,RENSystems_parameters , extra_parameter
         
         c1.DG_strategy = p1.DG_strategy if weights[3]<0.5 else p2.DG_strategy
         c2.DG_strategy = p2.DG_strategy if weights[4]<0.5 else p1.DG_strategy
-        
-#        if (RENSystems_parameters.n_store>1) :   # Determining the discharge order
-#            break_point = np.random.randint(RENSystems_parameters.n_store-1)+1
-            
-#            used = np.zeros(RENSystems_parameters.n_store, dtype=np.bool_)
-
-#            for i in range(break_point):
-#                 v = p1.discharge_order[i]
-#                 c1.discharge_order[i] = v
-#                 used[v] = True
-
-#            j = 0
-#            for i in range(RENSystems_parameters.n_store):
-#                if c1.discharge_order[i] != -1:
-#                    continue
-#                while used[p2[j]]:
-#                    j += 1
-#                v = p2[j]
-#                c1.discharge_order[i] = v
-#                used[v] = True
-#                j += 1
+    
 
   #          c1.discharge_order = np.unique(np.concatenate((p1.discharge_order[0:break_point],p2.discharge_order)))
   #          c2.discharge_order = np.unique(np.concatenate((p2.discharge_order[0:break_point],p1.discharge_order)))
@@ -631,17 +637,24 @@ def crossover_reduit_pro(p1, p2, r_cross,RENSystems_parameters , extra_parameter
         c1.DG_min_production = weights[10]*p1.DG_min_production+(1-weights[10])*p2.DG_min_production
         c2.DG_min_production = weights[10]*p2.DG_min_production+(1-weights[10])*p1.DG_min_production
         
-        c1.storages[INDIV_PRO_VOLUME,:] = weights[11]*p1.storages[0,:]+(1-weights[11])*p2.storages[0,:]
-        c2.storages[INDIV_PRO_VOLUME,:] = weights[11]*p2.storages[0,:]+(1-weights[11])*p1.storages[0,:]
+        if RENSystems_parameters.storage_model == CONTINUOUS_MODEL :
         
-        c1.storages[INDIV_PRO_CHARGE_POWER,:] = weights[12]*p1.storages[1,:]+(1-weights[12])*p2.storages[1,:]
-        c2.storages[INDIV_PRO_CHARGE_POWER,:] = weights[12]*p2.storages[1,:]+(1-weights[12])*p1.storages[1,:]
-        
-        c1.storages[INDIV_PRO_DISCHARGE_POWER,:] = weights[13]*p1.storages[2,:]+(1-weights[13])*p2.storages[2,:]
-        c2.storages[INDIV_PRO_DISCHARGE_POWER,:] = weights[13]*p2.storages[2,:]+(1-weights[13])*p1.storages[2,:]
-        
+            c1.storages[INDIV_PRO_VOLUME,:] = weights[11]*p1.storages[0,:]+(1-weights[11])*p2.storages[0,:]
+            c2.storages[INDIV_PRO_VOLUME,:] = weights[11]*p2.storages[0,:]+(1-weights[11])*p1.storages[0,:]
+            
+            c1.storages[INDIV_PRO_CHARGE_POWER,:] = weights[12]*p1.storages[1,:]+(1-weights[12])*p2.storages[1,:]
+            c2.storages[INDIV_PRO_CHARGE_POWER,:] = weights[12]*p2.storages[1,:]+(1-weights[12])*p1.storages[1,:]
+            
+            c1.storages[INDIV_PRO_DISCHARGE_POWER,:] = weights[13]*p1.storages[2,:]+(1-weights[13])*p2.storages[2,:]
+            c2.storages[INDIV_PRO_DISCHARGE_POWER,:] = weights[13]*p2.storages[2,:]+(1-weights[13])*p1.storages[2,:]            
+            
+        else : 
+            
+            c1.storage_discrete_set = np.round(weights[11]*p1.storage_discrete_set + (1-weights[11])*p2.storage_discrete_set).astype(np.int64)
+            c2.storage_discrete_set = np.round(weights[11]*p2.storage_discrete_set + (1-weights[11])*p1.storage_discrete_set).astype(np.int64)
+            
         c1.storages[INDIV_PRO_SOC_INIT,:] = weights[14]*p1.storages[3,:]+(1-weights[14])*p2.storages[3,:]
-        c2.storages[INDIV_PRO_SOC_INIT,:] = weights[14]*p2.storages[3,:]+(1-weights[14])*p1.storages[3,:]
+        c2.storages[INDIV_PRO_SOC_INIT,:] = weights[14]*p2.storages[3,:]+(1-weights[14])*p1.storages[3,:]                       
     
     return ( c1,c2,np.int64(cross_rand<r_cross))
 

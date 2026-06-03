@@ -118,7 +118,7 @@ class ConstraintIdx:
     REN_fraction = 2
     
 # =========================================================
-# CONNEXION MODE
+# CONNECTION MODE
 # =========================================================
 
 GRID_ON = 0
@@ -130,6 +130,13 @@ GRID_OFF = 1
 
 TYPE_PRO = 0
 TYPE_RESEARCH = 1  
+
+# =========================================================
+# STORAGE MODEL
+# =========================================================
+
+CONTINUOUS_MODEL = 0
+DISCRETE_MODEL = 1  
 
 # =========================================================
 # DEFINED ITEMS
@@ -152,7 +159,7 @@ PROD_VOLUME = int(ProdCharIdx.Volume)
 
 
 # =========================================================
-# STORAGE CHARACTERISTICS
+# STORAGE CHARACTERISTICS (CONTINUOUS OR UNIFIED MODEL)
 # =========================================================
 
 STOR_ENERGY_COST = int(StorCharIdx.Energy_cost)
@@ -167,7 +174,26 @@ STOR_CYCLE_LIFE = int(StorCharIdx.Cycle_life)
 STOR_INSTALLATION_COST = int(StorCharIdx.Installation_cost)
 STOR_ESOEI = int(StorCharIdx.ESOEI)
 STOR_POWER_COST = int(StorCharIdx.Power_Cost)
+STOR_UNIFIED_ENERGY = 12
+STOR_UNIFIED_CHARGE_POWER = 13
+STOR_UNIFIED_DISCHARGE_POWER = 14
 
+# =========================================================
+# STORAGE CHARACTERISTICS (DISCRETE MODEL)
+# =========================================================
+
+STOR_UNIT_ENERGY = 0
+STOR_UNIT_CHARGE_POWER = 1
+STOR_UNIT_DISCHARGE_POWER = 2
+STOR_UNIT_CAPEX_COST = 3
+STOR_UNIT_OPEX_COST = 4
+STOR_UNIT_ROUND_TRIP_EFF = 5
+STOR_UNIT_DEPTH_OF_DISCHARGE = 6
+STOR_UNIT_EMISSIONS = 7
+STOR_UNIT_LIFETIME = 8
+STOR_UNIT_CYCLE_LIFE = 9
+STOR_UNIT_ESOEI = 10
+STOR_UNIT_CAPACITY = 11
 
 # =========================================================
 # RESEARCH OPERATORS
@@ -234,9 +260,8 @@ PRO_OPER_DEVIATION = int(OperatorsProCharIdx.Min_deviation)
 OVERLAP_INTERN = int(OverlapsCharIdx.Intern)
 OVERLAP_EXTERN = int(OverlapsCharIdx.Extern)
 
-
 # =========================================================
-# INDIVIDUAL STORAGE STRUCTURE (PRO)
+# INDIVIDUAL STORAGE STRUCTURE (PRO, CONTINUOUS MODEL)
 # =========================================================
 
 INDIV_PRO_VOLUME = int(Indiv_Pro_StoreCharIdx.Volume)

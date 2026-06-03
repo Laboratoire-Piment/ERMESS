@@ -50,7 +50,7 @@ def fake_structured_data():
     data.optimization.criterion_num = 0
     data.optimization.type_optim = "research"
 
-    data.connexion = "on-grid"
+    data.connection = "on-grid"
 
     data.hyperparameters = Dummy()
     data.hyperparameters.r_cross = 0.5

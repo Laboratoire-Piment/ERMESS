@@ -60,7 +60,7 @@ def battery_charge(params, SOC_eff, taking_over, power: float, time_resolution: 
         return P_ch
 
 @jit(nopython=True)
-def battery_discharge(params, SOC_eff, RT_efficiency, taking_over, power: float, time_resolution: float) -> float:
+def battery_discharge(params, SOC_eff, RT_efficiency, overlaps, power: float, time_resolution: float) -> float:
         """
         Compute admissible battery discharging power under operational constraints.
         
@@ -98,7 +98,7 @@ def battery_discharge(params, SOC_eff, RT_efficiency, taking_over, power: float,
         """
         e_available = (SOC_eff) * params[0]  * RT_efficiency  # energy remaining and usable
         closest_level = min(8,max(0,np.int64(10*SOC_eff)))
-        participation = 1-taking_over[closest_level]
+        participation = 1-overlaps[closest_level]
         P_disch = min(power*participation, params[2], e_available * time_resolution) # discharging power knowing the constraints
         
         return (P_disch)

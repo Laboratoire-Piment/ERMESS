@@ -44,7 +44,7 @@ global_params = [
     ('constraint_num', int64),
     ('constraint_level', float64),
     ('cost_constraint', float64),
-    ('Connexion', types.string),
+    ('Connection', types.string),
     ('Non_movable_load', float64[:]),
 ]
 
@@ -59,10 +59,10 @@ class _GlobalParams:
         constraint_num (int): ID of the constraint.
         constraint_level (float): Constraint threshold.
         cost_constraint (float): Cost factor of the constraint.
-        Connexion (str): Grid connection type.
+        Connection (str): Grid connection type.
         Non_movable_load (np.ndarray): Fixed load profile.
     """
-    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connexion,Non_movable_load):
+    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connection,Non_movable_load):
         """Initialize global parameters.
 
         Args:
@@ -72,7 +72,7 @@ class _GlobalParams:
             constraint_num (int): ID of the constraint.
             constraint_level (float): Constraint threshold.
             cost_constraint (float): Cost factor of the constraint.
-            Connexion (str): Grid connection type.
+            Connection (str): Grid connection type.
             Non_movable_load (np.ndarray): Fixed load profile.
         """
         self.n_bits = n_bits
@@ -81,7 +81,7 @@ class _GlobalParams:
         self.constraint_num = constraint_num
         self.constraint_level = constraint_level
         self.cost_constraint = cost_constraint
-        self.Connexion = Connexion
+        self.Connection = Connection
         self.Non_movable_load = Non_movable_load
 
 specs_grid = [
@@ -258,9 +258,10 @@ def _pro_update_storage_power(gene,RENSystems_parameters,storage_TS):
         - Charging power is stored as a positive value.
         - Discharging power is the maximum positive output.
     """
-    for i in range(RENSystems_parameters.n_store):
-        gene.storages[INDIV_PRO_CHARGE_POWER][i]=max(-(storage_TS[i]))   
-        gene.storages[INDIV_PRO_DISCHARGE_POWER][i]=max(storage_TS[i])  
+    if RENSystems_parameters.storage_model == CONTINUOUS_MODEL : 
+        for i in range(RENSystems_parameters.n_store):
+            gene.storages[INDIV_PRO_CHARGE_POWER][i]=max(-(storage_TS[i]))   
+            gene.storages[INDIV_PRO_DISCHARGE_POWER][i]=max(storage_TS[i])  
     return(gene.storages)
 
 @jit(nopython=True)
@@ -400,16 +401,13 @@ def _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power
     return(annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost)
     
 @jit(nopython=True)
-def _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power):
+def _pro_economics_Storage(gene,RENSystems_parameters,Lifetime,size_power):
     """
     Compute economic metrics of storage systems.
     
     Args:
         gene:
             Individual solution.
-    
-        energy_storages (np.ndarray):
-            Storage capacities (kWh).
     
         RENSystems_parameters:
             Object containing storage cost parameters.
@@ -428,7 +426,7 @@ def _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,s
     Notes:
         - Includes power, energy, and installation costs.
     """
-    CAPEX_storage_cost =  np.multiply(size_power,RENSystems_parameters.specs_storage[STOR_POWER_COST,:]) + np.multiply(energy_storages,RENSystems_parameters.specs_storage[STOR_ENERGY_COST,:]) + np.multiply(RENSystems_parameters.specs_storage[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,RENSystems_parameters.n_store)))
+    CAPEX_storage_cost =  np.multiply(size_power,RENSystems_parameters.specs_storage[STOR_POWER_COST,:]) + np.multiply(gene.storages[INDIV_PRO_VOLUME,:],RENSystems_parameters.specs_storage[STOR_ENERGY_COST,:]) + np.multiply(RENSystems_parameters.specs_storage[STOR_INSTALLATION_COST,:],(size_power>np.repeat(0,RENSystems_parameters.n_store)))
     economics_CAPEX_storage = sum(np.divide(CAPEX_storage_cost,Lifetime))
     economics_OPEX_storage = sum(np.multiply(RENSystems_parameters.specs_storage[STOR_OM_COST,:],size_power))
     return(economics_CAPEX_storage,economics_OPEX_storage)    
@@ -534,7 +532,7 @@ def LCOE_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
         constraint_level (float): Threshold value for the constraint.
         cost_constraint (float): Maximum allowed cost for penalization.
         n_bits (int): Total number of timesteps.
-        Connexion (str): Grid connection type ('On-grid' or 'Off-grid').
+        Connection (str): Grid connection type ('On-grid' or 'Off-grid').
         DG_fuel_consumption (np.ndarray): Diesel generator fuel consumption per output level.
         DG_fuel_cost (float): Diesel fuel cost.
         DG_unit_cost (float): Capital cost per kW of diesel generator.
@@ -553,8 +551,8 @@ def LCOE_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
         - Penalization is applied if `obtained_constraint_level < constraint_level`.
     
     Important:
-        - When `Connexion='Off-grid'`, fitness accounts for diesel generator operation.
-        - When `Connexion='On-grid'`, fitness accounts for import/export economics, contract premiums, and penalties.
+        - When `Connection='Off-grid'`, fitness accounts for diesel generator operation.
+        - When `Connection='On-grid'`, fitness accounts for import/export economics, contract premiums, and penalties.
     
     Warning:
         - Avoid divisions by zero: `sum(production)` and `sum(Optimized_Load)` are used in constraints and may produce NaN if zero.
@@ -571,14 +569,14 @@ def LCOE_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
     size_power = _pro_size_storage_power(gene,RENSystems_parameters) 
     energy_storages,Lifetime = _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage_TS,losses)
-    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
+    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,RENSystems_parameters,Lifetime,size_power)
           
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+DG_OPEX_cost+DG_CAPEX_cost+annual_total_fuel_cost)/(den_Optimized_load/global_parameters.time_resolution/global_parameters.duration_years)
     
-    elif (global_parameters.Connexion==GRID_ON):            
+    elif (global_parameters.Connection==GRID_ON):            
         exportation = np.where(trades<0,trades,0)
         (economics_exportation,economics_importation,economics_overrun,economics_contract_power) = _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation)
         LCOE=(annual_cost_production+economics_CAPEX_storage+economics_OPEX_storage+economics_importation+economics_contract_power+economics_overrun+economics_exportation)/(den_Optimized_load/global_parameters.time_resolution/global_parameters.duration_years) 
@@ -656,7 +654,7 @@ def Self_sufficiency_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
     gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)                                                           
     importation=np.where(trades>0,trades,0)
-    Grid_importation = importation if (Connexion=='On-grid') else np.repeat(0.,n_bits)
+    Grid_importation = importation if (Connection=='On-grid') else np.repeat(0.,n_bits)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
@@ -766,16 +764,16 @@ def Annual_net_benefits_pro(gene,RENSystems_parameters,global_parameters,Genset_
     exportation = np.where(trades<0,-trades,0)
     energy_storages,Lifetime = _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage_TS,losses)
     size_power = _pro_size_storage_power(gene,RENSystems_parameters)   
-    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
+    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,RENSystems_parameters,Lifetime,size_power)
 
     
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost)
 
         
-    elif (global_parameters.Connexion==GRID_ON):  
+    elif (global_parameters.Connection==GRID_ON):  
         (economics_exportation,economics_importation,economics_overrun,economics_contract_power) = _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation)
         Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
         
@@ -820,15 +818,15 @@ def NPV_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid_
     energy_storages,Lifetime = _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage_TS,losses)
 
     size_power = _pro_size_storage_power(gene,RENSystems_parameters)
-    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
+    (economics_CAPEX_storage,economics_OPEX_storage) = _pro_economics_Storage(gene,RENSystems_parameters,Lifetime,size_power)
     
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _pro_economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-DG_OPEX_cost-DG_CAPEX_cost-annual_total_fuel_cost)
         DG_lifetime_years = Genset_parameters.lifetime/(sum(np.where(DG_production>0,1,0))/global_parameters.time_resolution/global_parameters.duration_years)
 
-    elif (global_parameters.Connexion==GRID_ON):  
+    elif (global_parameters.Connection==GRID_ON):  
         (economics_exportation,economics_importation,economics_overrun,economics_contract_power) = _pro_economics_Grid(gene,global_parameters,grid_parameters,importation,exportation)
         Annual_net_benefits = (-annual_cost_production-economics_CAPEX_storage-economics_OPEX_storage-economics_importation-economics_contract_power-economics_overrun+economics_exportation)
         DG_lifetime_years = np.nan
@@ -871,7 +869,7 @@ def Autonomy_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
 
-    Grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
+    Grid_importation = importation if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
     Autonomy = 1-sum(Grid_importation>0)/global_parameters.n_bits
     gene.fitness = _Compute_fitness(global_parameters,obtained_constraint_level, -Autonomy) 
 
@@ -910,17 +908,17 @@ def eqCO2_emissions_pro(gene,RENSystems_parameters,global_parameters,Genset_para
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
 
-    Grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
-    DG_production = importation if (global_parameters.Connexion==GRID_OFF) else np.repeat(0.,global_parameters.n_bits)
+    Grid_importation = importation if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
+    DG_production = importation if (global_parameters.Connection==GRID_OFF) else np.repeat(0.,global_parameters.n_bits)
         
     annual_CO2eq_prod = sum(np.sum((gene.production_set*RENSystems_parameters.unit_productions.T)/KILOS_CONVERSION_FACTOR*RENSystems_parameters.specs_prod[:,PROD_EMISSIONS],axis=0))/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years   
     annual_CO2eq_importation = sum(Grid_importation)*grid_parameters.eqCO2emissions/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years
     annual_CO2eq_storage = np.inner(np.array([sum(np.where(storage_TS[i]>0,storage_TS[i],0)) for i in range(RENSystems_parameters.n_store)]),RENSystems_parameters.specs_storage[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years
 
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _pro_indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         annual_CO2eq_DG = annual_fuel_consumption*Genset_parameters.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR      
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         annual_CO2eq_DG = 0.
 
     annual_eqCO2emissions = annual_CO2eq_DG+annual_CO2eq_prod+annual_CO2eq_importation+annual_CO2eq_storage
@@ -961,13 +959,13 @@ def Fossil_fuel_consumption_pro(gene,RENSystems_parameters,global_parameters,Gen
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)
 
-    if (global_parameters.Connexion==GRID_ON) : 
+    if (global_parameters.Connection==GRID_ON) : 
         Grid_importation = importation 
         annual_fossil_fuel_consumption_importation =  grid_parameters.fossil_fuel_ratio*sum(Grid_importation)/global_parameters.time_resolution/global_parameters.duration_years
     else : 
         annual_fossil_fuel_consumption_importation = 0
     
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         DG_nominal_power = max(trades)
         DG_production=importation
         if (DG_nominal_power>0):
@@ -975,7 +973,7 @@ def Fossil_fuel_consumption_pro(gene,RENSystems_parameters,global_parameters,Gen
             onsite_annual_fuel_consumption = sum(DG_production*Genset_parameters.fuel_CO2eq_emissions[closest_levels]/global_parameters.time_resolution/global_parameters.duration_years)
         else : 
             onsite_annual_fuel_consumption = 0    
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         onsite_annual_fuel_consumption = 0
     
     annual_fossil_fuel_consumption = annual_fossil_fuel_consumption_importation+onsite_annual_fuel_consumption
@@ -1021,13 +1019,13 @@ def EROI_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
     consumed_energy_production = sum(productible_energy/RENSystems_parameters.specs_prod[:,PROD_EROI])
     consumed_energy_storage = sum(np.array([np.nanmin((RENSystems_parameters.specs_storage[STOR_CYCLE_LIFE,i],RENSystems_parameters.specs_storage[STOR_LIFETIME,i]*Equivalent_cycles[i]))*energy_storages[i]/RENSystems_parameters.specs_storage[STOR_ESOEI,i] for i in range(RENSystems_parameters.n_store)]))
 
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         DG_production=importation
         DG_lifetime_years = Genset_parameters.lifetime/(sum(np.where(DG_production>0,1,0))/global_parameters.time_resolution/global_parameters.duration_years)
         productible_energy_DG = sum(DG_production)/global_parameters.time_resolution/global_parameters.duration_years*DG_lifetime_years
         consumed_energy_DG = productible_energy_DG/Genset_parameters.EROI
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         productible_energy_DG = 0.
         consumed_energy_DG = 0.
         
@@ -1202,7 +1200,7 @@ def LCOE_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
         constraint_num (int): Identifier for the applied constraint type.
         constraint_level (float): Target constraint threshold.
         cost_constraint (float): Penalty coefficient applied if constraint violated.
-        Connexion (str): System connection mode ('On-grid' or 'Off-grid').
+        Connection (str): System connection mode ('On-grid' or 'Off-grid').
         fuel_CO2eq_emissions (float): Fuel emissions factor (unused here).
         Grid_fossil_fuel_ratio (float): Fossil fuel share of grid electricity (unused here).
     
@@ -1232,7 +1230,7 @@ def LCOE_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
     (economics_CAPEX_storage,economics_OPEX_storage)=_Economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
 
     
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (DG_lifetime_years,annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _Economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         economics_exportation = 0
@@ -1241,7 +1239,7 @@ def LCOE_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
         economics_contract_power = 0
         
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         annual_total_fuel_cost = 0
         DG_CAPEX_cost = 0
         DG_OPEX_cost = 0
@@ -1294,7 +1292,7 @@ def Annual_net_benefits_research(gene,RENSystems_parameters,global_parameters,Ge
 
     (economics_CAPEX_storage,economics_OPEX_storage)=_Economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
 
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (DG_lifetime_years,annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _Economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         economics_exportation = 0
@@ -1302,7 +1300,7 @@ def Annual_net_benefits_research(gene,RENSystems_parameters,global_parameters,Ge
         economics_overrun = 0
         economics_contract_power = 0
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         DG_nominal_power = 0
         annual_fuel_consumption = 0
         DG_CAPEX_cost = 0
@@ -1355,7 +1353,7 @@ def NPV_research(gene,RENSystems_parameters,global_parameters,Genset_parameters,
 
     (economics_CAPEX_storage,economics_OPEX_storage)=_Economics_Storage(gene,energy_storages,RENSystems_parameters,Lifetime,size_power)
 
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         (DG_lifetime_years,annual_total_fuel_cost,DG_CAPEX_cost,DG_OPEX_cost) = _Economics_Genset(annual_fuel_consumption,DG_production,DG_nominal_power,Genset_parameters,global_parameters)
         economics_exportation = 0
@@ -1363,7 +1361,7 @@ def NPV_research(gene,RENSystems_parameters,global_parameters,Genset_parameters,
         economics_overrun = 0
         economics_contract_power = 0
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         DG_nominal_power = 0
         DG_CAPEX_cost = 0
         DG_OPEX_cost = 0
@@ -1486,15 +1484,15 @@ def eqCO2_emissions_research(gene,RENSystems_parameters,global_parameters,Genset
     
 
     importation=np.where(trades>0,trades,0)    
-    Grid_importation = np.where(trades>0,trades,0) if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
+    Grid_importation = np.where(trades>0,trades,0) if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
     
     annual_CO2eq_prod = sum(np.sum((gene.production_set*RENSystems_parameters.unit_productions.T)/KILOS_CONVERSION_FACTOR*RENSystems_parameters.specs_prod[:,PROD_EMISSIONS],axis=0))/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years   
     annual_CO2eq_importation = sum(Grid_importation)*grid_parameters.eqCO2emissions/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years
     annual_CO2eq_storage = sum(np.array([sum(np.where(gene.storage_TS[i]>0,gene.storage_TS[i],0)) for i in range(RENSystems_parameters.n_store)])[:]*RENSystems_parameters.specs_storage[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR/global_parameters.time_resolution/global_parameters.duration_years
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         annual_CO2eq_DG = annual_fuel_consumption*Genset_parameters.fuel_CO2eq_emissions/TONS_CONVERSION_FACTOR      
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         annual_CO2eq_DG = 0.
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
@@ -1531,7 +1529,7 @@ def Autonomy_research(gene,RENSystems_parameters,global_parameters,Genset_parame
     (production, Optimized_Load,trades) = _research_cost_base_indicators(gene,RENSystems_parameters,global_parameters)
     
     importation = np.where(trades>0,trades,0)
-    grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
+    grid_importation = importation if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)  
@@ -1569,13 +1567,13 @@ def Fossil_fuel_consumption_research(gene,RENSystems_parameters,global_parameter
     (production, Optimized_Load,trades) = _research_cost_base_indicators(gene,RENSystems_parameters,global_parameters)
 
     importation=np.where(trades>0,trades,0)
-    Grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)    
+    Grid_importation = importation if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)    
     annual_fossil_fuel_consumption_importation =  grid_parameters.fossil_fuel_ratio*sum(Grid_importation)/global_parameters.time_resolution/global_parameters.duration_years
 
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         (DG_nominal_power,DG_production,annual_fuel_consumption) = _Indicators_Genset(gene,Genset_parameters,global_parameters,trades,importation)
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         annual_fuel_consumption = 0
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
@@ -1624,13 +1622,13 @@ def EROI_research(gene,RENSystems_parameters,global_parameters,Genset_parameters
     consumed_energy_production = sum(productible_energy/RENSystems_parameters.specs_prod[:,PROD_EROI])
     consumed_energy_storage = sum(np.array([np.nanmin((RENSystems_parameters.spec_storage[STOR_CYCLE_LIFE,i],RENSystems_parameters.spec_storage[STOR_LIFETIME,i]*Equivalent_cycles[i]))*energy_storages[i]/RENSystems_parameters.spec_storage[STOR_ESOEI,i] for i in range(RENSystems_parameters.n_store)]))
     
-    if (global_parameters.Connexion==GRID_OFF):
+    if (global_parameters.Connection==GRID_OFF):
         DG_production=importation
         DG_lifetime_years = Genset_parameters.lifetime/(sum(np.where(DG_production>0,1,0))/global_parameters.time_resolution/global_parameters.duration_years)
         productible_energy_DG = sum(DG_production)/global_parameters.time_resolution/global_parameters.duration_years*DG_lifetime_years
         consumed_energy_DG = productible_energy_DG/Genset_parameters.EROI
         
-    elif (global_parameters.Connexion==GRID_ON):          
+    elif (global_parameters.Connection==GRID_ON):          
         productible_energy_DG = 0.
         consumed_energy_DG = 0.
 
@@ -1711,7 +1709,7 @@ def Self_sufficiency_research(gene,RENSystems_parameters,global_parameters,Gense
 
     importation=np.where(trades>0,trades,0)
     
-    Grid_importation = importation if (global_parameters.Connexion==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
+    Grid_importation = importation if (global_parameters.Connection==GRID_ON) else np.repeat(0.,global_parameters.n_bits)
 
     den_Optimized_load = max(1e-15,sum(Optimized_Load))   
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)

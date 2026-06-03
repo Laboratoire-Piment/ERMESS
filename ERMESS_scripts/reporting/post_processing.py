@@ -106,7 +106,8 @@ def _build_comparison_block(outputs_solution, output_baseline, keys):
   
 def compute_economic_comparisons(outputs_solution, output_baseline):
     NPV = outputs_solution['economics']['Value (€)']-output_baseline['economics']['Annual net benefits (€/yrs.)']*outputs_solution['technical']['Installation lifetime (yrs.)']
-    Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
+    with np.errstate(divide='ignore', invalid='ignore'):
+        Payback = outputs_solution['economics']['Initial investment (€)']/(outputs_solution['economics']['Annual net benefits (€/yrs.)']-output_baseline['economics']['Annual net benefits (€/yrs.)'])
     if Payback<0 : 
         Payback = np.nan
     return(NPV, Payback)
@@ -191,7 +192,7 @@ def _build_timeseries(outputs_solution, solution, Context, datetime):
     power_storage_total = power_storages.sum(axis=1)
 
     # --- Grid price ---
-    grid_price = Context.grid.prices[solution.contract] if Context.optimization.connexion=="On-grid" else None
+    grid_price = Context.grid.prices[solution.contract] if Context.optimization.connection=="On-grid" else None
 
     # --- Imbalance ---
     imbalance = (production+ power_storage_total+ grid- load- curtailment+ dg)
@@ -217,9 +218,16 @@ def _build_flows(outputs_solution, output_baseline, Context):
     pd.DataFrame
     """
 
-    # --- Base flows ---
-    flows_opt = pd.DataFrame(outputs_solution["storage flows"], index=["Optimization"])
-    flows_base = pd.DataFrame(output_baseline["storage flows"], index=["Baseline"])
+    # --- Base flows ---  
+    flows_opt = pd.DataFrame(
+    {k: np.sum(v) for k, v in outputs_solution["storage flows"].items()},
+    index=["Optimization"]
+    )
+
+    flows_base = pd.DataFrame(
+        {k: np.sum(v) for k, v in output_baseline["storage flows"].items()},
+        index=["Baseline"]
+    )
 
     df = pd.concat([flows_opt, flows_base])
 

@@ -42,14 +42,14 @@ global_params = [
     ('constraint_num', int64),
     ('constraint_level', float64),
     ('cost_constraint', float64),
-    ('Connexion', int64),
+    ('Connection', int64),
     ('Non_movable_load', float64[:]),
 ]
 
 @jitclass(global_params)
 class GlobalParams:
     """Container for global optimization parameters."""
-    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connexion,Non_movable_load):
+    def __init__(self, n_bits,time_resolution,duration_years,constraint_num,constraint_level,cost_constraint,Connection,Non_movable_load):
         """Initialize global simulation parameters.
 
         Args:
@@ -59,7 +59,7 @@ class GlobalParams:
             constraint_num (int): Constraint identifier.
             constraint_level (float): Constraint threshold value.
             cost_constraint (float): Cost constraint factor.
-            Connexion (int): Grid connection mode.
+            Connection (int): Grid connection mode.
             Non_movable_load (np.ndarray): Non-movable load profile.
         """
         self.n_bits = n_bits
@@ -68,7 +68,7 @@ class GlobalParams:
         self.constraint_num = constraint_num
         self.constraint_level = constraint_level
         self.cost_constraint = cost_constraint
-        self.Connexion = Connexion
+        self.Connection = Connection
         self.Non_movable_load = Non_movable_load
 
 specs_grid = [
@@ -119,12 +119,14 @@ REN_specs_systems = [
     ('capacities', int64[:]),
     ('specs_storage', float64[:,:]),
     ('n_store', int64),
+    ('storage_model', int64),
+    ('storage_bounds', int64[:]),
 ]
 
 @jitclass(REN_specs_systems)
 class RENSystemsParams:
     """Container for renewable energy systems parameters."""
-    def __init__(self, current_production, unit_productions, specs_prod, capacities, specs_storage, n_store):
+    def __init__(self, current_production, unit_productions, specs_prod, capacities, specs_storage, n_store, storage_model, storage_bounds):
         """Initialize renewable systems parameters.
         
         Args:
@@ -134,6 +136,8 @@ class RENSystemsParams:
             capacities (np.ndarray): Installed capacities.
             specs_storage (np.ndarray): Storage system characteristics.
             n_store (int): Number of storage systems.
+            storage_model (int) : type of storage model.
+            storage_bounds (np.ndarray) : limits if installed storage units.
         """
 
         self.current_production = current_production
@@ -142,6 +146,8 @@ class RENSystemsParams:
         self.capacities = capacities
         self.specs_storage = specs_storage
         self.n_store = n_store
+        self.storage_model = storage_model
+        self.storage_bounds = storage_bounds
         
 mutation_extra_params = [
     ('groups_production', int64[:,:] ),
@@ -242,17 +248,17 @@ def build_numba_params(Context):
         tuple: Tuple containing all initialized parameter containers.
     
     Raises:
-        ValueError: If the optimization or connexion type is unknown.
+        ValueError: If the optimization or connection type is unknown.
     """
     
     pro_parameters = ProParams(Context.loads.total_D_movable,Context.loads.total_Y_movable)
     
-    if Context.optimization.connexion == 'On-grid':
-        connexion_num = GRID_ON
-    elif Context.optimization.connexion == 'Off-grid':
-        connexion_num = GRID_OFF
+    if Context.optimization.connection == 'On-grid':
+        connection_num = GRID_ON
+    elif Context.optimization.connection == 'Off-grid':
+        connection_num = GRID_OFF
     else:
-        raise ValueError("Unknown connexion type")
+        raise ValueError("Unknown connection type")
     
     if Context.optimization.type_optim == 'pro':
         hyperparameters = Context.hyperparameters_pro
@@ -261,12 +267,21 @@ def build_numba_params(Context):
     else:
         raise ValueError("Unknown optim type")
     
-    global_parameters = GlobalParams(Context.time.n_bits,Context.time.time_resolution,Context.time.duration_years,Context.optimization.constraint_num,Context.optimization.constraint_level,hyperparameters.cost_constraint,connexion_num,Context.loads.non_movable)
+    global_parameters = GlobalParams(Context.time.n_bits,Context.time.time_resolution,Context.time.duration_years,Context.optimization.constraint_num,Context.optimization.constraint_level,hyperparameters.cost_constraint,connection_num,Context.loads.non_movable)
     if not (Context.grid == None):
         grid_parameters = GridParams(Context.grid.prices, Context.grid.fixed_premium, Context.grid.overrun, Context.grid.selling_price, Context.grid.eqCO2emissions, Context.grid.fossil_fuel_ratio)      
     else :
         grid_parameters = GridParamsDummy()
-    RENSystems_parameters = RENSystemsParams(Context.production.current_prod, Context.production.unit_prods, Context.production.specs_num, Context.production.capacities, Context.storage.characteristics, Context.storage.n_store)
+        
+        
+    if Context.storage.model == 'continuous':
+        storage_model = CONTINUOUS_MODEL
+    elif Context.storage.model == 'discrete':
+        storage_model = DISCRETE_MODEL
+    else:
+        raise ValueError("Unknown storage model")
+
+    RENSystems_parameters = RENSystemsParams(Context.production.current_prod, Context.production.unit_prods, Context.production.specs_num, Context.production.capacities, Context.storage.characteristics, Context.storage.n_store, storage_model, Context.storage.bounds)
     
     if not (Context.genset == None):
         Genset_parameters = GensetParams(Context.genset.fuel_cost, Context.genset.lifetime, Context.genset.unit_cost,Context.genset.maintenance_cost, Context.genset.fuel_consumption, Context.genset.fuel_CO2eq_emissions, Context.genset.EROI)

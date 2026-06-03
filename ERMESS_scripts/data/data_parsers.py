@@ -11,16 +11,81 @@ import timezonefinder
 import datetime
 from pathlib import Path
 
-
-from ERMESS_scripts.utils.constraints import compute_grid_prices
-
 from ERMESS_scripts.data.indices import ConstraintIdx, CriterionIdx
+from ERMESS_scripts.data import data_classes as  Dcl
+from ERMESS_scripts.data import ERMESS_meteo as Eme
+from ERMESS_scripts.data import ERMESS_PV_model as EPV
+from ERMESS_scripts.data import ERMESS_Wind_model as EWi
 from ERMESS_scripts.reporting import ERMESS_KPI_functions as EKPI
 
-from . import data_classes as  Dcl
-from . import ERMESS_meteo as Eme
-from . import ERMESS_PV_model as EPV
-from . import ERMESS_Wind_model as EWi
+def compute_grid_prices(datetime_data,grid_price):
+    """
+    Generate detailed grid price series for each contract and hour type.
+    
+    This function maps grid price contracts to hourly time series, taking into account
+    weekdays, weekends, peak/off-peak hours, seasonal differences, taxes, and premiums.
+    
+    Args:
+        datetime_data (array-like): Array of datetime values for the simulation horizon.
+        grid_price (pd.DataFrame): Contract-specific price structures, seasonal hours, and premiums.
+    
+    Returns:
+        list: List containing:
+            - prices_hour_type (np.ndarray): String array of shape (n_time, n_contracts) indicating the hour type for each timestep and contract.
+            - prices_num (np.ndarray): Numeric price values (€/kWh) of shape (n_time, n_contracts) for each timestep and contract.
+            - fixed_premium (np.ndarray): Array of fixed premiums per contract (€/kW).
+            - Overrun (np.ndarray): Array of overrun costs per contract (€/kW).
+            - Selling_price (np.ndarray): Array of selling prices per timestep and contract (€/kWh).
+    """
+    grid_price=grid_price.replace(np.nan, '', regex=True)
+    prices = [pd.DataFrame(data={'Datetime':datetime_data,'Hour type':'NONE','Price':None}) for i in range(len(grid_price))]
+    prices_hour_type = []
+    prices_num = []
+
+
+    fixed_premium = []
+    Overrun = []
+    Selling_price = []
+    
+    for i in range(len(grid_price)):
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend peak hours'].split(' '))),'Hour type']='Peak'
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend full hours'].split(' '))),'Hour type']='WE full'
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([5,6])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Weekend off-peak hours'].split(' '))),'Hour type']='WE off'
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday peak hours'].split(' '))),'Hour type']='Peak'
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday full hours'].split(' '))),'Hour type']='W full'
+        prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday off-peak hours'].split(' '))),'Hour type']='W off'
+    
+        prices[i].loc[prices[i]['Hour type']=='Peak' ,'Price']=grid_price.iloc[i]['Peak (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
+
+        prices[i]['Price']=prices[i]['Price']*(1+grid_price.iloc[i]['TVA load'])
+        prices[i]['Price']+=grid_price.iloc[i]['CSPE (c€/kWh)']
+        prices[i]['Price']=prices[i]['Price']/100
+        prices_hour_type.append(prices[i]['Hour type'])
+        prices_num.append(prices[i]['Price'])
+
+        fixed_premium.append( grid_price.iloc[i]['Fixed premium (€/kW)'])
+        Overrun.append( grid_price.iloc[i]['Power overrun (€/kW)'])
+        Selling_price.append(np.repeat(grid_price.iloc[i]['Selling base price (c€/kWh)'],len(datetime_data)))
+        Selling_price[i][(prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Selling peak hours'].split(' ')))]=grid_price.iloc[i]['Selling peak price (c€/kWh)']
+        Selling_price[i]=Selling_price[i]/100
+        
+        #Converting into Numpy
+    fixed_premium=np.array(fixed_premium,dtype=np.float64)
+    Overrun=np.array(Overrun,dtype=np.float64)
+    Selling_price=np.array(Selling_price,dtype=np.float64)
+    prices_num=np.float64(np.vstack(prices_num))
+    prices_hour_type=np.vstack(prices_hour_type).astype('U')
+
+    return([prices_hour_type,prices_num,fixed_premium,Overrun,Selling_price])
+
 
 def _timeseries_interpolation(datetime_model,series_datetime,series_yvalue):
     """
@@ -262,9 +327,9 @@ def _parse_datetime(data, site):
 
     return Dcl.TimeData(n_bits = n_bits, n_days = n_days, datetime=datetime_model, time_resolution=time_resolution, duration_years=duration_years)
 
-def _parse_storage(data):
+def _parse_continuous_storage(data):
     """
-    Parse storage technologies and characteristics.
+    Parse storage technologies and characteristics (continuous model).
     
     This function extracts storage technology types and their numerical
     characteristics, including derived power costs.
@@ -274,17 +339,48 @@ def _parse_storage(data):
             the 'Storages' sheet.
     
     Returns:
-        StorageData: Dataclass containing storage technologies and characteristics.
+        ContinuousStorageData: Dataclass containing storage technologies and characteristics.
     """
+    model = data['Environment']['Storage model'][0]
+    cols = ["Energy cost (€/kWh)","PCS cost (€/kW)","BOP cost (€/kW)","O&M cost (€/kW-yr.)","Round-trip efficiency","Depth of discharge","Emissions (gCO2eq/kWh)","Lifetime (years)","Cycle life","Installation cost (€)","ESOEI"]
+
+
+    if model == "continuous" :
+        Cost_power = data['Storage continuous model']['PCS cost (€/kW)']+data['Storage continuous model']['BOP cost (€/kW)']
+        storage_characteristics = data['Storage continuous model'][cols].T.to_numpy(dtype=np.float64)
+        storage_techs = data['Storage continuous model']['Technology'].to_numpy(dtype='U')
+        storage_characteristics = np.vstack((storage_characteristics,Cost_power),dtype=np.float64)
+        n_store = len(storage_techs)
+        return Dcl.ContinuousStorageData(model,n_store=n_store,techs=storage_techs, characteristics=storage_characteristics)
+    else :
+        return None
+
+def _parse_discrete_storage(data):
+    """
+    Parse storage technologies and characteristics (discrete model).
     
-    Cost_power = data['Storages']['PCS cost (€/kW)']+data['Storages']['BOP cost (€/kW)']
-    storage_characteristics = data['Storages'].T[1:].to_numpy(dtype=np.float64)
-    storage_techs = data['Storages']['Technology'].to_numpy(dtype='U')
-    storage_characteristics = np.vstack((storage_characteristics,Cost_power),dtype=np.float64)
-    n_store = len(storage_techs)
+    This function extracts storage technology types and their numerical
+    characteristics, including derived power costs.
     
-    return Dcl.StorageData(n_store=n_store,techs=storage_techs, characteristics_num=storage_characteristics)
+    Args:
+        data (dict[str, pandas.DataFrame]): Raw input data containing
+            the 'Storages' sheet.
     
+    Returns:
+        DiscreteStorageData: Dataclass containing storage technologies and characteristics.
+    """
+    model = data['Environment']['Storage model'][0]
+    
+    cols = ['Nominal energy (kWh)','Charge power (kW)','Discharge power (kW)','Capital unit cost (€)','O&M cost (€/yrs)','Round-trip efficiency','Depth of discharge','unit eqCO2 Emissions (gCO2)','Lifetime (years)','Cycle life','ESOEI']
+    
+    if model == "discrete" :
+        storage_ids = data['Storage discrete model']['Id'].to_numpy(dtype='U')
+        storage_characteristics = data['Storage discrete model'][cols].to_numpy(dtype=np.float64)        
+        storage_capacity = data['Storage discrete model']['Capacity'].to_numpy(dtype=np.int64)
+        n_store = len(storage_ids)
+        return Dcl.DiscreteStorageData(model,n_store=n_store,techs=storage_ids, characteristics=storage_characteristics,capacity=storage_capacity)
+    else :
+        return None
 
 def _parse_loads(data, datetime_model, timezone):
     """
@@ -632,7 +728,8 @@ def _parse_ERMESSInputs(data,node_id=None):
     siteData = _parse_site(data)
     TimeData = _parse_datetime(data, siteData)
     loadsData = _parse_loads(data, TimeData.datetime, siteData.timezone)
-    storageData = _parse_storage(data)
+    continu_storageData = _parse_continuous_storage(data)
+    discrete_storageData = _parse_discrete_storage(data)
     productionData = _parse_production(data, siteData, TimeData.datetime)
     
     optimizationData = _parse_optimization(data)
@@ -647,24 +744,25 @@ def _parse_ERMESSInputs(data,node_id=None):
         dispatchingData = _parse_dispatching(data)
         hyperparametersData = _parse_hyperparameters(data)
 
-    connexion = data["Environment"]["Connexion"][0]
+    connection = data["Environment"]["Connection"][0]
     tracking = data["Environment"]["Tracking"][0]
 
-    if connexion == "On-grid":
+    if connection == "On-grid":
         gridData = _parse_grid(data, TimeData.datetime)
         gensetData = None
 
-    elif connexion == "Off-grid":
+    elif connection == "Off-grid":
         gensetData = _parse_genset(data)
         gridData = None
 
     else:
-        raise ValueError(f"Unknown connexion type: {connexion}")
+        raise ValueError(f"Unknown connection type: {connection}")
 
     return Dcl.ERMESSInputs(
         time= TimeData,
         production= productionData,
-        storage= storageData,
+        continu_storage= continu_storageData,
+        discrete_storage= discrete_storageData,
         load= loadsData,
         grid= gridData,
         genset= gensetData,
@@ -672,7 +770,7 @@ def _parse_ERMESSInputs(data,node_id=None):
         hyperparameters= hyperparametersData,
         hyperparameterspro= hyperparametersProData,
         dispatching= dispatchingData,
-        connexion= connexion,
+        connection= connection,
         postProcessConfig = postProcessConfigData,
         tracking= tracking
     )
