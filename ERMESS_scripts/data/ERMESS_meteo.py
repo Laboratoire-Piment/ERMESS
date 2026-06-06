@@ -71,12 +71,10 @@ def _load_meteo(output_dir, folder_name, date_from, date_to, timezone_str):
     df_meteo = df_meteo.loc[date_from:date_to]
     df_meteo = df_meteo.round(2)
     
-    Wind_heights = np.array([10.,2.,0.])
-    PV_meteo = pd.DataFrame(data=df_meteo.loc[:, ['GHI','temp_air','wind_speed']].values,index=df_meteo.index,columns=np.array(['ghi','temp_air','wind_speed']))
-    Wind_meteo = pd.DataFrame(data=df_meteo.loc[:, ['wind_speed','temp_air','pressure']].values,index=df_meteo.index,columns=[np.array(['wind_speed','temperature','pressure']),Wind_heights])
+    Wind_heights = np.array([0.,0.,10.,2.,0.])
+    Meteo = pd.DataFrame(data=df_meteo.loc[:, ['GHI','temp_air','wind_speed','temp_air','pressure']].values,index=df_meteo.index,columns=[np.array(['ghi','temp_air','wind_speed','temperature','pressure']),Wind_heights])
 
-
-    return PV_meteo, Wind_meteo
+    return Meteo
 
 def _cache_valid(meta, date_from, date_to):
     """Check if cached data fully covers requested interval."""

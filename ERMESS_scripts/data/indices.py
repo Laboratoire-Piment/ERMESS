@@ -314,7 +314,8 @@ RF_DG_PRODUCTION = 11
 RF_STORAGE_CAPACITY = 12
 RF_STORAGE_INPOWER = 13
 RF_STORAGE_OUTPOWER = 14
-RF_INIT_SOC = 15
+RF_STORAGE_POWERS = 15
+RF_INIT_SOC = 16
 
 RF_INIT_SOC_EFFECT = 19
 RF_OVERLAP_EFFECT_START = 20
@@ -385,7 +386,8 @@ Mutate_DG_min_production = 11
 Mutate_storages_capacity = 12
 Mutate_storages_inpower = 13
 Mutate_storages_outpower = 14
-Mutate_initSOC_operator = 15
+Mutate_storages_powers = 15
+Mutate_initSOC_operator = 16
 
 # =========================================================
 # SAFETY CHECKS

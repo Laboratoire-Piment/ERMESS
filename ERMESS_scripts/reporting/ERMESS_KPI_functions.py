@@ -95,7 +95,7 @@ def _compute_storage_kpis(solution, Context,dispatching_timeseries):
     power_storages=np.array([max(powers_in[i],powers_out[i]) for i in range(n_store)])
     Equivalent_cycles =  np.array([np.sum(np.abs(storage_TS[i,:]))/(2*Context.time.time_resolution*max(energy_storages[i],np.float64(1e-15))*Context.time.duration_years) for i in range(n_store)]) 
     storage_lifetime = np.array([min(Context.storage.characteristics[STOR_LIFETIME,i],Context.storage.characteristics[STOR_CYCLE_LIFE,i]/max(1e-15,Equivalent_cycles[i])) for i in range(n_store)])
-    storage_discrete_set = solution.storage_discrete_set
+    storage_discrete_set = solution.storage_discrete_set if solution.storage_discrete_set.size>0 else np.repeat(np.nan,n_store)
 
     return{"losses (kW)": losses,"cumulative_energy": cumulative_energy,"technology_indicators":{"discrete storage set":storage_discrete_set,"Energy capacity (kWh)":energy_storages,"Power in (kW)":powers_in,"Power out (kW)":powers_out, "Min. SOC (%)" : minSOCs, "Equivalent cycles (/yrs.)" : Equivalent_cycles, "Storage lifetime (yrs.)" : storage_lifetime},"technology actions":{"annual reported energy (kWh)": reported_energy,"annual stored energy (kWh)": stored_energy,"annual losses (kWh)": annualize(losses, Context),},"annual total losses (kWh)":annual_total_losses, "Power storages (kW)":power_storages}
 

@@ -208,9 +208,10 @@ def pvmodel(site, weather, TempParam,
         zenith = site.get_solarposition(weatherData.index)['zenith']
         mask_day = zenith < 90
         dni_extra = get_extra_radiation(weatherData.index.dayofyear)
-        out = erbs(weatherData.loc[:,'ghi'], zenith, dni_extra)
+        out = erbs(weatherData.loc[:,'ghi'].squeeze(), zenith, dni_extra)
         dni = pd.DataFrame(data=out['dni'],index=weatherData.index,columns=['dni'])
         dhi = pd.DataFrame(data=out['dhi'],index=weatherData.index,columns=['dhi'])
+        weatherData.columns = weatherData.columns.get_level_values(0)
         weatherData = pd.concat([weatherData, pd.DataFrame(dni,columns=['dni']), pd.DataFrame(dhi,columns=['dhi'])], axis=1)
         weatherData.loc[~mask_day, ['dni', 'dhi']] = 0
         model = modelchain.ModelChain(

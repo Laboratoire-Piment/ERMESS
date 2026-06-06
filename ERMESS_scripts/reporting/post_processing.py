@@ -144,7 +144,7 @@ def export_to_excel(results, Context):
         _write_sheet(writer, results.SOC_distribution, "SOC distributions", index=False)
         _write_sheet(writer, results.timeseries, "TimeSeries", index=False)
         _write_sheet(writer, results.production, "Production", index=False)
-        _write_sheet(writer, results.genset, "Genset", index=False)
+        _write_sheet(writer, results.genset, "Genset")
         _write_multiple_tables(writer,results.demand_side_management,"Demand side management",positions=[(0, 0), (0, 7),(0, 13),], index=False)
         _write_multiple_tables(writer, results.time_balancing, "Balancing",positions=[(0, 0), (0, 7),(0, 14),(0, 21),], index=False)
         

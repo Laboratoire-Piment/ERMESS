@@ -1686,6 +1686,22 @@ def Mutate_storages_outpower_operator(c,hyperparameters_operators_num_pro,choice
     return(c)
 
 @jit(nopython=True)
+def Update_storage_powers_pro(gene,RENSystems_parameters,storage_TS,choice):
+    """
+    Update storage power capacities based on operation.
+    
+    This function updates charging and discharging power values in the
+    gene structure using observed storage time series.
+    
+    Notes:
+        - Charging power is stored as a positive value.
+        - Discharging power is the maximum positive output.
+    """
+    gene.storages[INDIV_PRO_CHARGE_POWER][choice]=max(-(storage_TS[choice]))   
+    gene.storages[INDIV_PRO_DISCHARGE_POWER][choice]=max(storage_TS[choice])  
+    return(gene.storages)
+
+@jit(nopython=True)
 def Mutate_initSOC_operator(c,random_factor,choice):
     """
     Initialize or perturb the initial State of Charge (SOC) of a selected storage unit.

@@ -149,7 +149,7 @@ def LFE_CCE(gene, global_parameters, pro_parameters, production ,RENSystems_para
                 index = index+1
                 store=gene.discharge_order[index]
                 if ((P_affordable<0) & (gene.storages[INDIV_PRO_VOLUME, store] > 0) & (gene.storages[INDIV_PRO_CHARGE_POWER, store] > 0) & (gene.storages[INDIV_PRO_DISCHARGE_POWER, store] > 0)):                                   
-                    P_bat[store,i]=ESM.battery_discharge(gene.storages[:,store], SOC_eff[store], RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store],gene.overlaps[1,:] if (index==(n_store-2)) else (gene.overlaps[0,:]) , -P_affordable, time_resolution)     
+                    P_bat[store,i]=ESM.battery_discharge(gene.storages[:,store], SOC_eff[store], RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store],gene.overlaps[1,:] if (index==(n_store-1)) else (gene.overlaps[0,:]) , -P_affordable, time_resolution)     
                     P_affordable=P_affordable+P_bat[store,i]
                     Losses[store,i]=P_bat[store,i]/RENSystems_parameters.specs_storage[STOR_ROUND_TRIP_EFF,store]-P_bat[store,i]
                     SOCs_eff[store,i] = SOC_eff[store]-(P_bat[store,i]+Losses[store,i]) /time_resolution / gene.storages[0,store]

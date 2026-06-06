@@ -574,7 +574,7 @@ def build_environment(structured_data):
             structured_data.continu_storage.characteristics, 
             structured_data.continu_storage.n_store, 
             structured_data.continu_storage.techs, 
-            np.zeros((structured_data.continu_storage.n_store))) 
+            np.zeros((structured_data.continu_storage.n_store),dtype=np.int64)) 
     elif structured_data.discrete_storage is not None :
         adapted_characteristics = _convert_characteristic_arrays(structured_data.discrete_storage.characteristics,structured_data.discrete_storage.n_store)
         storage = _StorageBlock(

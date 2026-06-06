@@ -247,24 +247,6 @@ def _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_p
     return(production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff)
 
 @jit(nopython=True)
-def _pro_update_storage_power(gene,RENSystems_parameters,storage_TS):
-    """
-    Update storage power capacities based on operation.
-    
-    This function updates charging and discharging power values in the
-    gene structure using observed storage time series.
-    
-    Notes:
-        - Charging power is stored as a positive value.
-        - Discharging power is the maximum positive output.
-    """
-    if RENSystems_parameters.storage_model == CONTINUOUS_MODEL : 
-        for i in range(RENSystems_parameters.n_store):
-            gene.storages[INDIV_PRO_CHARGE_POWER][i]=max(-(storage_TS[i]))   
-            gene.storages[INDIV_PRO_DISCHARGE_POWER][i]=max(storage_TS[i])  
-    return(gene.storages)
-
-@jit(nopython=True)
 def _pro_size_storage_power(gene,RENSystems_parameters):
     """
     Compute required storage power capacity.

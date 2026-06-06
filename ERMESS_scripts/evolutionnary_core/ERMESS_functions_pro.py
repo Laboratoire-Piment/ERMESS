@@ -329,7 +329,7 @@ def initial_population_pro(Context):
             storages_volumes = storage_total_capacity*distributions[:,2]
             storages_SOCs_Init = Random_storages_init_SOCs[:,j]
             storages_param = np.concatenate((storages_volumes,storages_charge_powers,storages_discharge_powers,storages_SOCs_Init)).reshape(4,Context.storage.n_store)
-            storage_discrete_set = np.empty((0, 0), dtype=np.int64)
+            storage_discrete_set = np.empty(0, dtype=np.int64)
         elif Context.storage.model == "discrete" :
             storage_discrete_set = np.array([np.random.randint(0,Bound,1)[0] for Bound in Context.storage.bounds],dtype=np.int64)
             storages_param = np.vstack((np.zeros((Context.storage.n_store, 3), dtype=np.float64)-1,Random_storages_init_SOCs[:,j]))
@@ -539,13 +539,18 @@ def NON_JIT_mutation_contraintes_pro(c, random_factors, choices,global_parameter
             if (random_factors[RF_STORAGE_OUTPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
                     c=Eop.Mutate_storages_outpower_operator(c,extra_parameters.hyperparameters_operators,choices[2])
                     usage_ope[Mutate_storages_outpower]=1
+                    
+            if (random_factors[RF_STORAGE_POWERS]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
+                    c=Eop.Update_storage_powers_pro(c,RENSystems_parameters,storage_TS,choices[3])
+                    usage_ope[Mutate_storages_powers]=1      
+
         elif RENSystems_parameters.storage_model == DISCRETE_MODEL :
             if (random_factors[RF_STORAGE_CAPACITY]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_CAPACITIES]) :         
                     c=Eop.Mutate_storages_units_operator_pro(c,RENSystems_parameters.storage_bounds,extra_parameters.hyperparameters_operators,choices[0],choices[1],choices[2] )
                     usage_ope[Mutate_storages_capacity]=1
                 
         if (random_factors[RF_INIT_SOC]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_INITIAL_SOC]) :         
-                c=Eop.Mutate_initSOC_operator(c,random_factors[RF_INIT_SOC_EFFECT],choices[3])
+                c=Eop.Mutate_initSOC_operator(c,random_factors[RF_INIT_SOC_EFFECT],choices[4])
                 usage_ope[Mutate_initSOC_operator]=1
                 
         return(c,usage_ope)

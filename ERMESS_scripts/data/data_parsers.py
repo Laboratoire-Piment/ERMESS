@@ -190,9 +190,9 @@ def _compute_production_manual(data, datetime_model):
     unit_prods = np.array([_timeseries_interpolation(datetime_model,datetime_prods,unit_prods[i])
         for i in range(len(unit_prods)) ])
 
-    return unit_prods, datetime_prods
+    return unit_prods
 
-def _compute_production_automatic(data, site, datetime_model, meteo_mode):
+def _compute_production_automatic(data, site, datetime_model, MeteoData):
     """
     Compute production time series using physical models for PV and wind.
     
@@ -209,21 +209,8 @@ def _compute_production_automatic(data, site, datetime_model, meteo_mode):
     Returns:
         tuple:
             - unit_prods (np.ndarray): 2D array of production time series.
-            - datetime_prods (pandas.DatetimeIndex): Production datetime index.
     """
 
-    if meteo_mode == "manual":
-
-        PV_meteo = data["Meteo"].loc[:, ['GHI (W/m²)', 'DNI (W/m²)', 'DHI (W/m²)','Air temperature (°C)', 'Wind speed (m/s)'
-        ]].rename(columns={'GHI (W/m²)': 'ghi','DNI (W/m²)': 'dni','DHI (W/m²)': 'dhi','Air temperature (°C)': 'temp_air','Wind speed (m/s)': 'wind_speed'
-        })
-
-        datetime_prods = pd.to_datetime(data["Meteo"]["Datetime"],format="%d/%m/%Y %H:%M").tz_localize(site.timezone)
-
-    else:
-        CDSAPI_key = data["Environment"]["CDSAPI key"]
-        PV_meteo, Wind_meteo = Eme.import_meteo(site.latitude,site.longitude,site.altitude,datetime_model[0],datetime_model[-1],site.timezone,CDSAPI_key)
-        datetime_prods = PV_meteo.index
 
     # --- PV ---
     PV_specs = data["PV_production_specs"]
@@ -232,6 +219,9 @@ def _compute_production_automatic(data, site, datetime_model, meteo_mode):
     PV_FixModMount = [{"type":"Fixed","surface_tilt":PV_specs['Tilt (°)'][i],"surface_azimuth":PV_specs['Azimuth (°)'][i],"racking_model":PV_specs['Mounting'][i]} for i in range(len(PV_specs))]
     PV_arrayParam = [{"surface_type":PV_specs['Surface type'][i],"module_type":PV_specs['Module type'][i],"modules_per_string":PV_specs['Modules per string'][i],"strings":PV_specs['Strings'][i]} for i in range(len(PV_specs))]
     LossesParam_default = {"soiling": 2,"shading": 3,"snow": 0,"mismatch": 2,"wiring": 2,"connections": 0.5,"lid": 1.5,"nameplate_rating": 1,"age": 0,"availability": 3}   
+
+    PV_meteo = MeteoData.loc[:,['ghi','temp_air','wind_speed']]
+    Wind_meteo = MeteoData.loc[:,['wind_speed','temperature','pressure']]
 
     prods_U_PV = np.array([EPV.pvmodel(site, PV_meteo, PV_TempParam_default, PV_specs['Module'][i], PV_specs['Inverter'][i], PV_FixModMount[i], PV_arrayParam[i],LossesParam_default,False,False,False,False)[0] for i in range(len(PV_specs))])
     prods_U_PV = np.where(prods_U_PV < 0, 0, prods_U_PV)
@@ -250,7 +240,7 @@ def _compute_production_automatic(data, site, datetime_model, meteo_mode):
     # concat
     unit_prods = np.row_stack([x for x in (prods_U_PV, prods_U_WT) if x.size])
 
-    return unit_prods, datetime_prods
+    return unit_prods
 
 def _parse_site(data):
     """
@@ -382,7 +372,7 @@ def _parse_discrete_storage(data):
     else :
         return None
 
-def _parse_loads(data, datetime_model, timezone):
+def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
     """
     Parse and interpolate load time series.
     
@@ -397,6 +387,7 @@ def _parse_loads(data, datetime_model, timezone):
     Returns:
         LoadData: Dataclass containing load time series.
     """
+    mode = data["Environment"]["Load"][0]
 
     series_datetime = pd.to_datetime(
         data["TimeSeries"]["Datetime"],
@@ -406,20 +397,28 @@ def _parse_loads(data, datetime_model, timezone):
         nonexistent="shift_forward",
         ambiguous=False)
 
-    non_movable = _timeseries_interpolation(
-        datetime_model,
-        series_datetime,
-        data["TimeSeries"]["Non-controllable load (kW)"])
-
-    yearly = _timeseries_interpolation(
-        datetime_model,
-        series_datetime,
-        data["TimeSeries"]["Yearly movable load (kW)"] )
-
-    daily = _timeseries_interpolation(
-        datetime_model,
-        series_datetime,
-        data["TimeSeries"]["Daily movable load (kW)"])
+    if mode == "manual" :
+        non_movable = _timeseries_interpolation(
+            datetime_model,
+            series_datetime,
+            data["TimeSeries"]["Non-controllable load (kW)"])
+    
+        yearly = _timeseries_interpolation(
+            datetime_model,
+            series_datetime,
+            data["TimeSeries"]["Yearly movable load (kW)"] )
+    
+        daily = _timeseries_interpolation(
+            datetime_model,
+            series_datetime,
+            data["TimeSeries"]["Daily movable load (kW)"])
+    else : 
+        from ERMESS_scripts.data import ERMESS_Load_model as Elo
+        building_list = data["Automatic load specs"]
+        meteoData.columns = meteoData.columns.get_level_values(0)
+        holidays,vacation_starts,vacation_ends = data["Holidays"]["holidays dates"],data["Holidays"]["vacation start dates"],data["Holidays"]["vacation end dates"]
+        vacations = pd.DataFrame((vacation_starts,vacation_ends)).T.dropna(how='all')
+        non_movable = Elo.generate_microgrid_load(building_list,meteoData,holidays,vacations, time_resolution)
 
     return Dcl.LoadData(non_movable=non_movable,yearly_movable=yearly,daily_movable=daily)
 
@@ -480,7 +479,33 @@ def _parse_grid(data, datetime_model):
                         Selling_price= selling_price,
                         Contract_Ids= Contract_Ids)
 
-def _parse_production(data, site, datetime_model):
+def _parse_meteo(data, siteData, datetime_model):
+    """
+    Parse and compute meteo data.
+    
+    This function handles both manual and automatic production modes.
+    
+    Args:
+        data (dict[str, pandas.DataFrame]): Raw input data.
+    
+    Returns:
+        MeteoData: Dataclass containing all meteo information.
+    """
+    meteo_mode = data["Environment"]["Meteo"][0]
+    
+    if meteo_mode == "manual":
+
+        Meteodata = data["Meteo"].loc[:, ['GHI (W/m²)', 'DNI (W/m²)', 'DHI (W/m²)','Air temperature (°C)', 'Wind speed (m/s)'
+        ]].rename(columns={'GHI (W/m²)': 'ghi','DNI (W/m²)': 'dni','DHI (W/m²)': 'dhi','Air temperature (°C)': 'temp_air','Wind speed (m/s)': 'wind_speed'
+        })
+
+    else:
+        CDSAPI_key = data["Environment"]["CDSAPI key"]
+        Meteodata = Eme.import_meteo(siteData.latitude,siteData.longitude,siteData.altitude,datetime_model[0],datetime_model[-1],siteData.timezone,CDSAPI_key)
+        
+    return(Meteodata)
+
+def _parse_production(data, site, datetime_model, MeteoData):
     """
     Parse and compute production data for all units.
     
@@ -499,7 +524,7 @@ def _parse_production(data, site, datetime_model):
     env = data["Environment"]
 
     production_mode = env["Production"][0]
-    meteo_mode = env["Meteo"][0]
+ 
 
     # =========================
     # 1. COMPUTE UNIT PRODUCTIONS
@@ -507,11 +532,11 @@ def _parse_production(data, site, datetime_model):
 
     if production_mode == "automatic":
 
-        unit_prods, datetime_prods = _compute_production_automatic(data,site,datetime_model,meteo_mode)
+        unit_prods = _compute_production_automatic(data,site,datetime_model,MeteoData)
 
     elif production_mode == "manual":
 
-        unit_prods, datetime_prods = _compute_production_manual(data,datetime_model)
+        unit_prods = _compute_production_manual(data,datetime_model)
 
     else:
         raise ValueError(f"Unknown production mode: {production_mode}")
@@ -537,15 +562,7 @@ def _parse_production(data, site, datetime_model):
 
     numbers = len(characteristics_num)
 
-    return Dcl.ProductionData(
-        ids=ids,
-        characteristics_num=characteristics_num,
-        capacities=capacities,
-        groups=groups,
-        current_prod=current_prod,
-        unit_prods=unit_prods,
-        numbers=numbers
-    )
+    return Dcl.ProductionData(ids=ids,characteristics_num=characteristics_num,capacities=capacities,groups=groups,current_prod=current_prod,unit_prods=unit_prods,numbers=numbers)
 
 def _parse_constraint(value) :
     """
@@ -727,10 +744,13 @@ def _parse_ERMESSInputs(data,node_id=None):
 
     siteData = _parse_site(data)
     TimeData = _parse_datetime(data, siteData)
-    loadsData = _parse_loads(data, TimeData.datetime, siteData.timezone)
     continu_storageData = _parse_continuous_storage(data)
     discrete_storageData = _parse_discrete_storage(data)
-    productionData = _parse_production(data, siteData, TimeData.datetime)
+    
+    meteoData = _parse_meteo(data, siteData, TimeData.datetime)
+    
+    productionData = _parse_production(data, siteData, TimeData.datetime, meteoData)
+    loadsData = _parse_loads(data, TimeData.datetime, siteData.timezone, meteoData, TimeData.time_resolution)
     
     optimizationData = _parse_optimization(data)
     postProcessConfigData = _parse_output_config(data,node_id)
