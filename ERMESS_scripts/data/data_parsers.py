@@ -415,10 +415,11 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
     else : 
         from ERMESS_scripts.data import ERMESS_Load_model as Elo
         building_list = data["Automatic load specs"]
+        load_flexibility = data["Load flexibility"]
         meteoData.columns = meteoData.columns.get_level_values(0)
         holidays,vacation_starts,vacation_ends = data["Holidays"]["holidays dates"],data["Holidays"]["vacation start dates"],data["Holidays"]["vacation end dates"]
         vacations = pd.DataFrame((vacation_starts,vacation_ends)).T.dropna(how='all')
-        non_movable = Elo.generate_microgrid_load(building_list,meteoData,holidays,vacations, time_resolution)
+        non_movable = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
 
     return Dcl.LoadData(non_movable=non_movable,yearly_movable=yearly,daily_movable=daily)
 
