@@ -6,7 +6,8 @@ Created on Thu Jun  4 11:50:01 2026
 """
 
 """
-Stochastic building energy load generation model.
+Stochastic bottom-up occupant-driven microgrid load model combining occupancy simulation,
+ activity-based end-use modelling, diversity effects and simplified thermal dynamics.
 
 This module generates synthetic electricity and thermal demand profiles
 for heterogeneous buildings based on occupancy, behavioral models,
@@ -20,12 +21,44 @@ The model includes:
 - microgrid aggregation across multiple buildings
 
 All loads are time-resolved and dependent on meteorological inputs.
+
+The models are inspired by :
+    
+    general methodology : 
+        Page, Robinson, Morel & Scartezzini,
+        "A generalised stochastic model for the simulation of occupant presence"
+        Energy and Buildings, 2008.
+    
+    occupancy model :
+        Richardson, Thomson & Infield
+        "A high-resolution domestic building occupancy model for energy demand simulations"
+        Energy and Buildings, 2008.
+        
+    charge model from occupancy :
+        Widén & Wäckelgård 
+        "A high-resolution stochastic model of domestic activity patterns and electricity demand"
+        Applied Energy, 2010
+        
+    lighting model, IT, shared equipment, EV :
+        Widén et al.
+        "A combined Markov-chain and bottom-up approach to modelling of domestic lighting demand"
+        Energy and Buildings, 2009
+        Richardson et al.
+        
+    dhw :
+        Jordan & Vajen
+        "Realistic domestic hot-water profiles in different time scales."
+        Proceedings of the IEA SHC Task 26 Workshop, 2001.
+        IEA SHC Task 26
+        
+        
+
 """
 
 import numpy as np
 import pandas as pd
 
-from ERMESS_scripts.data.config_profiles import PROFILES
+from ERMESS_scripts.load_model.src.config_profiles import PROFILES
 
 
 def is_holiday(ts, holidays):
@@ -118,7 +151,7 @@ def compute_occupancy(series_datetime, profile, events, n_steps, occupancy_param
     holiday_factor = np.where(events['holiday'],occupancy_params["holiday_factor"],1.0)
     vacation_factor = np.where(events['vacation'],occupancy_params["vacation_factor"],1.0)
 
-    p_target = p_base * holiday_factor * vacation_factor
+    p_target = np.clip(p_base * holiday_factor * vacation_factor,0.,1.)
     
     rho_occ = np.exp(-1./(occupancy_params["occupancy_memory"]*time_resolution))
     z_occ = generate_ar1(n_steps, rho_occ)
@@ -222,7 +255,7 @@ def shared_load(n_present, n_users, z_act, mean_activity, shared_params, simulta
     usage = mean_activity * occ_ratio**shared_params['shared_scaling_exponent']
     usage = np.clip(usage + simultaneity_factor * np.sqrt(usage*(1-usage)) * z_act,0, 1)
     
-    p_shared = shared_params["shared_installed_power"] * usage
+    p_shared = shared_params["shared_installed_power_per_user"] * (n_users**shared_params["shared_equipment_aggregation"]) * usage
     
     return(p_shared)
 
@@ -284,7 +317,7 @@ def dhw_load(n_present, dhw_params, n_steps, n_users, mean_activity, dhw_physica
     """
 
     MIN_PER_HOUR = 60
-    E_tank_max = (dhw_params["Tank_capacity"]* dhw_physical_params['rho_water']* dhw_physical_params['cp_water']* (dhw_params["T_hot"] - dhw_params["T_cold"])/ dhw_physical_params['JOULES_CONVERSION_FACTOR'])
+    E_tank_max = (dhw_params["Tank_capacity_per_user"]*(n_users**dhw_params["distribution_factor"])* dhw_physical_params['rho_water']* dhw_physical_params['cp_water']* (dhw_params["T_hot"] - dhw_params["T_cold"])/ dhw_physical_params['JOULES_CONVERSION_FACTOR'])
     p_draw_start = dhw_params["dhw_draw_rate"]* (n_present / n_users) * mean_activity / time_resolution
     p_draw_end = min(1.0,MIN_PER_HOUR/(dhw_params['mean_duration']*time_resolution))
     
@@ -450,15 +483,17 @@ def generate_occupancy_and_activity(building,time_resolution,events,meteoData):
     dt = 3600. / time_resolution
 
     z_act = generate_ar1(n_steps, rho_act)
+    
+    null_series = np.zeros (n_steps, dtype = np.float32)
 
     occupancy = compute_occupancy(series_datetime, profile, events, n_steps, occupancy_params, n_users, time_resolution)
-    p_light = lighting_load(occupancy, meteoData['ghi'], z_act, simultaneity_factor, n_steps, light_params)
-    p_it = it_load(occupancy, z_act, mean_activity, simultaneity_factor, n_steps, it_params)
-    p_shared = shared_load(occupancy, n_users, z_act, mean_activity, shared_params, simultaneity_factor)
-    p_EV = EV_load(n_users, n_steps, time_resolution, occupancy, EV_params, mean_activity)
-    p_dhw = dhw_load(occupancy, dhw_params, n_steps, n_users, mean_activity,dhw_physical_params,time_resolution)
-    p_cold,p_heat = hvac_load(occupancy, n_steps, dt, comfort_params,comfort_temp, meteoData)
-    p_base = base_load(n_steps,n_users,time_resolution,base_load_params)
+    p_light = lighting_load(occupancy, meteoData['ghi'], z_act, simultaneity_factor, n_steps, light_params) if building["Light"]=='Yes' else null_series
+    p_it = it_load(occupancy, z_act, mean_activity, simultaneity_factor, n_steps, it_params) if building["IT and office"]=='Yes' else null_series
+    p_shared = shared_load(occupancy, n_users, z_act, mean_activity, shared_params, simultaneity_factor) if building["Shared equipment"]=='Yes' else null_series
+    p_EV = EV_load(n_users, n_steps, time_resolution, occupancy, EV_params, mean_activity) if building["Electric vehicles"]=='Yes' else null_series
+    p_dhw = dhw_load(occupancy, dhw_params, n_steps, n_users, mean_activity,dhw_physical_params,time_resolution) if building["Domestic hot water"]=='Yes' else null_series
+    p_cold,p_heat = hvac_load(occupancy, n_steps, dt, comfort_params,comfort_temp, meteoData) if building["Thermal comfort"]=='Yes' else null_series
+    p_base = base_load(n_steps,n_users,time_resolution,base_load_params) if building["Base load"]=='Yes' else null_series
         
     occupancy = pd.Series(occupancy, index = series_datetime)
     activity = pd.DataFrame({"base":p_base,"lighting":p_light,"IT and office equipment":p_it,"shared equipment":p_shared,"electric vehicles":p_EV,"domestic hot water":p_dhw,"heating":p_heat,"cooling":p_cold},index=series_datetime)
@@ -550,8 +585,10 @@ def generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,va
         
         n_building += building['Number']
         n_steps = len(series_datetime)
+        print(building)
         
         for i in range(building["Number"]):
+            print(i)
             occupancy,activity = generate_occupancy_and_activity(building,time_resolution,events,meteoData)
             activity_memory = PROFILES[building["Type"]]["activity_memory"]
             loads = separate_loads(activity,activity_memory,time_resolution,n_steps,load_flexibility)

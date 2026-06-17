@@ -10,7 +10,7 @@ from numba.types import ListType
 from numba.experimental import jitclass
 from numba import float64, int64, types
 
-from ERMESS_scripts.energy_model import ERMESS_EMS_models as Eems
+from ERMESS_scripts.energy_management_model import ERMESS_EMS_models as Eems
 from ERMESS_scripts.data.indices import *
 
 pro_params = [

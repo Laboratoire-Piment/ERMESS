@@ -14,8 +14,8 @@ from pathlib import Path
 from ERMESS_scripts.data.indices import ConstraintIdx, CriterionIdx
 from ERMESS_scripts.data import data_classes as  Dcl
 from ERMESS_scripts.data import ERMESS_meteo as Eme
-from ERMESS_scripts.data import ERMESS_PV_model as EPV
-from ERMESS_scripts.data import ERMESS_Wind_model as EWi
+from ERMESS_scripts.energy_production_model import ERMESS_PV_model as EPV
+from ERMESS_scripts.energy_production_model import ERMESS_Wind_model as EWi
 from ERMESS_scripts.reporting import ERMESS_KPI_functions as EKPI
 
 def compute_grid_prices(datetime_data,grid_price):
@@ -413,13 +413,13 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
             series_datetime,
             data["TimeSeries"]["Daily movable load (kW)"])
     else : 
-        from ERMESS_scripts.data import ERMESS_Load_model as Elo
+        from ERMESS_scripts.load_model.src import ERMESS_Load_model as Elo
         building_list = data["Automatic load specs"]
         load_flexibility = data["Load flexibility"]
         meteoData.columns = meteoData.columns.get_level_values(0)
         holidays,vacation_starts,vacation_ends = data["Holidays"]["holidays dates"],data["Holidays"]["vacation start dates"],data["Holidays"]["vacation end dates"]
         vacations = pd.DataFrame((vacation_starts,vacation_ends)).T.dropna(how='all')
-        non_movable = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
+        non_movable,daily,yearly = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
 
     return Dcl.LoadData(non_movable=non_movable,yearly_movable=yearly,daily_movable=daily)
 
@@ -501,7 +501,7 @@ def _parse_meteo(data, siteData, datetime_model):
         })
 
     else:
-        CDSAPI_key = data["Environment"]["CDSAPI key"]
+        CDSAPI_key = data["Environment"]["CDSAPI key"][0]
         Meteodata = Eme.import_meteo(siteData.latitude,siteData.longitude,siteData.altitude,datetime_model[0],datetime_model[-1],siteData.timezone,CDSAPI_key)
         
     return(Meteodata)

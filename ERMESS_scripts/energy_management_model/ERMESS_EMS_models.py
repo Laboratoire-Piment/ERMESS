@@ -8,7 +8,7 @@ Created on Tue Jun 10 14:03:31 2025
 import numpy as np
 from numba import jit
 
-from ERMESS_scripts.energy_model import ERMESS_storages_model as ESM 
+from ERMESS_scripts.energy_management_model import ERMESS_storages_model as ESM 
 from ERMESS_scripts.data.indices import *
 
 @jit(nopython=True)

@@ -8,7 +8,7 @@ Created on Mon May 11 16:54:12 2026
 import pandas as pd
 import numpy as np 
 
-from ERMESS_scripts.energy_model import ERMESS_EMS_models as Eems
+from ERMESS_scripts.energy_management_model import ERMESS_EMS_models as Eems
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
 from ERMESS_scripts.data.indices import *
 

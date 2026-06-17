@@ -11,7 +11,7 @@ from numba.experimental import jitclass
 from numba import int64, float64
 
 from ERMESS_scripts.evolutionnary_core import ERMESS_evolutionnary_operators as Eop
-from ERMESS_scripts.energy_model import ERMESS_EMS_models as Eems
+from ERMESS_scripts.energy_management_model import ERMESS_EMS_models as Eems
 from ERMESS_scripts.evolutionnary_core import ERMESS_functions as Ef
 from ERMESS_scripts.data.indices import *
 

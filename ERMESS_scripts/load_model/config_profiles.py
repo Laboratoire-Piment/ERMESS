@@ -77,7 +77,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 80, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.40, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.35, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.85, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -89,7 +90,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 100, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 5, #domestic hot water tank volume (L)
+        "distribution_factor": 0.5, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.85, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -164,7 +166,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 60, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.70, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.35, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.75, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -176,7 +179,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 2500, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 100, #domestic hot water tank volume (L)
+        "distribution_factor": 0.6, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.7, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.90, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -251,7 +255,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 120, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 1.50, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.30, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.90, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -263,7 +268,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 800, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 30, #domestic hot water tank volume (L)
+        "distribution_factor": 0.4, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.6, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.85, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -338,7 +344,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 200, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 2.50, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.3, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.95, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -350,8 +357,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 4000, #domestic hot water tank volume (L)
-        "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
+        "Tank_capacity": 80, #domestic hot water tank volume (L)
+        "Charging_SOC_start": 0.4, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
         "T_hot" : 55, #hot water setpoint temperature (°C)
@@ -425,7 +432,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 40, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.20, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.40, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.80, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -437,7 +445,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 200, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 8, #domestic hot water tank volume (L)
+        "distribution_factor": 0.5, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -515,7 +524,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 10, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.15, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.55, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.7, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -527,7 +537,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 200, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 60, #domestic hot water tank volume (L)
+        "distribution_factor": 0.7, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -601,7 +612,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 50, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.18, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.40, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.80, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -613,7 +625,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 200, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 5, #domestic hot water tank volume (L)
+        "distribution_factor": 0.5, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -688,7 +701,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 60, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.12, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.40, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.80, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -700,7 +714,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 200, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 3, #domestic hot water tank volume (L)
+        "distribution_factor": 0.5, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -775,7 +790,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 250, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 1.5, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.50, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.95, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -787,7 +803,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 300, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 10, #domestic hot water tank volume (L)
+        "distribution_factor": 0.7, # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.85, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)
@@ -863,7 +880,8 @@ PROFILES = {
         },
         
         "shared_params":{
-        "shared_installed_power": 30, #total installed power of shared equipment (kW)
+        "shared_installed_power_per_user": 0.20, #total installed power of shared equipment per user (kW)
+        "shared_equipment_aggregation": 0.45, #aggregation exponent accounting for mutualisation of shared equipment
         "shared_scaling_exponent": 0.75, # aggregation exponent accounting for diversity in shared equipment usage
         },
         
@@ -875,7 +893,8 @@ PROFILES = {
         },
                 
         "dhw_params":{
-        "Tank_capacity": 2500, #domestic hot water tank volume (L)
+        "Tank_capacity_per_user": 70, #domestic hot water tank volume (L)
+        "distribution_factor": 1., # aggregation exponent accounting for mutualisation of dhw capacity (0:total mutualisation , 1: each user has one tank)
         "Charging_SOC_start": 0.8, #tank state-of-charge threshold triggering reheating
         "Charging_SOC_end": 0.95, #tank state-of-charge threshold stopping reheating
         "T_cold" : 17, #cold water supply temperature (°C)

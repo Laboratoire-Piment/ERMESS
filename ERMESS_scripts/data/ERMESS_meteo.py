@@ -247,9 +247,9 @@ def import_meteo(latitude,longitude,altitude,date_from,date_to,timezone_str,cdsa
         
     if not zipfile.is_zipfile(output_path):
         raise ValueError(f"Invalid ZIP file: {output_path}")
-
+        
     with zipfile.ZipFile(output_path, 'r') as zip_ref:
-        zip_ref.extractall(output_path)
+        zip_ref.extractall(os.path.dirname(output_path))
 
     return(_load_meteo(output_dir, folder_name, date_from, date_to, timezone_str))
 
