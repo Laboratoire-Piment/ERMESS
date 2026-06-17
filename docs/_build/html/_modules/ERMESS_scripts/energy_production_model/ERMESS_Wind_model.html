@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.energy_production_model.ERMESS_Wind_model &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.energy_production_model.ERMESS_Wind_model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding:utf-8 -*-</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">:Created: 2025-07-17 10:09:17</span>
+<span class="sd">:Author: Mathieu Lafitte and JoPHOBEA</span>
+
+<span class="sd">This script simulates the production of a single wind turbine.</span>
+
+<span class="sd">It is an adaptation of the ModelChain example of windpowerlib for ERMESS. Model is available here :</span>
+<span class="sd">https://windpowerlib.readthedocs.io/en/stable/getting_started.html#examples-and-basic-usage</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="c1">#---------------------</span>
+<span class="c1"># %%</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">windpowerlib</span> <span class="kn">import</span> <span class="n">ModelChain</span><span class="p">,</span> <span class="n">WindTurbine</span>
+
+<div class="viewcode-block" id="default_wind_turbines">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.default_wind_turbines">[docs]</a>
+<span class="k">def</span> <span class="nf">default_wind_turbines</span><span class="p">(</span><span class="n">WT_prod</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a default wind turbine dictionary for ERMESS.</span>
+<span class="sd">    </span>
+<span class="sd">    This function returns a turbine parameter dictionary compatible with</span>
+<span class="sd">    ``windpowerlib.WindTurbine`` used by ERMESS. It provides predefined default power curves</span>
+<span class="sd">    for several small and medium wind turbines typically used in micro-grid</span>
+<span class="sd">    optimisation studies within the ERMESS evolutionary sizing framework.</span>
+<span class="sd">    </span>
+<span class="sd">    If the turbine type is not recognized as a predefined default model,</span>
+<span class="sd">    the function converts the input structure into a dictionary format</span>
+<span class="sd">    compatible with ``WindTurbine``.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        WT_prod (pandas.Series or dict-like): Wind turbine configuration data. </span>
+<span class="sd">            Must contain at least the keys ``&#39;turbine_type&#39;`` and ``&#39;hub_height&#39;``.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Dictionary containing wind turbine parameters formatted for ``windpowerlib.WindTurbine``.</span>
+<span class="sd">            Structure example:</span>
+<span class="sd">                {   &quot;nominal_power&quot;: float,  # in W</span>
+<span class="sd">                    &quot;hub_height&quot;: float,     # in m</span>
+<span class="sd">                    &quot;power_curve&quot;: pandas.DataFrame   }</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        KeyError: If required keys (e.g. ``&#39;turbine_type&#39;`` or ``&#39;hub_height&#39;``) are missing.</span>
+<span class="sd">    </span>
+<span class="sd">    Note:</span>
+<span class="sd">        The predefined turbines are simplified generic models (1 kW, 5 kW,</span>
+<span class="sd">        12 kW, 60 kW, 100 kW) intended for optimisation benchmarking rather</span>
+<span class="sd">        than manufacturer-certified performance assessment.</span>
+<span class="sd">    </span>
+<span class="sd">    Warning:</span>
+<span class="sd">        Power curves are hard-coded and may not reflect real turbine</span>
+<span class="sd">        aerodynamics. Use manufacturer data for high-fidelity simulations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;1 kW default&#39;</span><span class="p">):</span>
+        <span class="n">turbineDict</span> <span class="o">=</span> <span class="p">{</span><span class="c1">#SWIFT_1kW_2</span>
+                <span class="s2">&quot;nominal_power&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span><span class="s2">&quot;hub_height&quot;</span><span class="p">:</span> <span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;hub_height&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;power_curve&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">50</span><span class="p">,</span><span class="mi">80</span><span class="p">,</span><span class="mi">130</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">250</span><span class="p">,</span><span class="mi">330</span><span class="p">,</span><span class="mi">430</span><span class="p">,</span><span class="mi">530</span><span class="p">,</span><span class="mi">650</span><span class="p">,</span><span class="mi">770</span><span class="p">,</span><span class="mi">900</span><span class="p">,</span><span class="mi">1020</span><span class="p">,</span><span class="mi">1140</span><span class="p">,</span><span class="mi">1250</span><span class="p">,</span><span class="mi">1330</span><span class="p">,</span><span class="mi">1390</span><span class="p">,</span><span class="mi">1430</span><span class="p">,</span><span class="mi">1410</span><span class="p">,</span><span class="mi">1340</span><span class="p">,</span><span class="mi">1210</span><span class="p">,</span><span class="mi">1090</span><span class="p">,</span><span class="mi">970</span><span class="p">,</span><span class="mi">760</span><span class="p">,</span><span class="mi">650</span><span class="p">,</span><span class="mi">540</span><span class="p">,</span><span class="mi">470</span><span class="p">,</span><span class="mi">400</span><span class="p">,</span><span class="mi">400</span><span class="p">,</span><span class="mi">350</span><span class="p">,</span><span class="mi">370</span><span class="p">,</span><span class="mi">320</span><span class="p">,</span><span class="mi">370</span><span class="p">,</span><span class="mi">360</span><span class="p">,</span><span class="mi">380</span><span class="p">,</span><span class="mi">370</span><span class="p">,</span><span class="mi">400</span><span class="p">,</span><span class="mi">400</span><span class="p">],</span> <span class="c1"># in W</span>
+                <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">49</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># in m/s</span>
+                                <span class="p">,}),}</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;5 kW default&#39;</span><span class="p">):</span>
+        <span class="n">turbineDict</span> <span class="o">=</span> <span class="p">{</span><span class="c1">#SD6_5.2kW_5</span>
+                <span class="s2">&quot;nominal_power&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">,</span><span class="s2">&quot;hub_height&quot;</span><span class="p">:</span> <span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;hub_height&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;power_curve&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">45</span><span class="p">,</span><span class="mi">96</span><span class="p">,</span><span class="mi">172</span><span class="p">,</span><span class="mi">296</span><span class="p">,</span><span class="mi">485</span><span class="p">,</span><span class="mi">739</span><span class="p">,</span><span class="mi">1020</span><span class="p">,</span><span class="mi">1326</span><span class="p">,</span><span class="mi">1733</span><span class="p">,</span><span class="mi">2165</span><span class="p">,</span><span class="mi">2674</span><span class="p">,</span><span class="mi">3121</span><span class="p">,</span><span class="mi">3546</span><span class="p">,</span><span class="mi">4033</span><span class="p">,</span><span class="mi">4428</span><span class="p">,</span><span class="mi">4870</span><span class="p">,</span><span class="mi">5164</span><span class="p">,</span><span class="mi">5464</span><span class="p">,</span><span class="mi">5626</span><span class="p">,</span><span class="mi">5851</span><span class="p">,</span><span class="mi">5960</span><span class="p">,</span><span class="mi">6000</span><span class="p">,</span><span class="mi">6026</span><span class="p">,</span><span class="mi">6064</span><span class="p">,</span><span class="mi">6059</span><span class="p">,</span><span class="mi">6119</span><span class="p">,</span><span class="mi">6099</span><span class="p">],</span> <span class="c1"># in W</span>
+                <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">33</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># in m/s</span>
+                                <span class="p">,}),}</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;12 kW default&#39;</span><span class="p">):</span>
+        <span class="n">turbineDict</span> <span class="o">=</span> <span class="p">{</span><span class="c1">#Jacobs31-20_12kW_9</span>
+                <span class="s2">&quot;nominal_power&quot;</span><span class="p">:</span> <span class="mi">12000</span><span class="p">,</span><span class="s2">&quot;hub_height&quot;</span><span class="p">:</span> <span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;hub_height&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;power_curve&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">170</span><span class="p">,</span><span class="mi">350</span><span class="p">,</span><span class="mi">660</span><span class="p">,</span><span class="mi">1070</span><span class="p">,</span><span class="mi">1600</span><span class="p">,</span><span class="mi">2190</span><span class="p">,</span><span class="mi">2970</span><span class="p">,</span><span class="mi">3840</span><span class="p">,</span><span class="mi">4630</span><span class="p">,</span><span class="mi">5580</span><span class="p">,</span><span class="mi">6670</span><span class="p">,</span><span class="mi">7910</span><span class="p">,</span><span class="mi">9190</span><span class="p">,</span><span class="mi">10620</span><span class="p">,</span><span class="mi">12000</span><span class="p">,</span><span class="mi">13140</span><span class="p">,</span><span class="mi">14480</span><span class="p">,</span><span class="mi">15720</span><span class="p">,</span><span class="mi">16470</span><span class="p">,</span><span class="mi">17520</span><span class="p">,</span><span class="mi">18280</span><span class="p">,</span><span class="mi">18620</span><span class="p">,</span><span class="mi">19060</span><span class="p">,</span><span class="mi">19200</span><span class="p">,</span><span class="mi">19540</span><span class="p">,</span><span class="mi">19580</span><span class="p">,</span><span class="mi">19780</span><span class="p">,</span><span class="mi">19910</span><span class="p">,</span><span class="mi">20000</span><span class="p">,</span><span class="mi">20030</span><span class="p">,</span><span class="mi">19660</span><span class="p">,</span><span class="mi">19980</span><span class="p">,</span><span class="mi">19840</span><span class="p">,</span><span class="mi">20120</span><span class="p">,</span><span class="mi">20180</span><span class="p">],</span> <span class="c1"># in W</span>
+                <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">43</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># in m/s</span>
+                                <span class="p">,}),}</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;60 kW default&#39;</span><span class="p">):</span>
+        <span class="n">turbineDict</span> <span class="o">=</span> <span class="p">{</span><span class="c1">#NPS60C-24_60kW_24.4</span>
+                <span class="s2">&quot;nominal_power&quot;</span><span class="p">:</span> <span class="mi">60000</span><span class="p">,</span><span class="s2">&quot;hub_height&quot;</span><span class="p">:</span> <span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;hub_height&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;power_curve&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1700</span><span class="p">,</span><span class="mi">6000</span><span class="p">,</span><span class="mi">13000</span><span class="p">,</span><span class="mi">24500</span><span class="p">,</span><span class="mi">38000</span><span class="p">,</span><span class="mi">52500</span><span class="p">,</span><span class="mi">58700</span><span class="p">,</span><span class="mi">59700</span><span class="p">,</span><span class="mi">59900</span><span class="p">,</span><span class="mi">59900</span><span class="p">,</span><span class="mi">59900</span><span class="p">,</span><span class="mi">59900</span><span class="p">,</span><span class="mi">59900</span><span class="p">,</span><span class="mi">57500</span><span class="p">,</span><span class="mi">55000</span><span class="p">,</span><span class="mi">52000</span><span class="p">,</span><span class="mi">49100</span><span class="p">,</span><span class="mi">46800</span><span class="p">,</span><span class="mi">45000</span><span class="p">,</span><span class="mi">43000</span><span class="p">,</span><span class="mi">42000</span><span class="p">,</span><span class="mi">41000</span><span class="p">,</span><span class="mi">40500</span><span class="p">],</span> <span class="c1"># in W</span>
+                <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">26</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># in m/s</span>
+                                <span class="p">,}),}</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;100 kW default&#39;</span><span class="p">):</span>
+        <span class="n">turbineDict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;nominal_power&quot;</span><span class="p">:</span> <span class="mi">100000</span><span class="p">,</span><span class="s2">&quot;hub_height&quot;</span><span class="p">:</span> <span class="n">WT_prod</span><span class="p">[</span><span class="s1">&#39;hub_height&#39;</span><span class="p">],</span>
+                <span class="s2">&quot;power_curve&quot;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">500</span><span class="p">,</span><span class="mi">4100</span><span class="p">,</span><span class="mi">10500</span><span class="p">,</span><span class="mi">19000</span><span class="p">,</span><span class="mi">29400</span><span class="p">,</span><span class="mi">41000</span><span class="p">,</span><span class="mi">54300</span><span class="p">,</span><span class="mi">66800</span><span class="p">,</span><span class="mi">77700</span><span class="p">,</span><span class="mi">86400</span><span class="p">,</span><span class="mi">92800</span><span class="p">,</span><span class="mi">97800</span><span class="p">,</span><span class="mi">100000</span><span class="p">,</span><span class="mi">99900</span><span class="p">,</span><span class="mi">99200</span><span class="p">,</span><span class="mi">98400</span><span class="p">,</span><span class="mi">97500</span><span class="p">,</span><span class="mi">96800</span><span class="p">,</span><span class="mi">96400</span><span class="p">,</span><span class="mi">96300</span><span class="p">,</span><span class="mi">96800</span><span class="p">,</span><span class="mi">98000</span><span class="p">,</span><span class="mi">99200</span><span class="p">],</span> <span class="c1"># in W</span>
+                <span class="s2">&quot;wind_speed&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">26</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># in m/s</span>
+                                <span class="p">,}),}</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">turbineDict</span><span class="o">=</span><span class="n">WT_prod</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        
+    <span class="k">return</span> <span class="p">(</span><span class="n">turbineDict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="windmodel">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.windmodel">[docs]</a>
+<span class="k">def</span> <span class="nf">windmodel</span><span class="p">(</span><span class="n">weather</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">MyTurbineDict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">ModelChainDict</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelChain</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulates wind turbine power production using windpowerlib within ERMESS.</span>
+<span class="sd">    </span>
+<span class="sd">    This function initializes a ``windpowerlib.WindTurbine`` object from a</span>
+<span class="sd">    turbine definition dictionary, executes a ``ModelChain`` simulation using</span>
+<span class="sd">    provided weather data.</span>
+<span class="sd">    </span>
+<span class="sd">    It is used inside the ERMESS evolutionary optimisation loop to evaluate</span>
+<span class="sd">    candidate wind turbines for micro-grid sizing.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        weather (pandas.DataFrame): Time-indexed weather data required by windpowerlib (e.g. wind speed, temperature, pressure).</span>
+<span class="sd">    </span>
+<span class="sd">        MyTurbineDict (dict): Wind turbine definition. Two formats are supported:</span>
+<span class="sd">            Reference to OpenEnergy Database (OEDB) turbine OR Custom turbine definition</span>
+<span class="sd">    </span>
+<span class="sd">        ModelChainDict (dict, optional): Optional dictionary specifying ModelChain</span>
+<span class="sd">            calculation models (wind speed, density, temperature, power output, etc.).</span>
+<span class="sd">            </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: Simulated wind power output time series (W), aligned with the</span>
+<span class="sd">            input weather index.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If weather data is incomplete or incompatible with</span>
+<span class="sd">            windpowerlib requirements.</span>
+<span class="sd">    </span>
+<span class="sd">        KeyError: If required turbine parameters are missing.</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        The function internally assigns the simulated power output to</span>
+<span class="sd">        ``my_turbine.power_output`` for consistency with windpowerlib</span>
+<span class="sd">        conventions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># WindTurbine object initialization</span>
+    <span class="c1"># ---------------------------------------------------------------------------------------</span>
+    <span class="n">my_turbine</span> <span class="o">=</span> <span class="n">WindTurbine</span><span class="p">(</span><span class="o">**</span><span class="n">MyTurbineDict</span><span class="p">)</span>
+
+    <span class="c1"># Simulation</span>
+    <span class="c1"># ---------------------------------------------------------------------------------------</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ModelChainDict</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">my_ModelChain</span> <span class="o">=</span> <span class="n">ModelChain</span><span class="p">(</span><span class="n">my_turbine</span><span class="p">,</span> <span class="o">**</span><span class="n">ModelChainDict</span><span class="p">)</span><span class="o">.</span><span class="n">run_model</span><span class="p">(</span><span class="n">weather</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">my_ModelChain</span> <span class="o">=</span> <span class="n">ModelChain</span><span class="p">(</span><span class="n">my_turbine</span><span class="p">)</span><span class="o">.</span><span class="n">run_model</span><span class="p">(</span><span class="n">weather</span><span class="p">)</span>
+    <span class="n">my_turbine</span><span class="o">.</span><span class="n">power_output</span> <span class="o">=</span> <span class="n">my_ModelChain</span><span class="o">.</span><span class="n">power_output</span>
+   
+    <span class="k">return</span> <span class="n">my_ModelChain</span><span class="o">.</span><span class="n">power_output</span><span class="o">.</span><span class="n">values</span></div>
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

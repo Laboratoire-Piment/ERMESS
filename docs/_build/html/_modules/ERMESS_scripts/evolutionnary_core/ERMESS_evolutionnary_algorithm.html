@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Thu Sep  7 19:25:38 2023</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_functions</span> <span class="k">as</span> <span class="n">Ef</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_functions_research</span> <span class="k">as</span> <span class="n">Efr</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_functions_pro</span> <span class="k">as</span> <span class="n">Efp</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="n">DISCRETE_MODEL</span>
+
+<span class="c1"># genetic algorithm</span>
+<div class="viewcode-block" id="evolutionnary_algorithm_research">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_research">[docs]</a>
+<span class="k">def</span> <span class="nf">evolutionnary_algorithm_research</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   Runs the genetic algorithm for microgrid optimization with constraints.</span>
+<span class="sd">    </span>
+<span class="sd">   This function performs selection, crossover, mutation, and elitism for a population of solutions.</span>
+<span class="sd">   Storage and DSM (demand-side management) adjustments are applied at each generation. Fitness </span>
+<span class="sd">   evaluation is done using the cost functions defined in the context.</span>
+<span class="sd">    </span>
+<span class="sd">   Args:</span>
+<span class="sd">        inputs (tuple): Tuple containing:</span>
+<span class="sd">            - Context (object): Simulation context including microgrid parameters, constraints, and hyperparameters.</span>
+<span class="sd">            - unjitted_pop (list): List of unjitted individual solutions (Individual_res instances).</span>
+<span class="sd">    </span>
+<span class="sd">   Returns:</span>
+<span class="sd">        final_pop: List of optimized individuals (Individual_res) after n_iter generations</span>
+<span class="sd">        operators_perf (optional): Array recording performance of operators per generation. Returned only if Context.tracking_ope == 1.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+   <span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">nonjit_pop</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>   
+   <span class="n">pop</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">jitting_pop_res</span><span class="p">(</span><span class="n">nonjit_pop</span><span class="p">)</span>
+   <span class="n">n_iter</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">n_iter</span>
+   <span class="n">r_cross</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">r_cross</span>
+   <span class="n">n_pop</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">n_pop</span>
+
+   <span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">,</span> <span class="n">extra_parameters</span> <span class="o">=</span> <span class="n">Ef</span><span class="o">.</span><span class="n">build_numba_params</span><span class="p">(</span><span class="n">Context</span><span class="p">)</span>
+   <span class="n">fitness_function_GA</span><span class="o">=</span><span class="n">Ef</span><span class="o">.</span><span class="n">find_cost_function_research</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">)</span>
+   <span class="n">activate_Y_DSM</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">total_Y_movable</span><span class="o">&gt;</span><span class="mi">0</span>
+   <span class="n">activate_D_DSM</span> <span class="o">=</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">time_resolution</span><span class="o">&gt;</span><span class="mi">1</span><span class="o">/</span><span class="mi">24</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">D_DSM_indexes</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">))</span>
+ 
+   <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">):</span>
+       <span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">trades</span><span class="p">)</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+       
+   <span class="n">best</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">Individual_res</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">([</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fitness</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)])])</span>
+          
+   <span class="n">operators_perf</span> <span class="o">=</span> <span class="p">[]</span>            
+   <span class="n">random_elitism_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_iter</span><span class="p">)</span>
+   <span class="n">random_elitism_choice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="n">n_iter</span><span class="p">)</span>   
+   <span class="n">random_factors_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_iter</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">55</span><span class="p">)</span>
+   <span class="n">choices_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,(</span><span class="n">n_iter</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">15</span><span class="p">),</span><span class="n">p</span><span class="o">=</span><span class="n">best</span><span class="o">.</span><span class="n">storage_sum</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">storage_sum</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">best</span><span class="o">.</span><span class="n">storage_sum</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span><span class="o">/</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span>
+   
+ <span class="c1"># enumerate generations</span>
+   <span class="k">for</span> <span class="n">gen</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+     <span class="c1"># select parents</span>
+     <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">Ef</span><span class="o">.</span><span class="n">selection_tournament</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)]</span>
+ <span class="c1"># create the next generation</span>
+     <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+     
+     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_pop</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+ <span class="c1"># get selected parents in pairs</span>
+             <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">selected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">selected</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+ <span class="c1"># crossover and mutation</span>
+             <span class="n">random_factors</span><span class="p">,</span><span class="n">choices</span> <span class="o">=</span> <span class="n">random_factors_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="p">,:],</span><span class="n">choices_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="p">,:]</span>
+             <span class="p">(</span><span class="n">p1_mut</span><span class="p">,</span><span class="n">p1_ope</span><span class="p">)</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">NON_JIT_mutation_contraintes_research</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="p">,</span> <span class="n">random_factors</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span> <span class="n">activate_Y_DSM</span><span class="p">,</span> <span class="n">activate_D_DSM</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">extra_parameters</span><span class="p">)</span>
+             <span class="n">random_factors</span><span class="p">,</span><span class="n">choices</span> <span class="o">=</span> <span class="n">random_factors_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:],</span><span class="n">choices_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:]</span>
+             <span class="p">(</span><span class="n">p2_mut</span><span class="p">,</span><span class="n">p2_ope</span><span class="p">)</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">NON_JIT_mutation_contraintes_research</span><span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="p">,</span> <span class="n">random_factors</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span> <span class="n">activate_Y_DSM</span><span class="p">,</span> <span class="n">activate_D_DSM</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">extra_parameters</span><span class="p">)</span>
+
+             <span class="p">[</span><span class="n">c1</span><span class="p">,</span><span class="n">c2</span><span class="p">,</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">crossover_reduit</span><span class="p">(</span><span class="n">p1_mut</span><span class="p">,</span> <span class="n">p2_mut</span><span class="p">,</span> <span class="n">r_cross</span><span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">extra_parameters</span><span class="p">)</span>
+
+  <span class="c1"># Energy consistency</span>
+             <span class="n">c1</span><span class="o">=</span><span class="n">Efr</span><span class="o">.</span><span class="n">enforce_energy_consistency</span> <span class="p">(</span><span class="n">c1</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">,</span><span class="n">extra_parameters</span><span class="p">,</span><span class="n">activate_Y_DSM</span> <span class="p">)</span>                
+             <span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">c1</span><span class="o">.</span><span class="n">trades</span><span class="p">)</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+
+                    
+             <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">p1</span><span class="o">.</span><span class="n">fitness</span> <span class="p">:</span> 
+                 <span class="n">operators_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">gen</span><span class="p">,</span><span class="n">p1_ope</span><span class="p">,</span><span class="n">ind</span><span class="p">)))</span>
+             <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">:</span>
+                     <span class="n">best</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">Individual_res</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+
+                 <span class="c1"># store for next generation</span>
+             <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+             
+             <span class="n">c2</span><span class="o">=</span><span class="n">Efr</span><span class="o">.</span><span class="n">enforce_energy_consistency</span> <span class="p">(</span><span class="n">c2</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">,</span><span class="n">extra_parameters</span><span class="p">,</span><span class="n">activate_Y_DSM</span><span class="p">)</span>
+             <span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">c2</span><span class="o">.</span><span class="n">trades</span><span class="p">)</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> 
+ 
+             <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">p2</span><span class="o">.</span><span class="n">fitness</span> <span class="p">:</span> 
+                 <span class="n">operators_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">gen</span><span class="p">,</span><span class="n">p2_ope</span><span class="p">,</span><span class="n">ind</span><span class="p">)))</span>
+             <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">:</span>
+                     <span class="n">best</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">Individual_res</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+
+             <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+ <span class="c1"># replace population</span>
+     <span class="n">pop</span> <span class="o">=</span> <span class="n">children</span>
+      
+     <span class="k">if</span> <span class="p">(</span><span class="n">random_elitism_prob</span><span class="p">[</span><span class="n">gen</span><span class="p">]</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">elitism_probability</span><span class="p">):</span>
+         <span class="n">pop</span><span class="p">[</span><span class="n">random_elitism_choice</span><span class="p">[</span><span class="n">gen</span><span class="p">]]</span><span class="o">=</span><span class="n">Efr</span><span class="o">.</span><span class="n">Individual_res</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+    <span class="c1">#On introduit de l&#39;élitisme</span>
+   <span class="k">del</span> <span class="n">pop</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pop</span><span class="p">))]</span>
+   <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+
+   <span class="n">final_pop</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">unjitting_pop_res</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span>
+
+   <span class="n">operators_perf</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">operators_perf</span><span class="p">)</span>
+<span class="c1">#   if Context.tracking.tracking_operators == 1 :</span>
+<span class="c1">#       return [final_pop,operators_perf]</span>
+<span class="c1">#   else :</span>
+   <span class="k">return</span> <span class="p">(</span><span class="n">final_pop</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="evolutionnary_algorithm_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">evolutionnary_algorithm_pro</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   Runs the PRO mode of the genetic algorithm for microgrid optimization.</span>
+<span class="sd">    </span>
+<span class="sd">   This function integrates PID-controlled mutation factors to maintain population diversity, </span>
+<span class="sd">   applies selection, crossover, mutation, and elitism, and evaluates fitness using cost functions.</span>
+<span class="sd">    </span>
+<span class="sd">   Args:</span>
+<span class="sd">        inputs (tuple): Tuple containing:</span>
+<span class="sd">            - Context (object): Simulation context including microgrid parameters, constraints, storage characteristics, and operator hyperparameters.</span>
+<span class="sd">            - pop (list): List of initial individual solutions (Individual_pro instances).</span>
+<span class="sd">    </span>
+<span class="sd">   Returns:</span>
+<span class="sd">        final_pop (list): List of optimized individuals (Individual_pro) after n_iter generations.</span>
+<span class="sd">        operators_perf (np.ndarray, optional): Array recording performance of genetic operators per generation. Returned only if Context.tracking_ope == 1.</span>
+<span class="sd">   </span>
+<span class="sd">   Warning:</span>
+<span class="sd">       PID parameters are tuned for stability.</span>
+<span class="sd">       Modifying them may lead to divergence of the algorithm.  </span>
+<span class="sd">   &quot;&quot;&quot;</span>
+   <span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">pop</span><span class="p">)</span> <span class="o">=</span> <span class="n">inputs</span>
+   
+   <span class="c1"># Initialization of the constants of the algorithm</span>
+   
+   <span class="n">pid</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">PIDConfig</span><span class="p">()</span>
+   <span class="n">pid</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>
+
+   <span class="n">Kp</span><span class="p">,</span><span class="n">Ki</span><span class="p">,</span><span class="n">Kd</span><span class="p">,</span><span class="n">u_min</span><span class="p">,</span><span class="n">u_max</span><span class="p">,</span><span class="n">anti_windup</span><span class="p">,</span><span class="n">beta</span> <span class="o">=</span> <span class="n">pid</span><span class="o">.</span><span class="n">Kp</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">Ki</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">Kd</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">u_min</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">u_max</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">anti_windup</span><span class="p">,</span><span class="n">pid</span><span class="o">.</span><span class="n">beta</span>
+   
+   <span class="n">n_iter</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">n_iter</span>
+   <span class="n">r_cross</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">r_cross</span>
+   <span class="n">n_pop</span><span class="o">=</span><span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">n_pop</span>
+   
+   <span class="n">PID_init_steps</span> <span class="o">=</span> <span class="mi">10</span>
+   <span class="n">n_random_factors</span> <span class="o">=</span> <span class="mi">43</span>
+   <span class="n">n_random_choices</span> <span class="o">=</span> <span class="mi">13</span>
+
+   <span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">,</span> <span class="n">extra_parameters</span> <span class="o">=</span> <span class="n">Ef</span><span class="o">.</span><span class="n">build_numba_params</span><span class="p">(</span><span class="n">Context</span><span class="p">)</span>
+   <span class="n">fitness_function_GA</span><span class="o">=</span><span class="n">Ef</span><span class="o">.</span><span class="n">find_cost_function_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">)</span>  
+  
+   <span class="k">if</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">DISCRETE_MODEL</span> <span class="p">:</span>
+       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">):</span>
+           <span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">storages</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">convert_storage_configuration</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">RENSystems_parameters</span><span class="p">)</span>
+           <span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+   <span class="k">else</span> <span class="p">:</span>
+       <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">):</span>
+           <span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+   <span class="n">best</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">Individual_pro</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">pop</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">([</span><span class="n">pop</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fitness</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)])])</span>
+   
+   <span class="n">operators_perf</span> <span class="o">=</span> <span class="p">[]</span>     
+       
+   <span class="n">random_elitism_prob</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_iter</span><span class="p">)</span>
+   <span class="n">random_elitism_choice</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="n">n_iter</span><span class="p">)</span>
+   
+   <span class="n">random_factors_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_iter</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="n">n_random_factors</span><span class="p">)</span>
+   <span class="n">choices_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,(</span><span class="n">n_iter</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="n">n_random_choices</span><span class="p">))</span>   
+
+   <span class="c1"># for diversity :</span>
+   <span class="n">diversities_10</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+   <span class="n">integrale_PID</span> <span class="o">=</span> <span class="mi">0</span> 
+   <span class="n">prev_error</span> <span class="o">=</span> <span class="mi">0</span>
+   <span class="n">fitnesses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ind</span><span class="o">.</span><span class="n">fitness</span> <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">])</span>
+   <span class="n">stagnation</span><span class="o">=</span><span class="mf">0.0</span>
+
+ <span class="c1"># enumerate generations</span>
+   <span class="k">for</span> <span class="n">gen</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iter</span><span class="p">):</span>
+     <span class="nb">print</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+           
+                  
+ <span class="c1">#if needed, calculation of the diversity   </span>
+     <span class="n">diversity</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">compute_diversity_pro</span><span class="p">(</span><span class="n">fitnesses</span><span class="p">)</span>
+     <span class="n">stagnation</span> <span class="o">=</span> <span class="n">stagnation</span><span class="o">+</span><span class="mi">1</span>
+     
+     <span class="k">if</span> <span class="n">gen</span><span class="o">&lt;</span><span class="n">PID_init_steps</span> <span class="p">:</span>
+         <span class="n">diversities_10</span><span class="p">[</span><span class="n">gen</span><span class="p">]</span> <span class="o">=</span> <span class="n">diversity</span><span class="o">*</span><span class="n">beta</span>
+         <span class="n">mutation_factor</span><span class="o">=</span><span class="mi">1</span>
+<span class="c1">#         print(gen,best.fitness,round(diversity,0),round(mutation_factor,2))</span>
+     <span class="k">else</span> <span class="p">:</span> 
+         <span class="k">if</span> <span class="p">(</span><span class="n">gen</span><span class="o">==</span><span class="mi">10</span><span class="p">):</span>
+             <span class="n">diversity_threshold</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">diversities_10</span><span class="p">)</span>
+         <span class="n">integrale_PID</span><span class="p">,</span><span class="n">mutation_factor</span><span class="p">,</span><span class="n">prev_error</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">PID_correction</span><span class="p">(</span><span class="n">stagnation</span><span class="p">,</span><span class="n">diversity_threshold</span><span class="p">,</span><span class="n">diversity</span><span class="p">,</span><span class="n">integrale_PID</span><span class="p">,</span><span class="n">prev_error</span><span class="p">,</span><span class="n">Kp</span><span class="p">,</span><span class="n">Ki</span><span class="p">,</span><span class="n">Kd</span><span class="p">,</span><span class="n">u_min</span><span class="p">,</span><span class="n">u_max</span><span class="p">,</span><span class="n">anti_windup</span><span class="p">)</span>
+<span class="c1">#         print(gen,best.fitness,round(diversity,0),&#39;/&#39;,round(diversity_threshold,0),round(mutation_factor,2))</span>
+         
+     <span class="n">hyperparameters_matrix</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">operators_parameters</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>     
+     <span class="n">hyperparameters_matrix</span> <span class="o">=</span> <span class="n">hyperparameters_matrix</span><span class="o">*</span><span class="n">mutation_factor</span>
+     
+     <span class="c1"># select parents</span>
+     <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span><span class="n">Ef</span><span class="o">.</span><span class="n">selection_tournament</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)]</span>
+ <span class="c1"># create the next generation</span>
+     <span class="n">children</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_pop</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+ <span class="c1"># get selected parents in pairs</span>
+             <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">selected</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">selected</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+
+ <span class="c1"># crossover and mutation</span>
+             <span class="n">random_factors</span><span class="p">,</span><span class="n">choices</span> <span class="o">=</span> <span class="n">random_factors_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="p">,:],</span><span class="n">choices_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="p">,:]</span>
+             <span class="p">(</span><span class="n">p1_mut</span><span class="p">,</span><span class="n">p1_ope</span><span class="p">)</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">NON_JIT_mutation_contraintes_pro</span><span class="p">(</span><span class="n">p1</span> <span class="p">,</span> <span class="n">random_factors</span> <span class="p">,</span> <span class="n">choices</span> <span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span> <span class="p">,</span><span class="n">grid_parameters</span> <span class="p">,</span><span class="n">extra_parameters</span> <span class="p">)</span>
+           
+             <span class="n">random_factors</span><span class="p">,</span><span class="n">choices</span> <span class="o">=</span> <span class="n">random_factors_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:],</span><span class="n">choices_set</span><span class="p">[</span><span class="n">gen</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,:]</span>
+             <span class="p">(</span><span class="n">p2_mut</span><span class="p">,</span><span class="n">p2_ope</span><span class="p">)</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">NON_JIT_mutation_contraintes_pro</span><span class="p">(</span><span class="n">p2</span> <span class="p">,</span> <span class="n">random_factors</span> <span class="p">,</span> <span class="n">choices</span> <span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span> <span class="p">,</span><span class="n">grid_parameters</span> <span class="p">,</span><span class="n">extra_parameters</span><span class="p">)</span>
+
+             <span class="p">(</span><span class="n">c1</span><span class="p">,</span><span class="n">c2</span><span class="p">,</span><span class="n">ind</span><span class="p">)</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">crossover_reduit_pro</span><span class="p">(</span><span class="n">p1_mut</span><span class="p">,</span> <span class="n">p2_mut</span><span class="p">,</span> <span class="n">r_cross</span><span class="p">,</span><span class="n">RENSystems_parameters</span> <span class="p">,</span> <span class="n">extra_parameters</span><span class="p">)</span>
+
+             <span class="k">if</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">DISCRETE_MODEL</span> <span class="p">:</span>
+                 <span class="n">c1</span><span class="o">.</span><span class="n">storages</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">convert_storage_configuration</span><span class="p">(</span><span class="n">c1</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">)</span>
+             <span class="n">c1</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>
+             
+             <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">p1</span><span class="o">.</span><span class="n">fitness</span> <span class="p">:</span> 
+                 <span class="n">operators_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">gen</span><span class="p">,</span><span class="n">p1_ope</span><span class="p">,</span><span class="n">ind</span><span class="p">)))</span>
+             <span class="k">if</span> <span class="n">c1</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">:</span>
+                     <span class="n">best</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">Individual_pro</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">c1</span><span class="p">)</span>    
+                     <span class="n">stagnation</span><span class="o">=</span><span class="mi">0</span>
+             <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span> <span class="c1"># store for next generation</span>
+             
+             <span class="k">if</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">DISCRETE_MODEL</span> <span class="p">:</span>
+                 <span class="n">c2</span><span class="o">.</span><span class="n">storages</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">convert_storage_configuration</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">)</span>
+             <span class="n">c2</span><span class="o">=</span><span class="n">fitness_function_GA</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span> 
+             
+             <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">p2</span><span class="o">.</span><span class="n">fitness</span> <span class="p">:</span> 
+                 <span class="n">operators_perf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">gen</span><span class="p">,</span><span class="n">p2_ope</span><span class="p">,</span><span class="n">ind</span><span class="p">)))</span>
+             <span class="k">if</span> <span class="n">c2</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">best</span><span class="o">.</span><span class="n">fitness</span><span class="p">:</span>
+                     <span class="n">best</span> <span class="o">=</span> <span class="n">Efp</span><span class="o">.</span><span class="n">Individual_pro</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">c2</span><span class="p">)</span>
+                     <span class="n">stagnation</span><span class="o">=</span><span class="mi">0</span>
+             <span class="n">fitnesses</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">fitnesses</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">=</span><span class="n">c1</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">c2</span><span class="o">.</span><span class="n">fitness</span>
+             <span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>  <span class="c1"># store for next generation</span>
+ <span class="c1"># replace population</span>
+     <span class="n">pop</span> <span class="o">=</span> <span class="n">children</span>
+           
+     <span class="k">if</span> <span class="p">(</span><span class="n">random_elitism_prob</span><span class="p">[</span><span class="n">gen</span><span class="p">]</span><span class="o">&lt;</span><span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">elitism_probability</span><span class="p">):</span>
+         <span class="n">pop</span><span class="p">[</span><span class="n">random_elitism_choice</span><span class="p">[</span><span class="n">gen</span><span class="p">]]</span><span class="o">=</span><span class="n">Efp</span><span class="o">.</span><span class="n">Individual_pro</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+    <span class="c1">#On introduit de l&#39;élitisme</span>
+   <span class="k">del</span> <span class="n">pop</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pop</span><span class="p">))]</span>
+   <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best</span><span class="p">)</span>
+   <span class="n">pop_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ind</span><span class="p">:</span> <span class="n">ind</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span>
+<span class="c1">#   final_pop=pop</span>
+<span class="c1">#   if (type_pop==&#39;NON_JIT&#39;):</span>
+<span class="c1">#       final_pop = Efr.pro_to_research(final_pop, Context)</span>
+
+   <span class="n">operators_perf</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">operators_perf</span><span class="p">)</span>
+   <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">tracking</span><span class="o">.</span><span class="n">tracking_operators</span> <span class="p">:</span>
+       <span class="k">return</span> <span class="p">[</span><span class="n">pop_sorted</span><span class="p">,</span><span class="n">operators_perf</span><span class="p">]</span>
+   <span class="k">else</span> <span class="p">:</span>
+       <span class="k">return</span> <span class="p">(</span><span class="n">pop_sorted</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

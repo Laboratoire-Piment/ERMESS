@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.reporting.post_processing &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.reporting.post_processing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Mar  3 13:50:18 2026</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">openpyxl</span>
+
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.reporting</span> <span class="kn">import</span> <span class="n">graphs_excel</span> <span class="k">as</span> <span class="n">EgE</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.reporting</span> <span class="kn">import</span> <span class="n">charts_config</span> <span class="k">as</span> <span class="n">Ecc</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.reporting</span> <span class="kn">import</span> <span class="n">ERMESS_KPI_functions</span> <span class="k">as</span> <span class="n">Ekpi</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core.ERMESS_functions_research</span> <span class="kn">import</span> <span class="n">_build_baseline_solution_research</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro</span> <span class="kn">import</span> <span class="n">_build_baseline_solution_pro</span>
+ 
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_PostProcessingResults</span><span class="p">:</span>
+    <span class="n">timeseries</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">technical</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">economic</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">environmental</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">flows</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">storages</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">production</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">global_dispatching</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">SOC_distribution</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">genset</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
+    <span class="n">demand_side_management</span><span class="p">:</span> <span class="nb">list</span>
+    <span class="n">time_balancing</span><span class="p">:</span> <span class="nb">list</span>
+    <span class="n">EMS</span><span class="p">:</span> <span class="nb">list</span>
+    
+<span class="k">def</span> <span class="nf">_as_text</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a value to a string, returning an empty string for None.</span>
+<span class="sd">    </span>
+<span class="sd">    This utility ensures that None values are represented as an empty string</span>
+<span class="sd">    instead of the literal &quot;None&quot;, which is useful for Excel or text output.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        value (Any): Any value that might be written in a cell.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: String representation of the value, or empty string if None.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_set_column_width</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span><span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Automatically adjust the width of all columns in an OpenPyXL worksheet</span>
+<span class="sd">    based on the maximum length of the content in each column.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        ws (openpyxl.worksheet.worksheet.Worksheet): Worksheet to format.</span>
+<span class="sd">        offset (int): Extra width to add to each column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dim_holder</span> <span class="o">=</span> <span class="n">openpyxl</span><span class="o">.</span><span class="n">worksheet</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">DimensionHolder</span><span class="p">(</span><span class="n">worksheet</span><span class="o">=</span><span class="n">ws</span><span class="p">)</span>
+    <span class="n">j</span><span class="o">=</span><span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ws</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">j</span><span class="o">+=</span><span class="mi">1</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">_as_text</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">value</span><span class="p">))</span> <span class="k">for</span> <span class="n">cell</span> <span class="ow">in</span> <span class="n">col</span><span class="p">)</span>
+        <span class="n">dim_holder</span><span class="p">[</span><span class="n">openpyxl</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_column_letter</span><span class="p">(</span><span class="n">j</span><span class="p">)]</span> <span class="o">=</span> <span class="n">openpyxl</span><span class="o">.</span><span class="n">worksheet</span><span class="o">.</span><span class="n">dimensions</span><span class="o">.</span><span class="n">ColumnDimension</span><span class="p">(</span><span class="n">ws</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="n">j</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">j</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">length</span><span class="o">+</span><span class="n">offset</span><span class="p">)</span>
+
+    <span class="n">ws</span><span class="o">.</span><span class="n">column_dimensions</span> <span class="o">=</span> <span class="n">dim_holder</span>
+        
+<span class="k">def</span> <span class="nf">_get_nested</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="n">keys</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">data</span>
+
+
+<span class="k">def</span> <span class="nf">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="n">keys</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generic builder for Optimization vs Baseline comparison blocks.</span>
+
+<span class="sd">    keys : str OR list/tuple</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">data_opt</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+    <span class="n">data_base</span> <span class="o">=</span> <span class="n">_get_nested</span><span class="p">(</span><span class="n">output_baseline</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_opt</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">data_opt</span><span class="p">,</span> <span class="n">data_base</span><span class="p">])</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df_opt</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data_opt</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Optimization&quot;</span><span class="p">])</span>
+        <span class="n">df_base</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data_base</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Baseline&quot;</span><span class="p">])</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df_opt</span><span class="p">,</span> <span class="n">df_base</span><span class="p">])</span>
+
+    <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Optimization&#39;</span><span class="p">,</span> <span class="s1">&#39;Baseline&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+  
+<div class="viewcode-block" id="compute_economic_comparisons">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.compute_economic_comparisons">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_economic_comparisons</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+    <span class="n">NPV</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s1">&#39;Value (€)&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">output_baseline</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s1">&#39;Annual net benefits (€/yrs.)&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;technical&#39;</span><span class="p">][</span><span class="s1">&#39;Installation lifetime (yrs.)&#39;</span><span class="p">]</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">):</span>
+        <span class="n">Payback</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s1">&#39;Initial investment (€)&#39;</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s1">&#39;Annual net benefits (€/yrs.)&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">output_baseline</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s1">&#39;Annual net benefits (€/yrs.)&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">Payback</span><span class="o">&lt;</span><span class="mi">0</span> <span class="p">:</span> 
+        <span class="n">Payback</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">NPV</span><span class="p">,</span> <span class="n">Payback</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="output_build_production">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.output_build_production">[docs]</a>
+<span class="k">def</span> <span class="nf">output_build_production</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s1">&#39;ID&#39;</span><span class="p">:</span> <span class="n">Context</span><span class="o">.</span><span class="n">specs_Id</span><span class="p">,</span>
+        <span class="s1">&#39;Number of units&#39;</span><span class="p">:</span> <span class="n">solution</span><span class="o">.</span><span class="n">production_set</span><span class="p">,</span>
+        <span class="s1">&#39;Coverage ratio&#39;</span><span class="p">:</span> <span class="n">solution</span><span class="o">.</span><span class="n">production_set</span> <span class="o">/</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span>
+        <span class="s1">&#39;Initial investment (€)&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">specs_num</span><span class="p">[:,</span> <span class="n">PROD_CAPEX</span><span class="p">],</span> <span class="n">solution</span><span class="o">.</span><span class="n">production_set</span><span class="p">)</span>
+    <span class="p">})</span>    </div>
+
+
+<span class="k">def</span> <span class="nf">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    
+<span class="k">def</span> <span class="nf">_write_multiple_tables</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">dfs</span><span class="p">,</span> <span class="n">sheet_name</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span><span class="n">index</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    dfs : list of DataFrames</span>
+<span class="sd">    positions : list of (row, col)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">df</span><span class="p">,</span> <span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">dfs</span><span class="p">,</span> <span class="n">positions</span><span class="p">):</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">sheet_name</span><span class="p">,</span><span class="n">startrow</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">startcol</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="export_to_excel">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.export_to_excel">[docs]</a>
+<span class="k">def</span> <span class="nf">export_to_excel</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">Context</span><span class="p">):</span>
+
+    <span class="k">with</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">postprocess_config</span><span class="o">.</span><span class="n">file_name</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s1">&#39;openpyxl&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>
+
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">flows</span><span class="p">,</span> <span class="s2">&quot;Flows&quot;</span><span class="p">)</span>
+        <span class="n">_write_multiple_tables</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span><span class="n">results</span><span class="o">.</span><span class="n">global_dispatching</span><span class="p">,</span><span class="s2">&quot;Global dispatching&quot;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">0</span><span class="p">),(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">),(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">),],</span><span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">economic</span><span class="p">,</span> <span class="s2">&quot;Financial outputs&quot;</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">technical</span><span class="p">,</span> <span class="s2">&quot;Technical&quot;</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">storages</span><span class="p">,</span> <span class="s2">&quot;Storages&quot;</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">environmental</span><span class="p">,</span> <span class="s2">&quot;Environment outputs&quot;</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">SOC_distribution</span><span class="p">,</span> <span class="s2">&quot;SOC distributions&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">timeseries</span><span class="p">,</span> <span class="s2">&quot;TimeSeries&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">production</span><span class="p">,</span> <span class="s2">&quot;Production&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_write_sheet</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">genset</span><span class="p">,</span> <span class="s2">&quot;Genset&quot;</span><span class="p">)</span>
+        <span class="n">_write_multiple_tables</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span><span class="n">results</span><span class="o">.</span><span class="n">demand_side_management</span><span class="p">,</span><span class="s2">&quot;Demand side management&quot;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">13</span><span class="p">),],</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_write_multiple_tables</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">time_balancing</span><span class="p">,</span> <span class="s2">&quot;Balancing&quot;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">14</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">21</span><span class="p">),],</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s2">&quot;pro&quot;</span><span class="p">)</span> <span class="p">:</span>
+            <span class="n">_write_multiple_tables</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">results</span><span class="o">.</span><span class="n">EMS</span><span class="p">,</span> <span class="s2">&quot;EMS&quot;</span><span class="p">,</span><span class="n">positions</span><span class="o">=</span><span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">),],</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    
+        <span class="n">wb</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">book</span>
+        <span class="k">for</span> <span class="n">ws</span> <span class="ow">in</span> <span class="n">wb</span><span class="o">.</span><span class="n">worksheets</span><span class="p">:</span>
+            <span class="n">_set_column_width</span><span class="p">(</span><span class="n">ws</span><span class="p">)</span></div>
+
+    
+<span class="k">def</span> <span class="nf">_build_timeseries</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a standardized time series DataFrame from optimization outputs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outputs_solution : dict</span>
+<span class="sd">        Output dictionary from evaluation_function.</span>
+<span class="sd">    Context : object</span>
+<span class="sd">        Simulation context (contains time, prices, etc.).</span>
+<span class="sd">    datetime_data : array-like</span>
+<span class="sd">        Timestamps.</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">        Clean time series DataFrame ready for analysis/export.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">TS</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s2">&quot;timeseries&quot;</span><span class="p">]</span>
+
+    <span class="c1"># --- Datetime ---</span>
+    <span class="n">datetime_index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">datetime</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="c1"># --- Core signals ---</span>
+    <span class="n">load</span> <span class="o">=</span> <span class="n">TS</span><span class="p">[</span><span class="s2">&quot;optimized load (kW)&quot;</span><span class="p">]</span>
+    <span class="n">production</span> <span class="o">=</span> <span class="n">TS</span><span class="p">[</span><span class="s2">&quot;production (kW)&quot;</span><span class="p">]</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">TS</span><span class="p">[</span><span class="s2">&quot;grid trading (kW)&quot;</span><span class="p">]</span>
+    <span class="n">dg</span> <span class="o">=</span> <span class="n">TS</span><span class="p">[</span><span class="s2">&quot;genset production (kW)&quot;</span><span class="p">]</span>
+    <span class="n">curtailment</span> <span class="o">=</span> <span class="n">TS</span><span class="p">[</span><span class="s2">&quot;curtailment (kW)&quot;</span><span class="p">]</span>
+
+    <span class="c1"># --- Storages ---</span>
+    <span class="n">power_storages</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">TS</span><span class="p">[</span><span class="s2">&quot;storage_TS (kW)&quot;</span><span class="p">],</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> power (kW)&quot;</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">],)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">losses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">TS</span><span class="p">[</span><span class="s2">&quot;losses (kW)&quot;</span><span class="p">],</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> losses (kW)&quot;</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">],)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">socs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">TS</span><span class="p">[</span><span class="s2">&quot;SOC (%)&quot;</span><span class="p">],</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> SOC (%)&quot;</span> <span class="k">for</span> <span class="n">tech</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">],)</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">power_storage_total</span> <span class="o">=</span> <span class="n">power_storages</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># --- Grid price ---</span>
+    <span class="n">grid_price</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">prices</span><span class="p">[</span><span class="n">solution</span><span class="o">.</span><span class="n">contract</span><span class="p">]</span> <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">connection</span><span class="o">==</span><span class="s2">&quot;On-grid&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># --- Imbalance ---</span>
+    <span class="n">imbalance</span> <span class="o">=</span> <span class="p">(</span><span class="n">production</span><span class="o">+</span> <span class="n">power_storage_total</span><span class="o">+</span> <span class="n">grid</span><span class="o">-</span> <span class="n">load</span><span class="o">-</span> <span class="n">curtailment</span><span class="o">+</span> <span class="n">dg</span><span class="p">)</span>
+
+    <span class="c1"># --- Merging dataframe ---</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Datetime&quot;</span><span class="p">:</span> <span class="n">datetime_index</span><span class="p">,</span><span class="s2">&quot;Load (kW)&quot;</span><span class="p">:</span> <span class="n">load</span><span class="p">,</span><span class="s2">&quot;Power production (kW)&quot;</span><span class="p">:</span> <span class="n">production</span><span class="p">,}),</span><span class="n">power_storages</span><span class="p">,</span><span class="n">losses</span><span class="p">,</span>
+                    <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;Grid power (kW)&quot;</span><span class="p">:</span> <span class="n">grid</span><span class="p">,</span><span class="s2">&quot;Grid price (€/kWh)&quot;</span><span class="p">:</span> <span class="n">grid_price</span><span class="p">,</span><span class="s2">&quot;Diesel production (kW)&quot;</span><span class="p">:</span> <span class="n">dg</span><span class="p">,</span>
+                    <span class="s2">&quot;Curtailment (kW)&quot;</span><span class="p">:</span> <span class="n">curtailment</span><span class="p">,</span><span class="s2">&quot;Imbalance (kW)&quot;</span><span class="p">:</span> <span class="n">imbalance</span><span class="p">,}),</span><span class="n">socs</span><span class="p">,],</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="k">def</span> <span class="nf">_build_flows</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a standardized flows DataFrame comparing optimization vs baseline.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outputs_solution : dict</span>
+<span class="sd">    output_baseline : dict</span>
+<span class="sd">    Context : object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pd.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># --- Base flows ---  </span>
+    <span class="n">flows_opt</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s2">&quot;storage flows&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Optimization&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">flows_base</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">output_baseline</span><span class="p">[</span><span class="s2">&quot;storage flows&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Baseline&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">flows_opt</span><span class="p">,</span> <span class="n">flows_base</span><span class="p">])</span>
+
+    <span class="c1"># ---  helper ---</span>
+    <span class="k">def</span> <span class="nf">build_storage_metric</span><span class="p">(</span><span class="n">metric_name</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+        <span class="n">opt_values</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s2">&quot;storage flows&quot;</span><span class="p">][</span><span class="n">metric_name</span><span class="p">]</span>
+        <span class="n">base_values</span> <span class="o">=</span> <span class="n">output_baseline</span><span class="p">[</span><span class="s2">&quot;storage flows&quot;</span><span class="p">][</span><span class="n">metric_name</span><span class="p">]</span>
+
+        <span class="n">data_opt</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">opt_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tech</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">)}</span>
+        <span class="n">data_base</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">tech</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">base_values</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tech</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">)}</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data_opt</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Optimization&quot;</span><span class="p">]),</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data_base</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Baseline&quot;</span><span class="p">]),])</span>
+
+    <span class="c1"># --- Storage metrics ---</span>
+    <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;annual stored energy (kWh)&quot;</span><span class="p">,</span> <span class="s2">&quot;annual stored energy (kWh)&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;annual reported energy (kWh)&quot;</span><span class="p">,</span> <span class="s2">&quot;annual reported energy (kWh)&quot;</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;annual losses (kWh)&quot;</span><span class="p">,</span> <span class="s2">&quot;annual losses (kWh)&quot;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">storage_blocks</span> <span class="o">=</span> <span class="p">[</span><span class="n">build_storage_metric</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span><span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">]</span>
+
+    <span class="c1"># --- Merge everything ---</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">df</span><span class="p">]</span> <span class="o">+</span> <span class="n">storage_blocks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="k">def</span> <span class="nf">_build_technical</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build technical comparison DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="s2">&quot;technical&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_build_environmental</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build environmental comparison DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="s2">&quot;environment&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_build_genset</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build genset comparison DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="s2">&quot;genset&quot;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_build_energy_allocation</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build balancing comparison DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">production_allocation</span>   <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;flow_attribution&#39;</span><span class="p">,</span><span class="s1">&#39;production_allocation&#39;</span><span class="p">])</span>
+    <span class="n">load_coverage</span>  <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;flow_attribution&#39;</span><span class="p">,</span><span class="s1">&#39;load_coverage&#39;</span><span class="p">])</span>
+    <span class="n">surplus_energy_actions</span>  <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;actions&#39;</span><span class="p">,</span><span class="s1">&#39;surplus_energy_actions&#39;</span><span class="p">])</span>
+    <span class="n">deficit_energy_actions</span>  <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;actions&#39;</span><span class="p">,</span><span class="s1">&#39;deficit_energy_actions&#39;</span><span class="p">])</span>
+    <span class="n">grid_export_sources</span> <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;flow_attribution&#39;</span><span class="p">,</span><span class="s1">&#39;grid_export_sources&#39;</span><span class="p">])</span>
+    <span class="n">grid_import_usage</span> <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;energy_allocations&#39;</span><span class="p">,</span><span class="s1">&#39;flow_attribution&#39;</span><span class="p">,</span><span class="s1">&#39;grid_import_usage&#39;</span><span class="p">])</span>
+    
+    <span class="k">return</span> <span class="n">production_allocation</span><span class="p">,</span><span class="n">load_coverage</span><span class="p">,</span><span class="n">surplus_energy_actions</span><span class="p">,</span><span class="n">deficit_energy_actions</span><span class="p">,</span><span class="n">grid_export_sources</span><span class="p">,</span><span class="n">grid_import_usage</span>
+
+<span class="k">def</span> <span class="nf">_build_demand_side_management</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build demand_side_management comparison DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Load_strategy</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;demand-side management&#39;</span><span class="p">][</span><span class="s1">&#39;Load_strategy&#39;</span><span class="p">])</span>
+    <span class="c1"># Removing timezones of Load Strategy to enable excel export</span>
+    <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_datetime64tz_dtype</span><span class="p">(</span><span class="n">Load_strategy</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]):</span>
+        <span class="n">Load_strategy</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Load_strategy</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz_convert</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">DSM_daily_strategy</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;demand-side management&#39;</span><span class="p">][</span><span class="s1">&#39;DSM_daily_strategy&#39;</span><span class="p">]</span>
+    <span class="n">DSM_yearly_strategy</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;demand-side management&#39;</span><span class="p">][</span><span class="s1">&#39;DSM_yearly_strategy&#39;</span><span class="p">]</span>
+   
+    <span class="k">return</span> <span class="n">Load_strategy</span><span class="p">,</span><span class="n">DSM_daily_strategy</span><span class="p">,</span><span class="n">DSM_yearly_strategy</span>
+
+<span class="k">def</span> <span class="nf">_build_economic</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build economic comparison DataFrame with NPV and Payback.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">econ_opt</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s2">&quot;economics&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">econ_base</span> <span class="o">=</span> <span class="n">output_baseline</span><span class="p">[</span><span class="s2">&quot;economics&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># --- External computation ---</span>
+    <span class="n">NPV</span><span class="p">,</span><span class="n">Payback</span> <span class="o">=</span> <span class="n">compute_economic_comparisons</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span> 
+
+    <span class="c1"># --- Assign ---</span>
+    <span class="n">econ_opt</span><span class="p">[</span><span class="s2">&quot;NPV (€)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">NPV</span>
+    <span class="n">econ_opt</span><span class="p">[</span><span class="s2">&quot;Payback (yrs.)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Payback</span>
+
+    <span class="n">econ_base</span><span class="p">[</span><span class="s2">&quot;NPV (€)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">econ_base</span><span class="p">[</span><span class="s2">&quot;Payback (yrs.)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    
+    <span class="n">df</span> <span class="o">=</span> <span class="n">_build_comparison_block</span><span class="p">({</span><span class="s2">&quot;economics&quot;</span><span class="p">:</span> <span class="n">econ_opt</span><span class="p">},{</span><span class="s2">&quot;economics&quot;</span><span class="p">:</span> <span class="n">econ_base</span><span class="p">},</span><span class="s2">&quot;economics&quot;</span><span class="p">,)</span>
+    <span class="n">df_reordered</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;LCOE (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;production (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;OPEX storage (€/kWh)&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;CAPEX storage (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;contract power (€/kWh)&#39;</span><span class="p">,</span><span class="s1">&#39;overrun penalty (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;energy importation (€/kWh)&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;genset fuel cost (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;genset CAPEX cost (€/kWh)&#39;</span><span class="p">,</span><span class="s1">&#39;genset OPEX cost (€/kWh)&#39;</span><span class="p">,</span> <span class="s1">&#39;energy exportation (€/kWh)&#39;</span><span class="p">,</span> 
+    <span class="s1">&#39;Annual net benefits (€/yrs.)&#39;</span><span class="p">,</span> <span class="s1">&#39;Value (€)&#39;</span><span class="p">,</span><span class="s1">&#39;Initial investment (€)&#39;</span><span class="p">,</span> <span class="s1">&#39;NPV (€)&#39;</span><span class="p">,</span><span class="s1">&#39;Payback (yrs.)&#39;</span><span class="p">]]</span>
+    
+    <span class="k">return</span> <span class="n">df_reordered</span>
+
+<span class="k">def</span> <span class="nf">_build_production</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build production assets DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">production_set</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">production_set</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;ID&quot;</span><span class="p">:</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">Ids</span><span class="p">,</span><span class="s2">&quot;Number of units&quot;</span><span class="p">:</span> <span class="n">production_set</span><span class="p">,</span><span class="s2">&quot;Coverage ratio&quot;</span><span class="p">:</span> <span class="n">production_set</span> <span class="o">/</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span>
+        <span class="s2">&quot;Initial investment (€)&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">specs_num</span><span class="p">[:,</span><span class="n">PROD_CAPEX</span><span class="p">],</span><span class="n">production_set</span><span class="p">),})</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+<span class="k">def</span> <span class="nf">_build_SOC_distribution</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build distribution of depth of discharge storage DataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;distribution_DOD&#39;</span><span class="p">],</span><span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">_build_time_balancing</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build time balancing DataFrames.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">daily_optim_time_balancing</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;balancing&#39;</span><span class="p">][</span><span class="s1">&#39;daily_time_balancing&#39;</span><span class="p">]</span>
+    <span class="n">daily_baseline_time_balancing</span> <span class="o">=</span> <span class="n">output_baseline</span><span class="p">[</span><span class="s1">&#39;balancing&#39;</span><span class="p">][</span><span class="s1">&#39;daily_time_balancing&#39;</span><span class="p">]</span>
+    <span class="n">yearly_optim_time_balancing</span> <span class="o">=</span> <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;balancing&#39;</span><span class="p">][</span><span class="s1">&#39;yearly_time_balancing&#39;</span><span class="p">]</span>
+    <span class="n">yearly_baseline_time_balancing</span> <span class="o">=</span> <span class="n">output_baseline</span><span class="p">[</span><span class="s1">&#39;balancing&#39;</span><span class="p">][</span><span class="s1">&#39;yearly_time_balancing&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">[</span><span class="n">daily_optim_time_balancing</span><span class="p">,</span><span class="n">daily_baseline_time_balancing</span><span class="p">,</span><span class="n">yearly_optim_time_balancing</span><span class="p">,</span><span class="n">yearly_baseline_time_balancing</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">_build_EMS</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span><span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build EMS data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">strategy</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Strategy&#39;</span><span class="p">:</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;strategy&#39;</span><span class="p">]},</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">repartition_coefficient</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;energy repartition coefficient&#39;</span><span class="p">:</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;energy repartition coefficient&#39;</span><span class="p">]},</span><span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Hour&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">24</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;D_DSM level (%)&#39;</span><span class="p">:</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;D_DSM min. levels&#39;</span><span class="p">],</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">])))})</span>
+    <span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Month&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;Y_DSM level (%)&#39;</span><span class="p">:</span><span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;Y_DSM min. levels&#39;</span><span class="p">],</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.</span><span class="p">])))})</span>
+    <span class="n">discharge_order</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;Order&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;Storage&#39;</span><span class="p">:</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">[</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;discharge order&#39;</span><span class="p">]]})</span>
+    <span class="n">overlaps</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">((</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;effective SOC (%)&#39;</span><span class="p">:</span><span class="mi">10</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">))}),</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="mi">100</span><span class="o">*</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;EMS&#39;</span><span class="p">][</span><span class="s1">&#39;overlaps&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">T</span><span class="p">),</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">overlaps</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;effective SOC (%)&#39;</span><span class="p">,</span><span class="s2">&quot;intern overlaps&quot;</span><span class="p">,</span><span class="s2">&quot;extern overlaps&quot;</span><span class="p">]</span>
+   
+    <span class="k">return</span> <span class="p">[</span><span class="n">strategy</span><span class="p">,</span><span class="n">repartition_coefficient</span><span class="p">,</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">overlaps</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="build_results">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.build_results">[docs]</a>
+<span class="k">def</span> <span class="nf">build_results</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">baseline_solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build all post-processing result tables for a solution.</span>
+
+<span class="sd">    This function evaluates the solution, computes comparison metrics</span>
+<span class="sd">    against the baseline scenario, and generates all post-processing</span>
+<span class="sd">    DataFrames used for exports and visualization.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        solution: Optimized solution object.</span>
+<span class="sd">        Context: Global ERMESS context object.</span>
+<span class="sd">        datetime (np.ndarray | pandas.DatetimeIndex): Simulation timestamps.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        _PostProcessingResults: Container gathering all generated</span>
+<span class="sd">        post-processing tables and indicators.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">outputs_solution</span> <span class="o">=</span> <span class="n">Ekpi</span><span class="o">.</span><span class="n">compute_KPI</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">datetime</span><span class="p">)</span>
+    <span class="n">output_baseline</span> <span class="o">=</span> <span class="n">Ekpi</span><span class="o">.</span><span class="n">compute_KPI</span><span class="p">(</span><span class="n">baseline_solution</span><span class="p">,</span><span class="n">Context</span><span class="p">,</span><span class="n">datetime</span><span class="p">)</span>
+    
+    <span class="n">NPV</span><span class="p">,</span><span class="n">Payback</span> <span class="o">=</span> <span class="n">compute_economic_comparisons</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s2">&quot;NPV (€)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">NPV</span>
+    <span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;economics&#39;</span><span class="p">][</span><span class="s2">&quot;Payback (yrs.)&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Payback</span>
+
+    <span class="c1"># --- DataFrames ---</span>
+    <span class="n">timeseries</span> <span class="o">=</span> <span class="n">_build_timeseries</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">,</span> <span class="n">datetime</span><span class="p">)</span>
+    <span class="n">flows</span> <span class="o">=</span> <span class="n">_build_flows</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span>
+    <span class="n">technical</span> <span class="o">=</span> <span class="n">_build_technical</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">economic</span> <span class="o">=</span> <span class="n">_build_economic</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span>
+    <span class="n">environmental</span> <span class="o">=</span> <span class="n">_build_environmental</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">storages</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">[</span><span class="s1">&#39;storages&#39;</span><span class="p">],</span> <span class="n">index</span><span class="o">=</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">technologies</span><span class="p">)</span>
+    <span class="n">production</span> <span class="o">=</span> <span class="n">_build_production</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span>
+    <span class="n">global_dispatching</span> <span class="o">=</span> <span class="n">_build_energy_allocation</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">SOC_distribution</span> <span class="o">=</span> <span class="n">_build_SOC_distribution</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">genset</span> <span class="o">=</span> <span class="n">_build_genset</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">demand_side_management</span> <span class="o">=</span> <span class="n">_build_demand_side_management</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>
+    <span class="n">time_balancing</span> <span class="o">=</span> <span class="n">_build_time_balancing</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span> <span class="n">output_baseline</span><span class="p">)</span>  
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;pro&#39;</span><span class="p">:</span>
+        <span class="n">EMS</span> <span class="o">=</span> <span class="n">_build_EMS</span><span class="p">(</span><span class="n">outputs_solution</span><span class="p">,</span><span class="n">Context</span><span class="p">)</span> 
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">EMS</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="k">return</span> <span class="n">_PostProcessingResults</span><span class="p">(</span><span class="n">timeseries</span><span class="o">=</span><span class="n">timeseries</span><span class="p">,</span><span class="n">technical</span><span class="o">=</span><span class="n">technical</span><span class="p">,</span><span class="n">economic</span><span class="o">=</span><span class="n">economic</span><span class="p">,</span><span class="n">environmental</span><span class="o">=</span><span class="n">environmental</span><span class="p">,</span><span class="n">flows</span><span class="o">=</span><span class="n">flows</span><span class="p">,</span>
+        <span class="n">storages</span><span class="o">=</span><span class="n">storages</span><span class="p">,</span><span class="n">production</span><span class="o">=</span><span class="n">production</span><span class="p">,</span><span class="n">global_dispatching</span><span class="o">=</span><span class="n">global_dispatching</span><span class="p">,</span><span class="n">SOC_distribution</span><span class="o">=</span><span class="n">SOC_distribution</span><span class="p">,</span><span class="n">genset</span><span class="o">=</span><span class="n">genset</span><span class="p">,</span>
+        <span class="n">demand_side_management</span><span class="o">=</span><span class="n">demand_side_management</span><span class="p">,</span><span class="n">time_balancing</span><span class="o">=</span><span class="n">time_balancing</span><span class="p">,</span><span class="n">EMS</span><span class="o">=</span><span class="n">EMS</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="post_traitement">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.post_traitement">[docs]</a>
+<span class="k">def</span> <span class="nf">post_traitement</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the complete post-processing workflow.</span>
+
+<span class="sd">    This function generates post-processing results and exports them</span>
+<span class="sd">    according to the configuration defined in the context.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        solution: Optimized solution object.</span>
+<span class="sd">        Context: Global ERMESS context object.</span>
+<span class="sd">        datetime (np.ndarray | pandas.DatetimeIndex): Simulation timestamps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+        
+    <span class="n">HOURS_PER_DAY</span><span class="o">=</span><span class="mi">24</span>
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;research&#39;</span><span class="p">:</span>
+        <span class="n">baseline_solution</span> <span class="o">=</span> <span class="n">_build_baseline_solution_research</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">HOURS_PER_DAY</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;pro&#39;</span><span class="p">:</span>
+        <span class="n">baseline_solution</span> <span class="o">=</span> <span class="n">_build_baseline_solution_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">)</span>
+
+    <span class="n">results</span> <span class="o">=</span> <span class="n">build_results</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">baseline_solution</span><span class="p">,</span> <span class="n">Context</span><span class="p">,</span> <span class="n">datetime</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">postprocess_config</span><span class="o">.</span><span class="n">export_type</span><span class="o">==</span><span class="s1">&#39;Excel&#39;</span><span class="p">:</span>
+        <span class="n">export_to_excel</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">postprocess_config</span><span class="o">.</span><span class="n">export_charts</span><span class="p">:</span>
+        <span class="n">charts_configurations</span> <span class="o">=</span> <span class="n">Ecc</span><span class="o">.</span><span class="n">get_charts_config</span><span class="p">(</span><span class="n">Context</span><span class="p">)</span>
+        <span class="n">EgE</span><span class="o">.</span><span class="n">add_excel_charts</span><span class="p">(</span><span class="n">Context</span><span class="o">=</span><span class="n">Context</span><span class="p">,</span><span class="n">charts_configurations</span><span class="o">=</span><span class="n">charts_configurations</span><span class="p">)</span></div>
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,791 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="ERMESS_scripts.reporting package" href="ERMESS_scripts.reporting.html"><link rel="prev" title="ERMESS_scripts.evolutionnary_core package" href="ERMESS_scripts.evolutionnary_core.html">
+        <link rel="prefetch" href="../_static/ermess_logo.png" as="image">
+
+    <!-- Generated with Sphinx 7.3.7 and Furo 2025.12.19 -->
+        <title>ERMESS_scripts.load_model package - ERMESS 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=acfd86a5" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ERMESS 1.0.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/ermess_logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ERMESS 1.0.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 current has-children"><a class="reference internal" href="ERMESS_scripts.html">ERMESS_scripts package</a><input aria-label="Toggle navigation of ERMESS_scripts package" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.cost.html">ERMESS_scripts.cost package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html">ERMESS_scripts.data package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html">ERMESS_scripts.energy_management_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html">ERMESS_scripts.energy_production_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html">ERMESS_scripts.evolutionnary_core package</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">ERMESS_scripts.load_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html">ERMESS_scripts.reporting package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/ERMESS_scripts.load_model.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-ERMESS_scripts.load_model">
+<span id="ermess-scripts-load-model-package"></span><h1>ERMESS_scripts.load_model package<a class="headerlink" href="#module-ERMESS_scripts.load_model" title="Link to this heading">¶</a></h1>
+<p>Created on Tue Mar  3 12:27:04 2026</p>
+<p>&#64;author: jlegalla</p>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-ERMESS_scripts.load_model.ERMESS_Load_model">
+<span id="ermess-scripts-load-model-ermess-load-model-module"></span><h2>ERMESS_scripts.load_model.ERMESS_Load_model module<a class="headerlink" href="#module-ERMESS_scripts.load_model.ERMESS_Load_model" title="Link to this heading">¶</a></h2>
+<p>Created on Thu Jun  4 11:50:01 2026</p>
+<p>&#64;author: JoPHOBEA</p>
+<dl class="simple">
+<dt>Stochastic bottom-up occupant-driven microgrid load model combining occupancy simulation,</dt><dd><p>activity-based end-use modelling, diversity effects and simplified thermal dynamics.</p>
+</dd>
+</dl>
+<p>This module generates synthetic electricity and thermal demand profiles
+for heterogeneous buildings based on occupancy, behavioral models,
+weather data, and end-use stochastic processes.</p>
+<p>The model includes:
+- occupancy generation with AR(1) temporal correlation
+- lighting, IT, shared equipment, EV, DHW, HVAC loads
+- base electrical load
+- load flexibility decomposition
+- microgrid aggregation across multiple buildings</p>
+<p>All loads are time-resolved and dependent on meteorological inputs.</p>
+<p>The models are inspired by :</p>
+<blockquote>
+<div><dl class="simple">
+<dt>general methodology :</dt><dd><p>Page, Robinson, Morel &amp; Scartezzini,
+“A generalised stochastic model for the simulation of occupant presence”
+Energy and Buildings, 2008.</p>
+</dd>
+<dt>occupancy model :</dt><dd><p>Richardson, Thomson &amp; Infield
+“A high-resolution domestic building occupancy model for energy demand simulations”
+Energy and Buildings, 2008.</p>
+</dd>
+<dt>charge model from occupancy :</dt><dd><p>Widén &amp; Wäckelgård
+“A high-resolution stochastic model of domestic activity patterns and electricity demand”
+Applied Energy, 2010</p>
+</dd>
+<dt>lighting model, IT, shared equipment, EV :</dt><dd><p>Widén et al.
+“A combined Markov-chain and bottom-up approach to modelling of domestic lighting demand”
+Energy and Buildings, 2009
+Richardson et al.</p>
+</dd>
+<dt>dhw :</dt><dd><p>Jordan &amp; Vajen
+“Realistic domestic hot-water profiles in different time scales.”
+Proceedings of the IEA SHC Task 26 Workshop, 2001.
+IEA SHC Task 26</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.EV_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">EV_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_users</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_present</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EV_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_activity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#EV_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.EV_load" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate electric vehicle charging demand.</p>
+<p>EV charging is modeled as:
+- stochastic session initiation
+- stochastic session termination
+- constant random charging power per session</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_users</strong> (<em>int</em>) – Number of users in building.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time resolution in hours.</p></li>
+<li><p><strong>n_present</strong> (<em>array-like</em>) – Number of present users.</p></li>
+<li><p><strong>EV_params</strong> (<em>dict</em>) – EV charging parameters.</p></li>
+<li><p><strong>mean_activity</strong> (<em>float</em>) – Activity scaling factor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EV charging power time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.base_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">base_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_users</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_load_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#base_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.base_load" title="Link to this definition">¶</a></dt>
+<dd><p>Compute aggregated base electrical load.</p>
+<p>Represents:
+- standby consumption
+- always-on appliances
+- background electrical usage</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>n_users</strong> (<em>int</em>) – Number of users in building.</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time resolution in hours.</p></li>
+<li><p><strong>base_load_params</strong> (<em>dict</em>) – Base load model parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Base electrical load time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">compute_occupancy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series_datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">occupancy_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_users</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#compute_occupancy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy" title="Link to this definition">¶</a></dt>
+<dd><p>Generate stochastic occupancy time series for a building.</p>
+<p>Occupancy is computed from:
+- deterministic hourly weekday/weekend profiles
+- holiday and vacation modulation factors
+- AR(1) correlated stochastic variability
+- binomial sampling over users</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>series_datetime</strong> (<em>pandas.DatetimeIndex</em>) – Time index.</p></li>
+<li><p><strong>profile</strong> (<em>str</em>) – Building archetype used to select parameters.</p></li>
+<li><p><strong>events</strong> (<em>pandas.DataFrame</em>) – Boolean DataFrame with columns:
+- ‘holiday’
+- ‘vacation’</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of simulation steps.</p></li>
+<li><p><strong>occupancy_params</strong> (<em>dict</em>) – Occupancy model parameters from PROFILES.</p></li>
+<li><p><strong>n_users</strong> (<em>int</em>) – Number of building occupants.</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time step resolution in hours.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Number of present users at each time step.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">dhw_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_present</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhw_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_users</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_activity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dhw_physical_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#dhw_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate domestic hot water (DHW) energy demand.</p>
+<p>The model includes:
+- stochastic draw events per occupant
+- thermal energy conversion of water usage
+- tank state-of-charge dynamics
+- hysteresis-based heating control</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_present</strong> (<em>array-like</em>) – Number of present users.</p></li>
+<li><p><strong>dhw_params</strong> (<em>dict</em>) – DHW system parameters.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>n_users</strong> (<em>int</em>) – Total number of users.</p></li>
+<li><p><strong>mean_activity</strong> (<em>float</em>) – Activity scaling factor.</p></li>
+<li><p><strong>dhw_physical_params</strong> (<em>dict</em>) – Physical constants (water density, Cp, etc.).</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time resolution in hours.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Electrical power required by DHW heater.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">generate_ar1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#generate_ar1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1" title="Link to this definition">¶</a></dt>
+<dd><p>Generate an AR(1) stochastic process.</p>
+<p>This function creates a temporally correlated random process used
+to model occupancy and activity fluctuations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>rho</strong> (<em>float</em>) – Autocorrelation coefficient (0 &lt; rho &lt; 1).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>AR(1) process of shape (n_steps,) with zero mean.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">generate_microgrid_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">building_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_flexibility</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meteoData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holidays</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vacations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#generate_microgrid_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load" title="Link to this definition">¶</a></dt>
+<dd><p>Generate aggregated microgrid load from multiple buildings.</p>
+<p>The workflow is:
+1. Generate occupancy and loads per building
+2. Apply flexibility decomposition
+3. Aggregate all buildings
+4. Compute total system load</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>building_list</strong> (<em>pandas.DataFrame</em>) – List of building definitions.</p></li>
+<li><p><strong>load_flexibility</strong> (<em>pandas.DataFrame</em>) – Flexibility parameters.</p></li>
+<li><p><strong>meteoData</strong> (<em>pandas.DataFrame</em>) – Weather time series.</p></li>
+<li><p><strong>holidays</strong> (<em>iterable</em>) – List of holiday dates.</p></li>
+<li><p><strong>vacations</strong> (<em>pandas.DataFrame</em>) – Vacation periods.</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time step resolution in hours.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Aggregated microgrid load containing:</dt><dd><ul class="simple">
+<li><p>non_movable</p></li>
+<li><p>daily_movable</p></li>
+<li><p>yearly_movable</p></li>
+<li><p>total_load</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">generate_occupancy_and_activity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">building</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">events</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meteoData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#generate_occupancy_and_activity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity" title="Link to this definition">¶</a></dt>
+<dd><p>Generate full building load time series.</p>
+<p>This function combines:
+- occupancy simulation
+- lighting demand
+- IT loads
+- shared equipment
+- EV charging
+- DHW demand
+- HVAC thermal loads
+- base electrical load</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>building</strong> (<em>dict</em>) – Building configuration (type, number of users, comfort temps).</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time step resolution in hours.</p></li>
+<li><p><strong>events</strong> (<em>pandas.DataFrame</em>) – Holiday and vacation indicators.</p></li>
+<li><p><strong>meteoData</strong> (<em>pandas.DataFrame</em>) – Weather data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>pandas.Series: Occupancy time series.
+pandas.DataFrame: End-use electrical and thermal loads.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">hvac_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">occupancy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comfort_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comfort_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meteoData</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#hvac_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load" title="Link to this definition">¶</a></dt>
+<dd><p>Simulate building thermal dynamics and HVAC electricity demand.</p>
+<p>The model includes:
+- indoor temperature evolution
+- solar heat gains through windows
+- wind-driven infiltration losses
+- internal gains from HVAC and occupants
+- heating and cooling control with comfort thresholds</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>occupancy</strong> (<em>array-like</em>) – Number of occupants per timestep.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of simulation steps.</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – Time step in seconds.</p></li>
+<li><p><strong>comfort_params</strong> (<em>dict</em>) – HVAC and thermal parameters.</p></li>
+<li><p><strong>comfort_temp</strong> (<em>dict</em>) – Comfort temperature bounds.</p></li>
+<li><p><strong>meteoData</strong> (<em>pandas.DataFrame</em>) – Weather data (temperature, GHI, wind).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>cooling electrical load (kW)</p></li>
+<li><p>heating electrical load (kW)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[numpy.ndarray, numpy.ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">is_holiday</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holidays</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#is_holiday"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether a timestamp corresponds to a holiday.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ts</strong> (<em>datetime-like</em>) – Timestamp to evaluate.</p></li>
+<li><p><strong>holidays</strong> (<em>iterable</em>) – Collection of holiday dates (pandas.Timestamp or datetime).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the date is a holiday, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">is_vacation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vacations</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#is_vacation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether a timestamp falls within a vacation period.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ts</strong> (<em>datetime-like</em>) – Timestamp to evaluate.</p></li>
+<li><p><strong>vacations</strong> (<em>pandas.DataFrame</em>) – DataFrame containing:
+- ‘vacation start dates’
+- ‘vacation end dates’</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the timestamp is within a vacation period, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.it_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">it_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">occupancy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_act</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_activity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simultaneity_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">it_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#it_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.it_load" title="Link to this definition">¶</a></dt>
+<dd><p>Compute IT and plug-load demand per building.</p>
+<p>Each active occupant contributes stochastic IT power consumption.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>occupancy</strong> (<em>array-like</em>) – Number of present users per timestep.</p></li>
+<li><p><strong>z_act</strong> (<em>numpy.ndarray</em>) – AR(1) activity process.</p></li>
+<li><p><strong>mean_activity</strong> (<em>float</em>) – Average probability of appliance usage.</p></li>
+<li><p><strong>simultaneity_factor</strong> (<em>float</em>) – Correlation between users’ activities.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>it_params</strong> (<em>dict</em>) – IT load parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>IT electrical load time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">lighting_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">occupancy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ghi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_act</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simultaneity_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">light_params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#lighting_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load" title="Link to this definition">¶</a></dt>
+<dd><p>Compute lighting electricity demand.</p>
+<p>Lighting usage depends on:
+- solar irradiance (GHI)
+- stochastic behavioral variability
+- occupancy-driven activation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>occupancy</strong> (<em>array-like</em>) – Number of present users per timestep.</p></li>
+<li><p><strong>ghi</strong> (<em>array-like</em>) – Global horizontal irradiance (W/m²).</p></li>
+<li><p><strong>z_act</strong> (<em>numpy.ndarray</em>) – AR(1) activity noise process.</p></li>
+<li><p><strong>simultaneity_factor</strong> (<em>float</em>) – Correlation strength between users.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>light_params</strong> (<em>dict</em>) – Lighting model parameters.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Total lighting power time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">separate_loads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">activity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">activity_memory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_resolution</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_flexibility</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#separate_loads"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads" title="Link to this definition">¶</a></dt>
+<dd><p>Decompose electrical loads into flexibility categories.</p>
+<p>Each load is split into:
+- non-movable loads
+- daily movable loads
+- yearly movable loads</p>
+<p>The decomposition is based on:
+- stochastic allocation
+- AR(1)-based temporal correlation
+- predefined flexibility coefficients</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>activity</strong> (<em>pandas.DataFrame</em>) – End-use load time series.</p></li>
+<li><p><strong>activity_memory</strong> (<em>float</em>) – Temporal memory of load flexibility.</p></li>
+<li><p><strong>time_resolution</strong> (<em>float</em>) – Time resolution in hours.</p></li>
+<li><p><strong>n_steps</strong> (<em>int</em>) – Number of time steps.</p></li>
+<li><p><strong>load_flexibility</strong> (<em>pandas.DataFrame</em>) – Flexibility coefficients.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Load decomposition by flexibility class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ERMESS_scripts.load_model.ERMESS_Load_model.shared_load">
+<span class="sig-prename descclassname"><span class="pre">ERMESS_scripts.load_model.ERMESS_Load_model.</span></span><span class="sig-name descname"><span class="pre">shared_load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_present</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_users</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_act</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_activity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simultaneity_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/ERMESS_scripts/load_model/ERMESS_Load_model.html#shared_load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ERMESS_scripts.load_model.ERMESS_Load_model.shared_load" title="Link to this definition">¶</a></dt>
+<dd><p>Compute shared equipment electrical load.</p>
+<p>Shared load scales with occupancy ratio and diversity effects,
+with stochastic variability applied at the aggregate level.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_present</strong> (<em>array-like</em>) – Number of present users per timestep.</p></li>
+<li><p><strong>n_users</strong> (<em>int</em>) – Total number of users in building.</p></li>
+<li><p><strong>z_act</strong> (<em>numpy.ndarray</em>) – AR(1) stochastic process.</p></li>
+<li><p><strong>mean_activity</strong> (<em>float</em>) – Average activity level.</p></li>
+<li><p><strong>shared_params</strong> (<em>dict</em>) – Shared equipment parameters.</p></li>
+<li><p><strong>simultaneity_factor</strong> (<em>float</em>) – Correlation strength.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shared equipment power demand time series.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-ERMESS_scripts.load_model.config_profiles">
+<span id="ermess-scripts-load-model-config-profiles-module"></span><h2>ERMESS_scripts.load_model.config_profiles module<a class="headerlink" href="#module-ERMESS_scripts.load_model.config_profiles" title="Link to this heading">¶</a></h2>
+<p>Created on Fri Jun  5 09:49:53 2026</p>
+<p>&#64;author: JoPHOBEA</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="ERMESS_scripts.reporting.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">ERMESS_scripts.reporting package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="ERMESS_scripts.evolutionnary_core.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">ERMESS_scripts.evolutionnary_core package</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Josselin LE GAL LA SALLE
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">ERMESS_scripts.load_model package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-ERMESS_scripts.load_model.ERMESS_Load_model">ERMESS_scripts.load_model.ERMESS_Load_model module</a><ul>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.EV_load"><code class="docutils literal notranslate"><span class="pre">EV_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.base_load"><code class="docutils literal notranslate"><span class="pre">base_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy"><code class="docutils literal notranslate"><span class="pre">compute_occupancy()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load"><code class="docutils literal notranslate"><span class="pre">dhw_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1"><code class="docutils literal notranslate"><span class="pre">generate_ar1()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load"><code class="docutils literal notranslate"><span class="pre">generate_microgrid_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity"><code class="docutils literal notranslate"><span class="pre">generate_occupancy_and_activity()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load"><code class="docutils literal notranslate"><span class="pre">hvac_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday"><code class="docutils literal notranslate"><span class="pre">is_holiday()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation"><code class="docutils literal notranslate"><span class="pre">is_vacation()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.it_load"><code class="docutils literal notranslate"><span class="pre">it_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load"><code class="docutils literal notranslate"><span class="pre">lighting_load()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads"><code class="docutils literal notranslate"><span class="pre">separate_loads()</span></code></a></li>
+<li><a class="reference internal" href="#ERMESS_scripts.load_model.ERMESS_Load_model.shared_load"><code class="docutils literal notranslate"><span class="pre">shared_load()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-ERMESS_scripts.load_model.config_profiles">ERMESS_scripts.load_model.config_profiles module</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

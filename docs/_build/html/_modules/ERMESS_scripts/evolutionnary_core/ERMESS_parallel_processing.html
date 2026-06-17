@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Sep 26 16:21:50 2023</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+
+<span class="sd">This script manages the parallel framework of ERMESS</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_evolutionnary_algorithm</span> <span class="k">as</span> <span class="n">EA</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_functions_research</span> <span class="k">as</span> <span class="n">Efr</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_functions_pro</span> <span class="k">as</span> <span class="n">Efp</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.cost</span> <span class="kn">import</span> <span class="n">ERMESS_cost_functions</span> <span class="k">as</span> <span class="n">Cfc</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Pool</span>
+
+<div class="viewcode-block" id="init_and_evolution_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.init_and_evolution_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">init_and_evolution_pro</span><span class="p">(</span><span class="n">args_context</span><span class="p">):</span>
+    <span class="n">Context_initialisation_pro</span><span class="p">,</span><span class="n">Context</span> <span class="o">=</span> <span class="n">args_context</span>
+    <span class="n">pro_initial_population</span> <span class="o">=</span>  <span class="n">Efp</span><span class="o">.</span><span class="n">initial_population_pro</span><span class="p">(</span><span class="n">Context_initialisation_pro</span><span class="p">)</span>
+    <span class="n">pro_initial_solutions</span> <span class="o">=</span> <span class="n">EA</span><span class="o">.</span><span class="n">evolutionnary_algorithm_pro</span><span class="p">((</span><span class="n">Context_initialisation_pro</span><span class="p">,</span><span class="n">pro_initial_population</span><span class="p">))</span>
+    <span class="n">res_initial_solutions</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">pro_to_research</span><span class="p">(</span><span class="n">pro_initial_solutions</span><span class="p">,</span> <span class="n">Context</span><span class="p">)</span>
+    <span class="n">nonjit_res_initial_solutions</span> <span class="o">=</span> <span class="n">Efr</span><span class="o">.</span><span class="n">unjitting_pop_res</span><span class="p">(</span><span class="n">res_initial_solutions</span><span class="p">)</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">nonjit_res_initial_solutions</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="initial_population_research_PARALLEL">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.initial_population_research_PARALLEL">[docs]</a>
+<span class="k">def</span> <span class="nf">initial_population_research_PARALLEL</span><span class="p">(</span><span class="n">args_pop_init</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Generate the initial population (RESEARCH) in parallel using multiple processes.</span>
+<span class="sd">            </span>
+<span class="sd">            Each element in `args_pop_init` is passed to</span>
+<span class="sd">            `fGA.initial_population_avec_pertes_contraintes_3`.</span>
+<span class="sd">            </span>
+<span class="sd">            Args:</span>
+<span class="sd">                args_pop_init (list): List of argument tuples for each process call of the initial population generation function.</span>
+<span class="sd">            </span>
+<span class="sd">            Returns:</span>
+<span class="sd">                list: List of populations generated in parallel.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">()</span>
+            <span class="n">pop_init</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">Efr</span><span class="o">.</span><span class="n">initial_population_research</span><span class="p">,</span><span class="n">args_pop_init</span><span class="p">)</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">return</span><span class="p">(</span><span class="n">pop_init</span><span class="p">)</span>       </div>
+
+        
+<div class="viewcode-block" id="ere_evolutive_research_PARALLEL">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ere_evolutive_research_PARALLEL">[docs]</a>
+<span class="k">def</span> <span class="nf">ere_evolutive_research_PARALLEL</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Runs the RESEARCH evolutionary algorithm in parallel.</span>
+<span class="sd">            </span>
+<span class="sd">            Each element in `args` is passed to `GA.genetic_algorithm_avec_pertes_contraintes_parallel2`.</span>
+<span class="sd">            </span>
+<span class="sd">            Args:</span>
+<span class="sd">                args (list of tuple): List of argument tuples for each process call of the evolutionary algorithm.</span>
+<span class="sd">                ere (object): Number of the current era in the global process.</span>
+<span class="sd">                n_ere (int): Index or number of the ERE being processed.</span>
+<span class="sd">            </span>
+<span class="sd">            Returns:</span>
+<span class="sd">                list: List of local populations generated by the evolutionary algorithm in parallel.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">()</span>
+            <span class="n">local_populations</span><span class="o">=</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">EA</span><span class="o">.</span><span class="n">evolutionnary_algorithm_research</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">return</span><span class="p">(</span><span class="n">local_populations</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ERMESS_pro_PARALLEL">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ERMESS_pro_PARALLEL">[docs]</a>
+<span class="k">def</span> <span class="nf">ERMESS_pro_PARALLEL</span><span class="p">(</span><span class="n">args_pro</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Runs the PRO evolutionary algorithm in parallel.</span>
+<span class="sd">            </span>
+<span class="sd">            Each element in `args_pro` is passed to `GA.genetic_algorithm_pro`.</span>
+<span class="sd">            </span>
+<span class="sd">            Args:</span>
+<span class="sd">                args_pro (list of tuple): List of argument tuples for each process call of the professional evolutionary algorithm.</span>
+<span class="sd">            </span>
+<span class="sd">            Returns:</span>
+<span class="sd">                list: List of professional local populations generated in parallel.</span>
+<span class="sd">                </span>
+<span class="sd">            Note:</span>
+<span class="sd">                Used only in the initialisation phase of the RESEARCH mode</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">()</span>
+            <span class="n">local_populations_pro</span><span class="o">=</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">init_and_evolution_pro</span><span class="p">,</span> <span class="n">args_pro</span><span class="p">)</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">return</span><span class="p">(</span><span class="n">local_populations_pro</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="parallel_fitness">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.parallel_fitness">[docs]</a>
+<span class="k">def</span> <span class="nf">parallel_fitness</span><span class="p">(</span><span class="n">args_fitness</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Computes fitness of populations in parallel.</span>
+<span class="sd">            </span>
+<span class="sd">            Each element in `args_fitness` is passed to `Cfc.fitness_list`.</span>
+<span class="sd">            </span>
+<span class="sd">            Args:</span>
+<span class="sd">                args_fitness (list of tuple): List of argument tuples for each process call to compute fitness of individuals.</span>
+<span class="sd">            </span>
+<span class="sd">            Returns:</span>
+<span class="sd">                list: List of fitness results for each population computed in parallel.</span>
+<span class="sd">                </span>
+<span class="sd">            Note:</span>
+<span class="sd">                Used only in the initialisation phase of the RESEARCH mode</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">()</span>
+            <span class="n">local_populations</span><span class="o">=</span><span class="n">pool</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">Cfc</span><span class="o">.</span><span class="n">fitness_list</span><span class="p">,</span> <span class="n">args_fitness</span><span class="p">)</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="k">return</span><span class="p">(</span><span class="n">local_populations</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.load_model.ERMESS_Load_model &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.load_model.ERMESS_Load_model</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Thu Jun  4 11:50:01 2026</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+
+<span class="sd">Stochastic bottom-up occupant-driven microgrid load model combining occupancy simulation,</span>
+<span class="sd"> activity-based end-use modelling, diversity effects and simplified thermal dynamics.</span>
+
+<span class="sd">This module generates synthetic electricity and thermal demand profiles</span>
+<span class="sd">for heterogeneous buildings based on occupancy, behavioral models,</span>
+<span class="sd">weather data, and end-use stochastic processes.</span>
+
+<span class="sd">The model includes:</span>
+<span class="sd">- occupancy generation with AR(1) temporal correlation</span>
+<span class="sd">- lighting, IT, shared equipment, EV, DHW, HVAC loads</span>
+<span class="sd">- base electrical load</span>
+<span class="sd">- load flexibility decomposition</span>
+<span class="sd">- microgrid aggregation across multiple buildings</span>
+
+<span class="sd">All loads are time-resolved and dependent on meteorological inputs.</span>
+
+<span class="sd">The models are inspired by :</span>
+<span class="sd">    </span>
+<span class="sd">    general methodology : </span>
+<span class="sd">        Page, Robinson, Morel &amp; Scartezzini,</span>
+<span class="sd">        &quot;A generalised stochastic model for the simulation of occupant presence&quot;</span>
+<span class="sd">        Energy and Buildings, 2008.</span>
+<span class="sd">    </span>
+<span class="sd">    occupancy model :</span>
+<span class="sd">        Richardson, Thomson &amp; Infield</span>
+<span class="sd">        &quot;A high-resolution domestic building occupancy model for energy demand simulations&quot;</span>
+<span class="sd">        Energy and Buildings, 2008.</span>
+<span class="sd">        </span>
+<span class="sd">    charge model from occupancy :</span>
+<span class="sd">        Widén &amp; Wäckelgård </span>
+<span class="sd">        &quot;A high-resolution stochastic model of domestic activity patterns and electricity demand&quot;</span>
+<span class="sd">        Applied Energy, 2010</span>
+<span class="sd">        </span>
+<span class="sd">    lighting model, IT, shared equipment, EV :</span>
+<span class="sd">        Widén et al.</span>
+<span class="sd">        &quot;A combined Markov-chain and bottom-up approach to modelling of domestic lighting demand&quot;</span>
+<span class="sd">        Energy and Buildings, 2009</span>
+<span class="sd">        Richardson et al.</span>
+<span class="sd">        </span>
+<span class="sd">    dhw :</span>
+<span class="sd">        Jordan &amp; Vajen</span>
+<span class="sd">        &quot;Realistic domestic hot-water profiles in different time scales.&quot;</span>
+<span class="sd">        Proceedings of the IEA SHC Task 26 Workshop, 2001.</span>
+<span class="sd">        IEA SHC Task 26</span>
+<span class="sd">        </span>
+<span class="sd">        </span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.load_model.config_profiles</span> <span class="kn">import</span> <span class="n">PROFILES</span>
+
+
+<div class="viewcode-block" id="is_holiday">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday">[docs]</a>
+<span class="k">def</span> <span class="nf">is_holiday</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">holidays</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether a timestamp corresponds to a holiday.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        ts (datetime-like): Timestamp to evaluate.</span>
+<span class="sd">        holidays (iterable): Collection of holiday dates (pandas.Timestamp or datetime).</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the date is a holiday, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">date</span><span class="p">())</span> <span class="ow">in</span> <span class="n">holidays</span></div>
+
+
+<div class="viewcode-block" id="is_vacation">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation">[docs]</a>
+<span class="k">def</span> <span class="nf">is_vacation</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">vacations</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether a timestamp falls within a vacation period.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        ts (datetime-like): Timestamp to evaluate.</span>
+<span class="sd">        vacations (pandas.DataFrame): DataFrame containing:</span>
+<span class="sd">            - &#39;vacation start dates&#39;</span>
+<span class="sd">            - &#39;vacation end dates&#39;</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: True if the timestamp is within a vacation period, False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">date</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">((</span><span class="n">vacations</span><span class="p">[</span><span class="s1">&#39;vacation start dates&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="n">vacations</span><span class="p">[</span><span class="s1">&#39;vacation end dates&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">any</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="generate_ar1">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_ar1</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate an AR(1) stochastic process.</span>
+<span class="sd">    </span>
+<span class="sd">    This function creates a temporally correlated random process used</span>
+<span class="sd">    to model occupancy and activity fluctuations.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        rho (float): Autocorrelation coefficient (0 &lt; rho &lt; 1).</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: AR(1) process of shape (n_steps,) with zero mean.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">z</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">z</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">rho</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">z</span></div>
+
+
+<div class="viewcode-block" id="compute_occupancy">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_occupancy</span><span class="p">(</span><span class="n">series_datetime</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">occupancy_params</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate stochastic occupancy time series for a building.</span>
+<span class="sd">    </span>
+<span class="sd">    Occupancy is computed from:</span>
+<span class="sd">    - deterministic hourly weekday/weekend profiles</span>
+<span class="sd">    - holiday and vacation modulation factors</span>
+<span class="sd">    - AR(1) correlated stochastic variability</span>
+<span class="sd">    - binomial sampling over users</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        series_datetime (pandas.DatetimeIndex): Time index.</span>
+<span class="sd">        profile (str): Building archetype used to select parameters.</span>
+<span class="sd">        events (pandas.DataFrame): Boolean DataFrame with columns:</span>
+<span class="sd">            - &#39;holiday&#39;</span>
+<span class="sd">            - &#39;vacation&#39;</span>
+<span class="sd">        n_steps (int): Number of simulation steps.</span>
+<span class="sd">        occupancy_params (dict): Occupancy model parameters from PROFILES.</span>
+<span class="sd">        n_users (int): Number of building occupants.</span>
+<span class="sd">        time_resolution (float): Time step resolution in hours.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pandas.Series: Number of present users at each time step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    
+    <span class="n">hours</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ts</span><span class="o">.</span><span class="n">hour</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">series_datetime</span><span class="p">])</span>
+    <span class="n">weekday</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ts</span><span class="o">.</span><span class="n">dayofweek</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">series_datetime</span><span class="p">])</span>
+    
+    <span class="n">p_weekday</span> <span class="o">=</span> <span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;occupancy_profile_weekday&quot;</span><span class="p">]</span>
+    <span class="n">p_weekend</span> <span class="o">=</span> <span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;occupancy_profile_weekend&quot;</span><span class="p">]</span>
+    
+    <span class="n">p_weekday_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p_weekday</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span><span class="p">)])</span>
+    <span class="n">p_weekend_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p_weekend</span><span class="p">[</span><span class="n">h</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">24</span><span class="p">)])</span>
+
+    <span class="n">p_base</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">weekday</span><span class="p">,</span> <span class="n">p_weekday_arr</span><span class="p">[</span><span class="n">hours</span><span class="p">],</span> <span class="n">p_weekend_arr</span><span class="p">[</span><span class="n">hours</span><span class="p">])</span>
+        
+    <span class="n">holiday_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="s1">&#39;holiday&#39;</span><span class="p">],</span><span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;holiday_factor&quot;</span><span class="p">],</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">vacation_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">events</span><span class="p">[</span><span class="s1">&#39;vacation&#39;</span><span class="p">],</span><span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;vacation_factor&quot;</span><span class="p">],</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="n">p_target</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p_base</span> <span class="o">*</span> <span class="n">holiday_factor</span> <span class="o">*</span> <span class="n">vacation_factor</span><span class="p">,</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">)</span>
+    
+    <span class="n">rho_occ</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;occupancy_memory&quot;</span><span class="p">]</span><span class="o">*</span><span class="n">time_resolution</span><span class="p">))</span>
+    <span class="n">z_occ</span> <span class="o">=</span> <span class="n">generate_ar1</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">rho_occ</span><span class="p">)</span>
+    
+    <span class="n">sigma_occ</span> <span class="o">=</span> <span class="n">occupancy_params</span><span class="p">[</span><span class="s2">&quot;occupancy_correlation&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">p_target</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p_target</span><span class="p">))</span>
+    <span class="n">p_real</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p_target</span> <span class="o">+</span> <span class="n">sigma_occ</span> <span class="o">*</span> <span class="n">z_occ</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_users</span><span class="p">,</span> <span class="n">p_real</span><span class="p">),</span><span class="n">index</span> <span class="o">=</span> <span class="n">series_datetime</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">occupancy</span></div>
+
+
+<div class="viewcode-block" id="lighting_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load">[docs]</a>
+<span class="k">def</span> <span class="nf">lighting_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">ghi</span><span class="p">,</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">light_params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute lighting electricity demand.</span>
+<span class="sd">    </span>
+<span class="sd">    Lighting usage depends on:</span>
+<span class="sd">    - solar irradiance (GHI)</span>
+<span class="sd">    - stochastic behavioral variability</span>
+<span class="sd">    - occupancy-driven activation</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        occupancy (array-like): Number of present users per timestep.</span>
+<span class="sd">        ghi (array-like): Global horizontal irradiance (W/m²).</span>
+<span class="sd">        z_act (numpy.ndarray): AR(1) activity noise process.</span>
+<span class="sd">        simultaneity_factor (float): Correlation strength between users.</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        light_params (dict): Lighting model parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: Total lighting power time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_light_inst</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="n">ghi</span> <span class="o">-</span> <span class="n">light_params</span><span class="p">[</span><span class="s2">&quot;GHI_threshold&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="n">light_params</span><span class="p">[</span><span class="s2">&quot;irradiance_smoothness&quot;</span><span class="p">]))</span>
+    <span class="n">sigma_light</span> <span class="o">=</span> <span class="n">simultaneity_factor</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">p_light_inst</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">p_light_inst</span><span class="p">))</span>
+    <span class="n">p_light_real</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p_light_inst</span> <span class="o">+</span> <span class="n">sigma_light</span><span class="o">*</span><span class="n">z_act</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">active_users</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">p_light_real</span><span class="p">)</span>
+    <span class="n">power_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">light_params</span><span class="p">[</span><span class="s1">&#39;mean_light_power&#39;</span><span class="p">],</span><span class="n">light_params</span><span class="p">[</span><span class="s1">&#39;std_light_power&#39;</span><span class="p">],</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">occupancy</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">occupancy</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">power_light</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">active_users</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="p">:</span><span class="n">active_users</span><span class="p">[</span><span class="n">t</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">P_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">power_light</span> <span class="o">*</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">P_light</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="it_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.it_load">[docs]</a>
+<span class="k">def</span> <span class="nf">it_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">it_params</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute IT and plug-load demand per building.</span>
+<span class="sd">    </span>
+<span class="sd">    Each active occupant contributes stochastic IT power consumption.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        occupancy (array-like): Number of present users per timestep.</span>
+<span class="sd">        z_act (numpy.ndarray): AR(1) activity process.</span>
+<span class="sd">        mean_activity (float): Average probability of appliance usage.</span>
+<span class="sd">        simultaneity_factor (float): Correlation between users&#39; activities.</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        it_params (dict): IT load parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: IT electrical load time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">p_it_inst</span> <span class="o">=</span> <span class="n">mean_activity</span>
+    <span class="n">sigma_it</span> <span class="o">=</span> <span class="n">simultaneity_factor</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">p_it_inst</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">p_it_inst</span><span class="p">))</span>
+    <span class="n">p_it_real</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p_it_inst</span> <span class="o">+</span> <span class="n">sigma_it</span><span class="o">*</span><span class="n">z_act</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">active_users</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">p_it_real</span><span class="p">)</span>
+    <span class="n">power_it</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">it_params</span><span class="p">[</span><span class="s1">&#39;mean_it_power&#39;</span><span class="p">],</span><span class="n">it_params</span><span class="p">[</span><span class="s1">&#39;std_it_power&#39;</span><span class="p">],</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">occupancy</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">occupancy</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">power_it</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">active_users</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="p">:</span><span class="n">active_users</span><span class="p">[</span><span class="n">t</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="n">p_it</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">power_it</span> <span class="o">*</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">p_it</span><span class="p">)</span></div>
+
+      
+
+<div class="viewcode-block" id="shared_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.shared_load">[docs]</a>
+<span class="k">def</span> <span class="nf">shared_load</span><span class="p">(</span><span class="n">n_present</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span> <span class="n">shared_params</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute shared equipment electrical load.</span>
+<span class="sd">    </span>
+<span class="sd">    Shared load scales with occupancy ratio and diversity effects,</span>
+<span class="sd">    with stochastic variability applied at the aggregate level.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_present (array-like): Number of present users per timestep.</span>
+<span class="sd">        n_users (int): Total number of users in building.</span>
+<span class="sd">        z_act (numpy.ndarray): AR(1) stochastic process.</span>
+<span class="sd">        mean_activity (float): Average activity level.</span>
+<span class="sd">        shared_params (dict): Shared equipment parameters.</span>
+<span class="sd">        simultaneity_factor (float): Correlation strength.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: Shared equipment power demand time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">occ_ratio</span> <span class="o">=</span> <span class="n">n_present</span> <span class="o">/</span> <span class="n">n_users</span>
+    
+    <span class="n">usage</span> <span class="o">=</span> <span class="n">mean_activity</span> <span class="o">*</span> <span class="n">occ_ratio</span><span class="o">**</span><span class="n">shared_params</span><span class="p">[</span><span class="s1">&#39;shared_scaling_exponent&#39;</span><span class="p">]</span>
+    <span class="n">usage</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">usage</span> <span class="o">+</span> <span class="n">simultaneity_factor</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">usage</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">usage</span><span class="p">))</span> <span class="o">*</span> <span class="n">z_act</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">p_shared</span> <span class="o">=</span> <span class="n">shared_params</span><span class="p">[</span><span class="s2">&quot;shared_installed_power_per_user&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_users</span><span class="o">**</span><span class="n">shared_params</span><span class="p">[</span><span class="s2">&quot;shared_equipment_aggregation&quot;</span><span class="p">])</span> <span class="o">*</span> <span class="n">usage</span>
+    
+    <span class="k">return</span><span class="p">(</span><span class="n">p_shared</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EV_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.EV_load">[docs]</a>
+<span class="k">def</span> <span class="nf">EV_load</span><span class="p">(</span><span class="n">n_users</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">,</span> <span class="n">n_present</span><span class="p">,</span> <span class="n">EV_params</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate electric vehicle charging demand.</span>
+<span class="sd">    </span>
+<span class="sd">    EV charging is modeled as:</span>
+<span class="sd">    - stochastic session initiation</span>
+<span class="sd">    - stochastic session termination</span>
+<span class="sd">    - constant random charging power per session</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_users (int): Number of users in building.</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        time_resolution (float): Time resolution in hours.</span>
+<span class="sd">        n_present (array-like): Number of present users.</span>
+<span class="sd">        EV_params (dict): EV charging parameters.</span>
+<span class="sd">        mean_activity (float): Activity scaling factor.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: EV charging power time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">p_start</span> <span class="o">=</span> <span class="n">EV_params</span><span class="p">[</span><span class="s1">&#39;EV_charge_rate&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">n_present</span> <span class="o">/</span> <span class="n">n_users</span><span class="p">)</span> <span class="o">*</span> <span class="n">mean_activity</span> <span class="o">/</span> <span class="n">time_resolution</span> 
+    <span class="n">p_end</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">EV_params</span><span class="p">[</span><span class="s1">&#39;EV_charge_duration_mean&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">time_resolution</span><span class="p">)</span>
+    
+    <span class="n">n_new_sessions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_present</span><span class="p">,</span><span class="n">p_start</span><span class="p">)</span>
+    <span class="n">n_sessions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">n_sessions</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_sessions</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span> <span class="n">n_new_sessions</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_sessions</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p_end</span><span class="p">))</span>
+    
+    <span class="n">P_EV</span> <span class="o">=</span> <span class="n">n_sessions</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">EV_params</span><span class="p">[</span><span class="s1">&#39;EV_power_min&#39;</span><span class="p">],</span> <span class="n">EV_params</span><span class="p">[</span><span class="s1">&#39;EV_power_max&#39;</span><span class="p">],</span> <span class="n">n_steps</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">P_EV</span></div>
+
+
+<div class="viewcode-block" id="dhw_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load">[docs]</a>
+<span class="k">def</span> <span class="nf">dhw_load</span><span class="p">(</span><span class="n">n_present</span><span class="p">,</span> <span class="n">dhw_params</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span> <span class="n">dhw_physical_params</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate domestic hot water (DHW) energy demand.</span>
+<span class="sd">    </span>
+<span class="sd">    The model includes:</span>
+<span class="sd">    - stochastic draw events per occupant</span>
+<span class="sd">    - thermal energy conversion of water usage</span>
+<span class="sd">    - tank state-of-charge dynamics</span>
+<span class="sd">    - hysteresis-based heating control</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_present (array-like): Number of present users.</span>
+<span class="sd">        dhw_params (dict): DHW system parameters.</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        n_users (int): Total number of users.</span>
+<span class="sd">        mean_activity (float): Activity scaling factor.</span>
+<span class="sd">        dhw_physical_params (dict): Physical constants (water density, Cp, etc.).</span>
+<span class="sd">        time_resolution (float): Time resolution in hours.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: Electrical power required by DHW heater.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">MIN_PER_HOUR</span> <span class="o">=</span> <span class="mi">60</span>
+    <span class="n">E_tank_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;Tank_capacity_per_user&quot;</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">n_users</span><span class="o">**</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;distribution_factor&quot;</span><span class="p">])</span><span class="o">*</span> <span class="n">dhw_physical_params</span><span class="p">[</span><span class="s1">&#39;rho_water&#39;</span><span class="p">]</span><span class="o">*</span> <span class="n">dhw_physical_params</span><span class="p">[</span><span class="s1">&#39;cp_water&#39;</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;T_hot&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;T_cold&quot;</span><span class="p">])</span><span class="o">/</span> <span class="n">dhw_physical_params</span><span class="p">[</span><span class="s1">&#39;JOULES_CONVERSION_FACTOR&#39;</span><span class="p">])</span>
+    <span class="n">p_draw_start</span> <span class="o">=</span> <span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;dhw_draw_rate&quot;</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="n">n_present</span> <span class="o">/</span> <span class="n">n_users</span><span class="p">)</span> <span class="o">*</span> <span class="n">mean_activity</span> <span class="o">/</span> <span class="n">time_resolution</span>
+    <span class="n">p_draw_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="n">MIN_PER_HOUR</span><span class="o">/</span><span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s1">&#39;mean_duration&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">time_resolution</span><span class="p">))</span>
+    
+    <span class="n">n_new_draws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_present</span><span class="p">,</span> <span class="n">p_draw_start</span><span class="p">)</span>
+    <span class="n">P_draw_mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;dhw_mean_flow&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">dhw_physical_params</span><span class="p">[</span><span class="s1">&#39;rho_water&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">dhw_physical_params</span><span class="p">[</span><span class="s1">&#39;cp_water&#39;</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;T_hot&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;T_cold&quot;</span><span class="p">]))</span> <span class="o">/</span> <span class="mi">60000</span>
+    
+    <span class="n">P_heater</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">soc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span><span class="o">+</span><span class="mf">0.5</span>
+
+    <span class="n">heater_on</span> <span class="o">=</span> <span class="kc">False</span>
+    
+    <span class="n">n_draws</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+        <span class="n">n_draws</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_draws</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span> <span class="n">n_new_draws</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n_draws</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">p_draw_end</span><span class="p">))</span>
+        <span class="n">P_draw</span><span class="o">=</span><span class="n">n_draws</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">*</span> <span class="n">P_draw_mean</span>
+        
+        <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span>  <span class="p">(</span><span class="n">P_draw</span> <span class="o">/</span> <span class="n">time_resolution</span><span class="p">)</span> <span class="o">/</span> <span class="n">E_tank_max</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">heater_on</span> <span class="ow">and</span> <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;Charging_SOC_start&quot;</span><span class="p">]):</span>
+            <span class="n">heater_on</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">heater_on</span> <span class="ow">and</span> <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;Charging_SOC_end&quot;</span><span class="p">]):</span>
+            <span class="n">heater_on</span> <span class="o">=</span> <span class="kc">False</span>
+            
+        <span class="n">P_heater</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;heater_power&quot;</span><span class="p">]</span><span class="o">/</span><span class="n">dhw_params</span><span class="p">[</span><span class="s2">&quot;thermal_gain_factor&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">heater_on</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">P_heater</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">/</span> <span class="n">time_resolution</span><span class="p">)</span> <span class="o">/</span> <span class="n">E_tank_max</span>
+
+        <span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">soc</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    
+    <span class="k">return</span> <span class="n">P_heater</span></div>
+
+
+<div class="viewcode-block" id="hvac_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load">[docs]</a>
+<span class="k">def</span> <span class="nf">hvac_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">comfort_params</span><span class="p">,</span><span class="n">comfort_temp</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate building thermal dynamics and HVAC electricity demand.</span>
+<span class="sd">    </span>
+<span class="sd">    The model includes:</span>
+<span class="sd">    - indoor temperature evolution</span>
+<span class="sd">    - solar heat gains through windows</span>
+<span class="sd">    - wind-driven infiltration losses</span>
+<span class="sd">    - internal gains from HVAC and occupants</span>
+<span class="sd">    - heating and cooling control with comfort thresholds</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        occupancy (array-like): Number of occupants per timestep.</span>
+<span class="sd">        n_steps (int): Number of simulation steps.</span>
+<span class="sd">        dt (float): Time step in seconds.</span>
+<span class="sd">        comfort_params (dict): HVAC and thermal parameters.</span>
+<span class="sd">        comfort_temp (dict): Comfort temperature bounds.</span>
+<span class="sd">        meteoData (pandas.DataFrame): Weather data (temperature, GHI, wind).</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[numpy.ndarray, numpy.ndarray]:</span>
+<span class="sd">            - cooling electrical load (kW)</span>
+<span class="sd">            - heating electrical load (kW)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">T_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">T_in</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">meteoData</span><span class="p">[</span><span class="s2">&quot;temp_air&quot;</span><span class="p">])</span><span class="o">*</span><span class="mi">3</span><span class="o">/</span><span class="mi">4</span> <span class="o">+</span> <span class="n">meteoData</span><span class="p">[</span><span class="s2">&quot;temp_air&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+    
+    <span class="n">Q_solar</span> <span class="o">=</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;solar_heat_gain&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;windows_surface&#39;</span><span class="p">]</span> <span class="o">*</span>  <span class="n">meteoData</span><span class="p">[</span><span class="s2">&quot;ghi&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">Q_heat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">Q_cool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">Q_wind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+    <span class="n">wind</span> <span class="o">=</span> <span class="n">meteoData</span><span class="p">[</span><span class="s2">&quot;wind_speed&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">T_ext</span> <span class="o">=</span> <span class="n">meteoData</span><span class="p">[</span><span class="s2">&quot;temp_air&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">):</span>
+
+        <span class="n">error_heat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">comfort_temp</span><span class="p">[</span><span class="s1">&#39;T_comfort_min&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">error_cool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">comfort_temp</span><span class="p">[</span><span class="s1">&#39;T_comfort_max&#39;</span><span class="p">])</span>
+
+        <span class="n">Q_heat</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_gain_per_user&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">occupancy</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">*</span> <span class="n">error_heat</span><span class="p">,</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;heat_saturation&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_COP&#39;</span><span class="p">])</span>
+        <span class="n">Q_cool</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_gain_per_user&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">occupancy</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">*</span> <span class="n">error_cool</span><span class="p">,</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;cold_saturation&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_EER&#39;</span><span class="p">])</span>
+        <span class="n">Q_wind</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;wind_sensitivity&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">wind</span><span class="p">[</span><span class="n">t</span><span class="p">]</span><span class="o">*</span> <span class="p">(</span><span class="n">T_ext</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+
+        <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="p">((</span><span class="n">T_ext</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">T_in</span><span class="p">[</span><span class="n">t</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;thermal_resistance&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;thermal_capacity&#39;</span><span class="p">])</span><span class="o">+</span> <span class="p">(</span><span class="n">Q_solar</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="n">Q_wind</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">+</span> <span class="n">Q_heat</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">-</span> <span class="n">Q_cool</span><span class="p">[</span><span class="n">t</span><span class="p">])</span> <span class="o">/</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;thermal_capacity&#39;</span><span class="p">])</span>
+
+    <span class="n">P_cold_elec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">Q_cool</span> <span class="o">/</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_EER&#39;</span><span class="p">],</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;cold_saturation&#39;</span><span class="p">])</span><span class="o">/</span><span class="mf">1000.</span>
+    <span class="n">P_heat_elec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">Q_heat</span> <span class="o">/</span> <span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;hvac_COP&#39;</span><span class="p">],</span><span class="n">comfort_params</span><span class="p">[</span><span class="s1">&#39;heat_saturation&#39;</span><span class="p">])</span><span class="o">/</span><span class="mf">1000.</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">P_cold_elec</span><span class="p">,</span><span class="n">P_heat_elec</span><span class="p">)</span> </div>
+
+
+<div class="viewcode-block" id="base_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.base_load">[docs]</a>
+<span class="k">def</span> <span class="nf">base_load</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span><span class="n">n_users</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">base_load_params</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute aggregated base electrical load.</span>
+<span class="sd">    </span>
+<span class="sd">    Represents:</span>
+<span class="sd">    - standby consumption</span>
+<span class="sd">    - always-on appliances</span>
+<span class="sd">    - background electrical usage</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        n_users (int): Number of users in building.</span>
+<span class="sd">        time_resolution (float): Time resolution in hours.</span>
+<span class="sd">        base_load_params (dict): Base load model parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        numpy.ndarray: Base electrical load time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">base_load_params</span><span class="p">[</span><span class="s2">&quot;noise_memory&quot;</span><span class="p">]</span><span class="o">*</span> <span class="n">time_resolution</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">generate_ar1</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+    <span class="n">P_nominal</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_load_params</span><span class="p">[</span><span class="s2">&quot;power_per_user&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_users</span><span class="o">**</span><span class="n">base_load_params</span><span class="p">[</span><span class="s1">&#39;scaling_exponent&#39;</span><span class="p">])</span>
+    <span class="n">P_base</span> <span class="o">=</span> <span class="p">(</span><span class="n">P_nominal</span><span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span> <span class="n">base_load_params</span><span class="p">[</span><span class="s2">&quot;noise_std&quot;</span><span class="p">]</span><span class="o">*</span> <span class="n">z</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">P_base</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_occupancy_and_activity">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_occupancy_and_activity</span><span class="p">(</span><span class="n">building</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">events</span><span class="p">,</span><span class="n">meteoData</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate full building load time series.</span>
+<span class="sd">    </span>
+<span class="sd">    This function combines:</span>
+<span class="sd">    - occupancy simulation</span>
+<span class="sd">    - lighting demand</span>
+<span class="sd">    - IT loads</span>
+<span class="sd">    - shared equipment</span>
+<span class="sd">    - EV charging</span>
+<span class="sd">    - DHW demand</span>
+<span class="sd">    - HVAC thermal loads</span>
+<span class="sd">    - base electrical load</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        building (dict): Building configuration (type, number of users, comfort temps).</span>
+<span class="sd">        time_resolution (float): Time step resolution in hours.</span>
+<span class="sd">        events (pandas.DataFrame): Holiday and vacation indicators.</span>
+<span class="sd">        meteoData (pandas.DataFrame): Weather data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            pandas.Series: Occupancy time series.</span>
+<span class="sd">            pandas.DataFrame: End-use electrical and thermal loads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">series_datetime</span> <span class="o">=</span> <span class="n">meteoData</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">n_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series_datetime</span><span class="p">)</span>
+    <span class="n">profile</span> <span class="o">=</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">]</span>
+    <span class="n">n_users</span> <span class="o">=</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Number of users&quot;</span><span class="p">]</span>
+
+    <span class="n">simultaneity_factor</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;simultaneity_factor&quot;</span><span class="p">]</span>
+    <span class="n">activity_memory</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;activity_memory&quot;</span><span class="p">]</span>
+    <span class="n">mean_activity</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;mean_activity&quot;</span><span class="p">]</span>
+    
+    <span class="n">occupancy_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;occupancy_params&quot;</span><span class="p">]</span> 
+    <span class="n">base_load_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;base_load_params&quot;</span><span class="p">]</span>
+    <span class="n">shared_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;shared_params&quot;</span><span class="p">]</span>
+    <span class="n">EV_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;EV_params&quot;</span><span class="p">]</span>
+    <span class="n">dhw_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;dhw_params&quot;</span><span class="p">]</span>
+    <span class="n">it_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;it_params&quot;</span><span class="p">]</span>
+    <span class="n">light_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;light_params&quot;</span><span class="p">]</span>
+    <span class="n">comfort_params</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">profile</span><span class="p">][</span><span class="s2">&quot;comfort_params&quot;</span><span class="p">]</span> 
+    <span class="n">comfort_temp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;T_comfort_min&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">building</span><span class="p">[</span><span class="s2">&quot;Min. comfort temperature (°C)&quot;</span><span class="p">])</span> <span class="p">,</span>
+                    <span class="s1">&#39;T_comfort_max&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">building</span><span class="p">[</span><span class="s2">&quot;Max. comfort temperature (°C)&quot;</span><span class="p">])}</span>
+    
+    <span class="c1">#Control the weight of the memory</span>
+    <span class="n">rho_act</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">activity_memory</span><span class="o">*</span><span class="n">time_resolution</span><span class="p">))</span>
+    
+    <span class="c1">#Thresholds &amp; specific powers</span>
+    <span class="n">dhw_physical_params</span> <span class="o">=</span><span class="p">{</span><span class="s1">&#39;rho_water&#39;</span> <span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;cp_water&#39;</span><span class="p">:</span><span class="mi">4186</span><span class="p">,</span> <span class="s1">&#39;JOULES_CONVERSION_FACTOR&#39;</span><span class="p">:</span><span class="mi">3600000</span><span class="p">}</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="mf">3600.</span> <span class="o">/</span> <span class="n">time_resolution</span>
+
+    <span class="n">z_act</span> <span class="o">=</span> <span class="n">generate_ar1</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">rho_act</span><span class="p">)</span>
+    
+    <span class="n">null_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span> <span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">compute_occupancy</span><span class="p">(</span><span class="n">series_datetime</span><span class="p">,</span> <span class="n">profile</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">occupancy_params</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">)</span>
+    <span class="n">p_light</span> <span class="o">=</span> <span class="n">lighting_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">[</span><span class="s1">&#39;ghi&#39;</span><span class="p">],</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">light_params</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Light&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_it</span> <span class="o">=</span> <span class="n">it_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">it_params</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;IT and office&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_shared</span> <span class="o">=</span> <span class="n">shared_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">z_act</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span> <span class="n">shared_params</span><span class="p">,</span> <span class="n">simultaneity_factor</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Shared equipment&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_EV</span> <span class="o">=</span> <span class="n">EV_load</span><span class="p">(</span><span class="n">n_users</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">,</span> <span class="n">occupancy</span><span class="p">,</span> <span class="n">EV_params</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Electric vehicles&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_dhw</span> <span class="o">=</span> <span class="n">dhw_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">dhw_params</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">n_users</span><span class="p">,</span> <span class="n">mean_activity</span><span class="p">,</span><span class="n">dhw_physical_params</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Domestic hot water&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_cold</span><span class="p">,</span><span class="n">p_heat</span> <span class="o">=</span> <span class="n">hvac_load</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">comfort_params</span><span class="p">,</span><span class="n">comfort_temp</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Thermal comfort&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+    <span class="n">p_base</span> <span class="o">=</span> <span class="n">base_load</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span><span class="n">n_users</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">base_load_params</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Base load&quot;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span> <span class="k">else</span> <span class="n">null_series</span>
+        
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">occupancy</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">series_datetime</span><span class="p">)</span>
+    <span class="n">activity</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;base&quot;</span><span class="p">:</span><span class="n">p_base</span><span class="p">,</span><span class="s2">&quot;lighting&quot;</span><span class="p">:</span><span class="n">p_light</span><span class="p">,</span><span class="s2">&quot;IT and office equipment&quot;</span><span class="p">:</span><span class="n">p_it</span><span class="p">,</span><span class="s2">&quot;shared equipment&quot;</span><span class="p">:</span><span class="n">p_shared</span><span class="p">,</span><span class="s2">&quot;electric vehicles&quot;</span><span class="p">:</span><span class="n">p_EV</span><span class="p">,</span><span class="s2">&quot;domestic hot water&quot;</span><span class="p">:</span><span class="n">p_dhw</span><span class="p">,</span><span class="s2">&quot;heating&quot;</span><span class="p">:</span><span class="n">p_heat</span><span class="p">,</span><span class="s2">&quot;cooling&quot;</span><span class="p">:</span><span class="n">p_cold</span><span class="p">},</span><span class="n">index</span><span class="o">=</span><span class="n">series_datetime</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">occupancy</span><span class="p">,</span><span class="n">activity</span></div>
+
+
+<div class="viewcode-block" id="separate_loads">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads">[docs]</a>
+<span class="k">def</span> <span class="nf">separate_loads</span><span class="p">(</span><span class="n">activity</span><span class="p">,</span><span class="n">activity_memory</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">n_steps</span><span class="p">,</span><span class="n">load_flexibility</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decompose electrical loads into flexibility categories.</span>
+<span class="sd">    </span>
+<span class="sd">    Each load is split into:</span>
+<span class="sd">    - non-movable loads</span>
+<span class="sd">    - daily movable loads</span>
+<span class="sd">    - yearly movable loads</span>
+<span class="sd">    </span>
+<span class="sd">    The decomposition is based on:</span>
+<span class="sd">    - stochastic allocation</span>
+<span class="sd">    - AR(1)-based temporal correlation</span>
+<span class="sd">    - predefined flexibility coefficients</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        activity (pandas.DataFrame): End-use load time series.</span>
+<span class="sd">        activity_memory (float): Temporal memory of load flexibility.</span>
+<span class="sd">        time_resolution (float): Time resolution in hours.</span>
+<span class="sd">        n_steps (int): Number of time steps.</span>
+<span class="sd">        load_flexibility (pandas.DataFrame): Flexibility coefficients.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pandas.DataFrame: Load decomposition by flexibility class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">SIGMA_SEPARATION</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="n">rates</span> <span class="o">=</span> <span class="n">load_flexibility</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;Usage&quot;</span><span class="p">)[[</span><span class="s2">&quot;Non movable rate&quot;</span><span class="p">,</span><span class="s2">&quot;daily movable rate&quot;</span><span class="p">,</span><span class="s2">&quot;yearly movable rate&quot;</span><span class="p">]]</span>
+    
+    <span class="n">rho_separation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="n">activity_memory</span><span class="o">*</span><span class="n">time_resolution</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">generate_ar1</span><span class="p">(</span><span class="n">n_steps</span><span class="p">,</span> <span class="n">rho_separation</span><span class="p">)</span>
+
+    <span class="n">real_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_steps</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">activity</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">activity</span><span class="o">.</span><span class="n">keys</span><span class="p">())):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">real_rates</span><span class="p">[:,</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span> <span class="n">rates</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span><span class="o">+</span> <span class="n">SIGMA_SEPARATION</span><span class="o">*</span><span class="n">z</span><span class="p">)</span>
+    <span class="n">real_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">real_rates</span><span class="p">,</span><span class="mf">0.001</span><span class="p">,</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">real_rates</span> <span class="o">/=</span> <span class="n">real_rates</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="n">loads</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ti,tij-&gt;tj&quot;</span><span class="p">,</span><span class="n">activity</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">real_rates</span><span class="p">)</span>
+    <span class="n">loads</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">loads</span><span class="p">,</span><span class="n">index</span> <span class="o">=</span> <span class="n">activity</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">loads</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;non_movable&quot;</span><span class="p">,</span><span class="s2">&quot;daily_movable&quot;</span><span class="p">,</span><span class="s2">&quot;yearly_movable&quot;</span><span class="p">]</span> 
+    
+    <span class="k">return</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="generate_microgrid_load">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_microgrid_load</span><span class="p">(</span><span class="n">building_list</span><span class="p">,</span><span class="n">load_flexibility</span><span class="p">,</span><span class="n">meteoData</span><span class="p">,</span><span class="n">holidays</span><span class="p">,</span><span class="n">vacations</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate aggregated microgrid load from multiple buildings.</span>
+<span class="sd">    </span>
+<span class="sd">    The workflow is:</span>
+<span class="sd">    1. Generate occupancy and loads per building</span>
+<span class="sd">    2. Apply flexibility decomposition</span>
+<span class="sd">    3. Aggregate all buildings</span>
+<span class="sd">    4. Compute total system load</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        building_list (pandas.DataFrame): List of building definitions.</span>
+<span class="sd">        load_flexibility (pandas.DataFrame): Flexibility parameters.</span>
+<span class="sd">        meteoData (pandas.DataFrame): Weather time series.</span>
+<span class="sd">        holidays (iterable): List of holiday dates.</span>
+<span class="sd">        vacations (pandas.DataFrame): Vacation periods.</span>
+<span class="sd">        time_resolution (float): Time step resolution in hours.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pandas.DataFrame: Aggregated microgrid load containing:</span>
+<span class="sd">            - non_movable</span>
+<span class="sd">            - daily_movable</span>
+<span class="sd">            - yearly_movable</span>
+<span class="sd">            - total_load</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n_building</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">buildings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">names</span><span class="o">=</span><span class="p">[]</span>
+    
+    <span class="n">series_datetime</span> <span class="o">=</span> <span class="n">meteoData</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">holiday_factor</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="kc">True</span> <span class="k">if</span> <span class="n">is_holiday</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">holidays</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">series_datetime</span><span class="p">],</span><span class="n">index</span> <span class="o">=</span> <span class="n">series_datetime</span><span class="p">)</span>
+    <span class="n">vacation_factor</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">([</span><span class="kc">True</span> <span class="k">if</span> <span class="n">is_vacation</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">vacations</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">series_datetime</span><span class="p">],</span><span class="n">index</span> <span class="o">=</span> <span class="n">series_datetime</span><span class="p">)</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;holiday&#39;</span><span class="p">:</span> <span class="n">holiday_factor</span><span class="p">,</span> <span class="s1">&#39;vacation&#39;</span><span class="p">:</span> <span class="n">vacation_factor</span><span class="p">},</span> <span class="n">index</span> <span class="o">=</span> <span class="n">series_datetime</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">building</span> <span class="ow">in</span> <span class="n">building_list</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        
+        <span class="n">n_building</span> <span class="o">+=</span> <span class="n">building</span><span class="p">[</span><span class="s1">&#39;Number&#39;</span><span class="p">]</span>
+        <span class="n">n_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">series_datetime</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">building</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">building</span><span class="p">[</span><span class="s2">&quot;Number&quot;</span><span class="p">]):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">occupancy</span><span class="p">,</span><span class="n">activity</span> <span class="o">=</span> <span class="n">generate_occupancy_and_activity</span><span class="p">(</span><span class="n">building</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">events</span><span class="p">,</span><span class="n">meteoData</span><span class="p">)</span>
+            <span class="n">activity_memory</span> <span class="o">=</span> <span class="n">PROFILES</span><span class="p">[</span><span class="n">building</span><span class="p">[</span><span class="s2">&quot;Type&quot;</span><span class="p">]][</span><span class="s2">&quot;activity_memory&quot;</span><span class="p">]</span>
+            <span class="n">loads</span> <span class="o">=</span> <span class="n">separate_loads</span><span class="p">(</span><span class="n">activity</span><span class="p">,</span><span class="n">activity_memory</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">n_steps</span><span class="p">,</span><span class="n">load_flexibility</span><span class="p">)</span>
+            <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">building</span><span class="p">[</span><span class="s2">&quot;Building&quot;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">if</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Number&quot;</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">1</span> <span class="k">else</span> <span class="n">building</span><span class="p">[</span><span class="s2">&quot;Building&quot;</span><span class="p">])</span>
+            <span class="n">buildings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loads</span><span class="p">)</span>
+
+    <span class="n">microgrid_load</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">buildings</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">microgrid_load</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;non_movable&quot;</span><span class="p">,</span><span class="s2">&quot;daily_movable&quot;</span><span class="p">,</span><span class="s2">&quot;yearly_movable&quot;</span><span class="p">]</span> 
+
+    <span class="n">microgrid_load</span><span class="p">[</span><span class="s2">&quot;total_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">microgrid_load</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">microgrid_load</span></div>
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

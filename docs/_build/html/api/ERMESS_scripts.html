@@ -1,0 +1,904 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="ERMESS_scripts.cost package" href="ERMESS_scripts.cost.html"><link rel="prev" title="ERMESS" href="../index.html">
+        <link rel="prefetch" href="../_static/ermess_logo.png" as="image">
+
+    <!-- Generated with Sphinx 7.3.7 and Furo 2025.12.19 -->
+        <title>ERMESS_scripts package - ERMESS 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=acfd86a5" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">ERMESS 1.0.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/ermess_logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ERMESS 1.0.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">ERMESS_scripts package</a><input aria-label="Toggle navigation of ERMESS_scripts package" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.cost.html">ERMESS_scripts.cost package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html">ERMESS_scripts.data package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html">ERMESS_scripts.energy_management_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html">ERMESS_scripts.energy_production_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html">ERMESS_scripts.evolutionnary_core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.load_model.html">ERMESS_scripts.load_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html">ERMESS_scripts.reporting package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/api/ERMESS_scripts.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-ERMESS_scripts">
+<span id="ermess-scripts-package"></span><h1>ERMESS_scripts package<a class="headerlink" href="#module-ERMESS_scripts" title="Link to this heading">¶</a></h1>
+<p>Created on Tue Mar  3 12:25:21 2026</p>
+<p>&#64;author: jlegalla</p>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.cost.html">ERMESS_scripts.cost package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.cost.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.cost.html#module-ERMESS_scripts.cost.ERMESS_cost_functions">ERMESS_scripts.cost.ERMESS_cost_functions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Annual_net_benefits_pro"><code class="docutils literal notranslate"><span class="pre">Annual_net_benefits_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Annual_net_benefits_research"><code class="docutils literal notranslate"><span class="pre">Annual_net_benefits_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Autonomy_pro"><code class="docutils literal notranslate"><span class="pre">Autonomy_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Autonomy_research"><code class="docutils literal notranslate"><span class="pre">Autonomy_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.EROI_pro"><code class="docutils literal notranslate"><span class="pre">EROI_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.EROI_research"><code class="docutils literal notranslate"><span class="pre">EROI_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Fossil_fuel_consumption_pro"><code class="docutils literal notranslate"><span class="pre">Fossil_fuel_consumption_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Fossil_fuel_consumption_research"><code class="docutils literal notranslate"><span class="pre">Fossil_fuel_consumption_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.LCOE_pro"><code class="docutils literal notranslate"><span class="pre">LCOE_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.LCOE_research"><code class="docutils literal notranslate"><span class="pre">LCOE_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Losses_pro"><code class="docutils literal notranslate"><span class="pre">Losses_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Losses_research"><code class="docutils literal notranslate"><span class="pre">Losses_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Max_import_power_pro"><code class="docutils literal notranslate"><span class="pre">Max_import_power_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Max_import_power_research"><code class="docutils literal notranslate"><span class="pre">Max_import_power_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.NPV_pro"><code class="docutils literal notranslate"><span class="pre">NPV_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.NPV_research"><code class="docutils literal notranslate"><span class="pre">NPV_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_consumption_pro"><code class="docutils literal notranslate"><span class="pre">Self_consumption_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_consumption_research"><code class="docutils literal notranslate"><span class="pre">Self_consumption_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_sufficiency_pro"><code class="docutils literal notranslate"><span class="pre">Self_sufficiency_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_sufficiency_research"><code class="docutils literal notranslate"><span class="pre">Self_sufficiency_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.eqCO2_emissions_pro"><code class="docutils literal notranslate"><span class="pre">eqCO2_emissions_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.eqCO2_emissions_research"><code class="docutils literal notranslate"><span class="pre">eqCO2_emissions_research()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.data.html">ERMESS_scripts.data package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.ERMESS_meteo">ERMESS_scripts.data.ERMESS_meteo module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.ERMESS_meteo.import_meteo"><code class="docutils literal notranslate"><span class="pre">import_meteo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_builder">ERMESS_scripts.data.data_builder module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_builder.build_environment"><code class="docutils literal notranslate"><span class="pre">build_environment()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_classes">ERMESS_scripts.data.data_classes module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData"><code class="docutils literal notranslate"><span class="pre">ContinuousStorageData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.characteristics"><code class="docutils literal notranslate"><span class="pre">ContinuousStorageData.characteristics</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.model"><code class="docutils literal notranslate"><span class="pre">ContinuousStorageData.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.n_store"><code class="docutils literal notranslate"><span class="pre">ContinuousStorageData.n_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.techs"><code class="docutils literal notranslate"><span class="pre">ContinuousStorageData.techs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.capacity"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData.capacity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.characteristics"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData.characteristics</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.model"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.n_store"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData.n_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.techs"><code class="docutils literal notranslate"><span class="pre">DiscreteStorageData.techs</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData"><code class="docutils literal notranslate"><span class="pre">DispatchingData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_min_production"><code class="docutils literal notranslate"><span class="pre">DispatchingData.DG_min_production</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_min_runtime"><code class="docutils literal notranslate"><span class="pre">DispatchingData.DG_min_runtime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_strategy"><code class="docutils literal notranslate"><span class="pre">DispatchingData.DG_strategy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.D_DSM_minimum_levels"><code class="docutils literal notranslate"><span class="pre">DispatchingData.D_DSM_minimum_levels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Defined_items"><code class="docutils literal notranslate"><span class="pre">DispatchingData.Defined_items</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Discharge_order"><code class="docutils literal notranslate"><span class="pre">DispatchingData.Discharge_order</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Overlaps"><code class="docutils literal notranslate"><span class="pre">DispatchingData.Overlaps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Y_DSM_minimum_levels"><code class="docutils literal notranslate"><span class="pre">DispatchingData.Y_DSM_minimum_levels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.energy_use_coefficient"><code class="docutils literal notranslate"><span class="pre">DispatchingData.energy_use_coefficient</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.connection"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.connection</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.continu_storage"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.continu_storage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.discrete_storage"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.discrete_storage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.dispatching"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.dispatching</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.genset"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.genset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.grid"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.hyperparameters"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.hyperparameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.hyperparameterspro"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.hyperparameterspro</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.load"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.load</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.optimization"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.optimization</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.postProcessConfig"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.postProcessConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.production"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.production</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.time"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.tracking"><code class="docutils literal notranslate"><span class="pre">ERMESSInputs.tracking</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData"><code class="docutils literal notranslate"><span class="pre">GensetData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.EROI"><code class="docutils literal notranslate"><span class="pre">GensetData.EROI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_CO2eq_emissions"><code class="docutils literal notranslate"><span class="pre">GensetData.fuel_CO2eq_emissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_consumption"><code class="docutils literal notranslate"><span class="pre">GensetData.fuel_consumption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_cost"><code class="docutils literal notranslate"><span class="pre">GensetData.fuel_cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.lifetime"><code class="docutils literal notranslate"><span class="pre">GensetData.lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.maintenance_cost"><code class="docutils literal notranslate"><span class="pre">GensetData.maintenance_cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.unit_cost"><code class="docutils literal notranslate"><span class="pre">GensetData.unit_cost</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData"><code class="docutils literal notranslate"><span class="pre">GridData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.CO2eq_emissions"><code class="docutils literal notranslate"><span class="pre">GridData.CO2eq_emissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Contract_Ids"><code class="docutils literal notranslate"><span class="pre">GridData.Contract_Ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Overrun"><code class="docutils literal notranslate"><span class="pre">GridData.Overrun</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Selling_price"><code class="docutils literal notranslate"><span class="pre">GridData.Selling_price</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.energy_ratio"><code class="docutils literal notranslate"><span class="pre">GridData.energy_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.fixed_premium"><code class="docutils literal notranslate"><span class="pre">GridData.fixed_premium</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.fossil_fuel_ratio"><code class="docutils literal notranslate"><span class="pre">GridData.fossil_fuel_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.n_contracts"><code class="docutils literal notranslate"><span class="pre">GridData.n_contracts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.prices"><code class="docutils literal notranslate"><span class="pre">GridData.prices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.prices_hour_type"><code class="docutils literal notranslate"><span class="pre">GridData.prices_hour_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData"><code class="docutils literal notranslate"><span class="pre">HyperparametersData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.cost_constraint"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.cost_constraint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.elitism_probability"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.elitism_probability</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.elitism_probability_init"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.elitism_probability_init</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_core"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.n_core</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_iter"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.n_iter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_iter_init"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.n_iter_init</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_nodes"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.n_nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_pop"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.n_pop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.nb_ere"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.nb_ere</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.operators_num"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.operators_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.r_cross"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.r_cross</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.r_cross_init"><code class="docutils literal notranslate"><span class="pre">HyperparametersData.r_cross_init</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.cost_constraint"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.cost_constraint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.elitism_probability"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.elitism_probability</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.n_iter"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.n_iter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.n_pop"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.n_pop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.operators_num"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.operators_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.r_cross"><code class="docutils literal notranslate"><span class="pre">HyperparametersProData.r_cross</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData"><code class="docutils literal notranslate"><span class="pre">LoadData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.daily_movable"><code class="docutils literal notranslate"><span class="pre">LoadData.daily_movable</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.non_movable"><code class="docutils literal notranslate"><span class="pre">LoadData.non_movable</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.yearly_movable"><code class="docutils literal notranslate"><span class="pre">LoadData.yearly_movable</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.Non_JIT_Environnement"><code class="docutils literal notranslate"><span class="pre">Non_JIT_Environnement</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData"><code class="docutils literal notranslate"><span class="pre">OptimizationData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.constraint_level"><code class="docutils literal notranslate"><span class="pre">OptimizationData.constraint_level</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.constraint_num"><code class="docutils literal notranslate"><span class="pre">OptimizationData.constraint_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.criterion_num"><code class="docutils literal notranslate"><span class="pre">OptimizationData.criterion_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.type_optim"><code class="docutils literal notranslate"><span class="pre">OptimizationData.type_optim</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig"><code class="docutils literal notranslate"><span class="pre">PostProcessConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.export_charts"><code class="docutils literal notranslate"><span class="pre">PostProcessConfig.export_charts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.export_type"><code class="docutils literal notranslate"><span class="pre">PostProcessConfig.export_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.file_name"><code class="docutils literal notranslate"><span class="pre">PostProcessConfig.file_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData"><code class="docutils literal notranslate"><span class="pre">ProductionData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.capacities"><code class="docutils literal notranslate"><span class="pre">ProductionData.capacities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.characteristics_num"><code class="docutils literal notranslate"><span class="pre">ProductionData.characteristics_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.current_prod"><code class="docutils literal notranslate"><span class="pre">ProductionData.current_prod</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.groups"><code class="docutils literal notranslate"><span class="pre">ProductionData.groups</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.ids"><code class="docutils literal notranslate"><span class="pre">ProductionData.ids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.numbers"><code class="docutils literal notranslate"><span class="pre">ProductionData.numbers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.unit_prods"><code class="docutils literal notranslate"><span class="pre">ProductionData.unit_prods</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData"><code class="docutils literal notranslate"><span class="pre">SiteData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.altitude"><code class="docutils literal notranslate"><span class="pre">SiteData.altitude</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.latitude"><code class="docutils literal notranslate"><span class="pre">SiteData.latitude</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.longitude"><code class="docutils literal notranslate"><span class="pre">SiteData.longitude</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.timezone"><code class="docutils literal notranslate"><span class="pre">SiteData.timezone</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData"><code class="docutils literal notranslate"><span class="pre">TimeData</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.datetime"><code class="docutils literal notranslate"><span class="pre">TimeData.datetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.duration_years"><code class="docutils literal notranslate"><span class="pre">TimeData.duration_years</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.n_bits"><code class="docutils literal notranslate"><span class="pre">TimeData.n_bits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.n_days"><code class="docutils literal notranslate"><span class="pre">TimeData.n_days</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.time_resolution"><code class="docutils literal notranslate"><span class="pre">TimeData.time_resolution</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_parsers">ERMESS_scripts.data.data_parsers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_parsers.compute_grid_prices"><code class="docutils literal notranslate"><span class="pre">compute_grid_prices()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_reader">ERMESS_scripts.data.data_reader module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.data_reader.load_excel"><code class="docutils literal notranslate"><span class="pre">load_excel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_validation">ERMESS_scripts.data.data_validation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.data.html#module-ERMESS_scripts.data.indices">ERMESS_scripts.data.indices module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx"><code class="docutils literal notranslate"><span class="pre">ConstraintIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.REN_fraction"><code class="docutils literal notranslate"><span class="pre">ConstraintIdx.REN_fraction</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.Self_consumption"><code class="docutils literal notranslate"><span class="pre">ConstraintIdx.Self_consumption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.Self_sufficiency"><code class="docutils literal notranslate"><span class="pre">ConstraintIdx.Self_sufficiency</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx"><code class="docutils literal notranslate"><span class="pre">CriterionIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Annual_net_benefits"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Annual_net_benefits</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Autonomy"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Autonomy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.EROI"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.EROI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Energy_losses"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Energy_losses</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.EqCO2emissions"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.EqCO2emissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Fossil_fuel_consumption"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Fossil_fuel_consumption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.LCOE"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.LCOE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Max_power_from_grid"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Max_power_from_grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.NPV"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.NPV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Self_consumption"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Self_consumption</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Self_sufficiency"><code class="docutils literal notranslate"><span class="pre">CriterionIdx.Self_sufficiency</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx"><code class="docutils literal notranslate"><span class="pre">DefinedItemsIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.DSM"><code class="docutils literal notranslate"><span class="pre">DefinedItemsIdx.DSM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.Genset"><code class="docutils literal notranslate"><span class="pre">DefinedItemsIdx.Genset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.Storage"><code class="docutils literal notranslate"><span class="pre">DefinedItemsIdx.Storage</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx"><code class="docutils literal notranslate"><span class="pre">Indiv_Pro_StoreCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Charge_power"><code class="docutils literal notranslate"><span class="pre">Indiv_Pro_StoreCharIdx.Charge_power</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Discharge_power"><code class="docutils literal notranslate"><span class="pre">Indiv_Pro_StoreCharIdx.Discharge_power</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.SOC_init"><code class="docutils literal notranslate"><span class="pre">Indiv_Pro_StoreCharIdx.SOC_init</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Volume"><code class="docutils literal notranslate"><span class="pre">Indiv_Pro_StoreCharIdx.Volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Inv_length"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Inv_length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Inv_magnitude"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Inv_magnitude</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Max_average"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Max_average</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Max_deviation"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Max_deviation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Min_average"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Min_average</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Min_deviation"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Min_deviation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Probability"><code class="docutils literal notranslate"><span class="pre">OperatorsCharIdx.Probability</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Constraint_forcing"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Constraint_forcing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Contract"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Contract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Curve_smoothing"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Curve_smoothing</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.DSM_noise"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.DSM_noise</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.DSM_trades_consistency"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.DSM_trades_consistency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Inter_storages"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Inter_storages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Interdaily_consistency"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Interdaily_consistency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Production"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Production</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_global"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_global</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_mix"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_mix</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_patterns"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_patterns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_power"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_power</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_trades_consistency"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_trades_consistency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_volume"><code class="docutils literal notranslate"><span class="pre">OperatorsOpeIdX.Storage_volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx"><code class="docutils literal notranslate"><span class="pre">OperatorsProCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx.Min_deviation"><code class="docutils literal notranslate"><span class="pre">OperatorsProCharIdx.Min_deviation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx.Probability"><code class="docutils literal notranslate"><span class="pre">OperatorsProCharIdx.Probability</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Contract"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Contract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.DG_control"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.DG_control</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.DSM_levels"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.DSM_levels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Discharge_order"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Discharge_order</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Energy_use"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Energy_use</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Initial_SOC"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Initial_SOC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Overlap"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Overlap</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Production"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Production</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Storage_capacities"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Storage_capacities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Storage_powers"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Storage_powers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Strategy"><code class="docutils literal notranslate"><span class="pre">OperatorsProOpeIdx.Strategy</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx"><code class="docutils literal notranslate"><span class="pre">OverlapsCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx.Extern"><code class="docutils literal notranslate"><span class="pre">OverlapsCharIdx.Extern</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx.Intern"><code class="docutils literal notranslate"><span class="pre">OverlapsCharIdx.Intern</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Capex"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.Capex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.EROI"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.EROI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Emissions"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.Emissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Lifetime"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.Lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Opex"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.Opex</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Volume"><code class="docutils literal notranslate"><span class="pre">ProdCharIdx.Volume</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx"><code class="docutils literal notranslate"><span class="pre">StorCharIdx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.BOP_Cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.BOP_Cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Cycle_life"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Cycle_life</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Depth_of_discharge"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Depth_of_discharge</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.ESOEI"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.ESOEI</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Emissions"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Emissions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Energy_cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Energy_cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Installation_cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Installation_cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Lifetime"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Lifetime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.OM_Cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.OM_Cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.PCS_Cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.PCS_Cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Power_Cost"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Power_Cost</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Round_trip_efficiency"><code class="docutils literal notranslate"><span class="pre">StorCharIdx.Round_trip_efficiency</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html">ERMESS_scripts.energy_management_model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_EMS_models">ERMESS_scripts.energy_management_model.ERMESS_EMS_models module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_EMS_models.LFE_CCE"><code class="docutils literal notranslate"><span class="pre">LFE_CCE()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_storages_model">ERMESS_scripts.energy_management_model.ERMESS_storages_model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_storages_model.battery_charge"><code class="docutils literal notranslate"><span class="pre">battery_charge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_storages_model.battery_discharge"><code class="docutils literal notranslate"><span class="pre">battery_discharge()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html">ERMESS_scripts.energy_production_model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_PV_model">ERMESS_scripts.energy_production_model.ERMESS_PV_model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_PV_model.dimensionnement_pv"><code class="docutils literal notranslate"><span class="pre">dimensionnement_pv()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_PV_model.pvmodel"><code class="docutils literal notranslate"><span class="pre">pvmodel()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_Wind_model">ERMESS_scripts.energy_production_model.ERMESS_Wind_model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.default_wind_turbines"><code class="docutils literal notranslate"><span class="pre">default_wind_turbines()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.windmodel"><code class="docutils literal notranslate"><span class="pre">windmodel()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html">ERMESS_scripts.evolutionnary_core package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm">ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_pro"><code class="docutils literal notranslate"><span class="pre">evolutionnary_algorithm_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_research"><code class="docutils literal notranslate"><span class="pre">evolutionnary_algorithm_research()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators">ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_DDSM_interdaily_patterns_operator"><code class="docutils literal notranslate"><span class="pre">Copy_DDSM_interdaily_patterns_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_YDSM_interdaily_patterns_operator"><code class="docutils literal notranslate"><span class="pre">Copy_YDSM_interdaily_patterns_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_interdaily_patterns_operator"><code class="docutils literal notranslate"><span class="pre">Copy_interdaily_patterns_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Distribute_storage_roles_operator"><code class="docutils literal notranslate"><span class="pre">Distribute_storage_roles_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_DDSM_trades_consistency_operator"><code class="docutils literal notranslate"><span class="pre">Force_DDSM_trades_consistency_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_YDSM_trades_consistency_operator"><code class="docutils literal notranslate"><span class="pre">Force_YDSM_trades_consistency_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_constraint_operator"><code class="docutils literal notranslate"><span class="pre">Force_constraint_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_storage_trade_consistency_operator"><code class="docutils literal notranslate"><span class="pre">Force_storage_trade_consistency_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Merge_opposite_storage_flows_operator"><code class="docutils literal notranslate"><span class="pre">Merge_opposite_storage_flows_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DDSM_levels_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_DDSM_levels_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DDSM_points_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_DDSM_points_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DG_min_production_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_DG_min_production_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DG_min_runtime_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_DG_min_runtime_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DSM_storage_distribution_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_DSM_storage_distribution_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_EMS_Overlap_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_EMS_Overlap_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_YDSM_levels_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_YDSM_levels_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_YDSM_points_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_YDSM_points_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_initSOC_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_initSOC_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_production_capacity_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_production_capacity_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_production_capacity_operator_pro"><code class="docutils literal notranslate"><span class="pre">Mutate_production_capacity_operator_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_dailypattern_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storage_dailypattern_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_global_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storage_global_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_points_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storage_points_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_windows_noise_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storage_windows_noise_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_windows_scaling_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storage_windows_scaling_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_capacity_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storages_capacity_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_inpower_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storages_inpower_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_outpower_operator"><code class="docutils literal notranslate"><span class="pre">Mutate_storages_outpower_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_units_operator_pro"><code class="docutils literal notranslate"><span class="pre">Mutate_storages_units_operator_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_units_operator_research"><code class="docutils literal notranslate"><span class="pre">Mutate_storages_units_operator_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reallocate_storage_mix_points_operator"><code class="docutils literal notranslate"><span class="pre">Reallocate_storage_mix_points_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reduce_storage_power_operator"><code class="docutils literal notranslate"><span class="pre">Reduce_storage_power_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reduce_storage_volume_operator"><code class="docutils literal notranslate"><span class="pre">Reduce_storage_volume_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_DDSM_windows_operator"><code class="docutils literal notranslate"><span class="pre">Smooth_DDSM_windows_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_YDSM_windows_operator"><code class="docutils literal notranslate"><span class="pre">Smooth_YDSM_windows_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_interdaily_storage_timeseries_operator"><code class="docutils literal notranslate"><span class="pre">Smooth_interdaily_storage_timeseries_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_storage_noise_operator"><code class="docutils literal notranslate"><span class="pre">Smooth_storage_noise_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_dispatching_strategy_operator"><code class="docutils literal notranslate"><span class="pre">Switch_dispatching_strategy_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_intragroup_productor_operator"><code class="docutils literal notranslate"><span class="pre">Switch_intragroup_productor_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_storages_order_operator"><code class="docutils literal notranslate"><span class="pre">Switch_storages_order_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Transfer_production_capacity_operator"><code class="docutils literal notranslate"><span class="pre">Transfer_production_capacity_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Transfer_storage_flows_operator"><code class="docutils literal notranslate"><span class="pre">Transfer_storage_flows_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Update_storage_powers_pro"><code class="docutils literal notranslate"><span class="pre">Update_storage_powers_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.reduce_power_trading_operator"><code class="docutils literal notranslate"><span class="pre">reduce_power_trading_operator()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.switch_contract_operator"><code class="docutils literal notranslate"><span class="pre">switch_contract_operator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions">ERMESS_scripts.evolutionnary_core.ERMESS_functions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams"><code class="docutils literal notranslate"><span class="pre">GensetParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams.class_type"><code class="docutils literal notranslate"><span class="pre">GensetParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy"><code class="docutils literal notranslate"><span class="pre">GensetParamsDummy</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy.class_type"><code class="docutils literal notranslate"><span class="pre">GensetParamsDummy.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams"><code class="docutils literal notranslate"><span class="pre">GlobalParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams.class_type"><code class="docutils literal notranslate"><span class="pre">GlobalParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams"><code class="docutils literal notranslate"><span class="pre">GridParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams.class_type"><code class="docutils literal notranslate"><span class="pre">GridParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy"><code class="docutils literal notranslate"><span class="pre">GridParamsDummy</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy.class_type"><code class="docutils literal notranslate"><span class="pre">GridParamsDummy.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams"><code class="docutils literal notranslate"><span class="pre">MutationParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams.class_type"><code class="docutils literal notranslate"><span class="pre">MutationParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams"><code class="docutils literal notranslate"><span class="pre">ProParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams.class_type"><code class="docutils literal notranslate"><span class="pre">ProParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams"><code class="docutils literal notranslate"><span class="pre">RENSystemsParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams.class_type"><code class="docutils literal notranslate"><span class="pre">RENSystemsParams.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.build_numba_params"><code class="docutils literal notranslate"><span class="pre">build_numba_params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_pro"><code class="docutils literal notranslate"><span class="pre">find_cost_function_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_research"><code class="docutils literal notranslate"><span class="pre">find_cost_function_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.fitness_list"><code class="docutils literal notranslate"><span class="pre">fitness_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.selection_tournament"><code class="docutils literal notranslate"><span class="pre">selection_tournament()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro">ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro"><code class="docutils literal notranslate"><span class="pre">Individual_pro</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.production_set"><code class="docutils literal notranslate"><span class="pre">Individual_pro.production_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.contract"><code class="docutils literal notranslate"><span class="pre">Individual_pro.contract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_strategy"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_strategy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_discharge_order"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_discharge_order</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.energy_use_repartition_DSM"><code class="docutils literal notranslate"><span class="pre">Individual_pro.energy_use_repartition_DSM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_taking_over"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_taking_over</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_D_DSM_min_levels"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_D_DSM_min_levels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_Y_DSM_min_levels"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_Y_DSM_min_levels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_DG_min_runtime"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_DG_min_runtime</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_DG_min_production"><code class="docutils literal notranslate"><span class="pre">Individual_pro.PMS_DG_min_production</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.storages"><code class="docutils literal notranslate"><span class="pre">Individual_pro.storages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.fitness"><code class="docutils literal notranslate"><span class="pre">Individual_pro.fitness</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.class_type"><code class="docutils literal notranslate"><span class="pre">Individual_pro.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.NON_JIT_mutation_contraintes_pro"><code class="docutils literal notranslate"><span class="pre">NON_JIT_mutation_contraintes_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro"><code class="docutils literal notranslate"><span class="pre">Non_JIT_Individual_pro</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro.copy"><code class="docutils literal notranslate"><span class="pre">Non_JIT_Individual_pro.copy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig"><code class="docutils literal notranslate"><span class="pre">PIDConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Kd"><code class="docutils literal notranslate"><span class="pre">PIDConfig.Kd</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Ki"><code class="docutils literal notranslate"><span class="pre">PIDConfig.Ki</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Kp"><code class="docutils literal notranslate"><span class="pre">PIDConfig.Kp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.anti_windup"><code class="docutils literal notranslate"><span class="pre">PIDConfig.anti_windup</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.beta"><code class="docutils literal notranslate"><span class="pre">PIDConfig.beta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.u_max"><code class="docutils literal notranslate"><span class="pre">PIDConfig.u_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.u_min"><code class="docutils literal notranslate"><span class="pre">PIDConfig.u_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.validate"><code class="docutils literal notranslate"><span class="pre">PIDConfig.validate()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PID_correction"><code class="docutils literal notranslate"><span class="pre">PID_correction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.RandomFactors"><code class="docutils literal notranslate"><span class="pre">RandomFactors</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.compute_diversity_pro"><code class="docutils literal notranslate"><span class="pre">compute_diversity_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.convert_storage_configuration"><code class="docutils literal notranslate"><span class="pre">convert_storage_configuration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.crossover_reduit_pro"><code class="docutils literal notranslate"><span class="pre">crossover_reduit_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.find_cost_function_pro"><code class="docutils literal notranslate"><span class="pre">find_cost_function_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.initial_population_pro"><code class="docutils literal notranslate"><span class="pre">initial_population_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.jitting_pop_pro"><code class="docutils literal notranslate"><span class="pre">jitting_pop_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.unjitting_pop_pro"><code class="docutils literal notranslate"><span class="pre">unjitting_pop_pro()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_research">ERMESS_scripts.evolutionnary_core.ERMESS_functions_research module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res"><code class="docutils literal notranslate"><span class="pre">Individual_res</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.production_set"><code class="docutils literal notranslate"><span class="pre">Individual_res.production_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.storage_sum"><code class="docutils literal notranslate"><span class="pre">Individual_res.storage_sum</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.storage_TS"><code class="docutils literal notranslate"><span class="pre">Individual_res.storage_TS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.contract"><code class="docutils literal notranslate"><span class="pre">Individual_res.contract</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.Y_DSM"><code class="docutils literal notranslate"><span class="pre">Individual_res.Y_DSM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.D_DSM"><code class="docutils literal notranslate"><span class="pre">Individual_res.D_DSM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.fitness"><code class="docutils literal notranslate"><span class="pre">Individual_res.fitness</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.trades"><code class="docutils literal notranslate"><span class="pre">Individual_res.trades</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.class_type"><code class="docutils literal notranslate"><span class="pre">Individual_res.class_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.NON_JIT_mutation_contraintes_research"><code class="docutils literal notranslate"><span class="pre">NON_JIT_mutation_contraintes_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Non_JIT_Individual_res"><code class="docutils literal notranslate"><span class="pre">Non_JIT_Individual_res</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Non_JIT_Individual_res.copy"><code class="docutils literal notranslate"><span class="pre">Non_JIT_Individual_res.copy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.bouclages_old"><code class="docutils literal notranslate"><span class="pre">bouclages_old()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.check_bouclage"><code class="docutils literal notranslate"><span class="pre">check_bouclage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.combining_solutions"><code class="docutils literal notranslate"><span class="pre">combining_solutions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.crossover_reduit"><code class="docutils literal notranslate"><span class="pre">crossover_reduit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.enforce_energy_consistency"><code class="docutils literal notranslate"><span class="pre">enforce_energy_consistency()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.find_cost_function_research"><code class="docutils literal notranslate"><span class="pre">find_cost_function_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.initial_population_research"><code class="docutils literal notranslate"><span class="pre">initial_population_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.jitting_pop_res"><code class="docutils literal notranslate"><span class="pre">jitting_pop_res()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.non_JIT_bouclages"><code class="docutils literal notranslate"><span class="pre">non_JIT_bouclages()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.pro_to_research"><code class="docutils literal notranslate"><span class="pre">pro_to_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.unjitting_pop_res"><code class="docutils literal notranslate"><span class="pre">unjitting_pop_res()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing">ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ERMESS_pro_PARALLEL"><code class="docutils literal notranslate"><span class="pre">ERMESS_pro_PARALLEL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ere_evolutive_research_PARALLEL"><code class="docutils literal notranslate"><span class="pre">ere_evolutive_research_PARALLEL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.init_and_evolution_pro"><code class="docutils literal notranslate"><span class="pre">init_and_evolution_pro()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.initial_population_research_PARALLEL"><code class="docutils literal notranslate"><span class="pre">initial_population_research_PARALLEL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.parallel_fitness"><code class="docutils literal notranslate"><span class="pre">parallel_fitness()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation">ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.Initialize_ERMESS_research"><code class="docutils literal notranslate"><span class="pre">Initialize_ERMESS_research()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.adaptation_hyperparameters_initialisation"><code class="docutils literal notranslate"><span class="pre">adaptation_hyperparameters_initialisation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.combine_populations"><code class="docutils literal notranslate"><span class="pre">combine_populations()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.find_constraint_levels"><code class="docutils literal notranslate"><span class="pre">find_constraint_levels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_high_res_population"><code class="docutils literal notranslate"><span class="pre">init_high_res_population()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_low_res_population"><code class="docutils literal notranslate"><span class="pre">init_low_res_population()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_pro_population"><code class="docutils literal notranslate"><span class="pre">init_pro_population()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.write_node_population"><code class="docutils literal notranslate"><span class="pre">write_node_population()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.load_model.html">ERMESS_scripts.load_model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.load_model.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.ERMESS_Load_model">ERMESS_scripts.load_model.ERMESS_Load_model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.EV_load"><code class="docutils literal notranslate"><span class="pre">EV_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.base_load"><code class="docutils literal notranslate"><span class="pre">base_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy"><code class="docutils literal notranslate"><span class="pre">compute_occupancy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load"><code class="docutils literal notranslate"><span class="pre">dhw_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1"><code class="docutils literal notranslate"><span class="pre">generate_ar1()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load"><code class="docutils literal notranslate"><span class="pre">generate_microgrid_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity"><code class="docutils literal notranslate"><span class="pre">generate_occupancy_and_activity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load"><code class="docutils literal notranslate"><span class="pre">hvac_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday"><code class="docutils literal notranslate"><span class="pre">is_holiday()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation"><code class="docutils literal notranslate"><span class="pre">is_vacation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.it_load"><code class="docutils literal notranslate"><span class="pre">it_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load"><code class="docutils literal notranslate"><span class="pre">lighting_load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads"><code class="docutils literal notranslate"><span class="pre">separate_loads()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.shared_load"><code class="docutils literal notranslate"><span class="pre">shared_load()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.config_profiles">ERMESS_scripts.load_model.config_profiles module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="ERMESS_scripts.reporting.html">ERMESS_scripts.reporting package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_KPI_functions">ERMESS_scripts.reporting.ERMESS_KPI_functions module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.annualize"><code class="docutils literal notranslate"><span class="pre">annualize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.compute_KPI"><code class="docutils literal notranslate"><span class="pre">compute_KPI()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.storage_charge_energy"><code class="docutils literal notranslate"><span class="pre">storage_charge_energy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.storage_discharge_energy"><code class="docutils literal notranslate"><span class="pre">storage_discharge_energy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_evaluation_operators">ERMESS_scripts.reporting.ERMESS_evaluation_operators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.charts_config">ERMESS_scripts.reporting.charts_config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.charts_config.get_charts_config"><code class="docutils literal notranslate"><span class="pre">get_charts_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs">ERMESS_scripts.reporting.graphs module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.graphs.plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs_excel">ERMESS_scripts.reporting.graphs_excel module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.graphs_excel.add_excel_charts"><code class="docutils literal notranslate"><span class="pre">add_excel_charts()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.post_processing">ERMESS_scripts.reporting.post_processing module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.build_results"><code class="docutils literal notranslate"><span class="pre">build_results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.compute_economic_comparisons"><code class="docutils literal notranslate"><span class="pre">compute_economic_comparisons()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.export_to_excel"><code class="docutils literal notranslate"><span class="pre">export_to_excel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.output_build_production"><code class="docutils literal notranslate"><span class="pre">output_build_production()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.post_traitement"><code class="docutils literal notranslate"><span class="pre">post_traitement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="ERMESS_scripts.cost.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">ERMESS_scripts.cost package</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../index.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Josselin LE GAL LA SALLE
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">ERMESS_scripts package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

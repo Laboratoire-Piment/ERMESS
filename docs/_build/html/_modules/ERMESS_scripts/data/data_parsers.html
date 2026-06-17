@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.data.data_parsers &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.data.data_parsers</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Mon Mar 16 15:06:18 2026</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">timezonefinder</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="n">ConstraintIdx</span><span class="p">,</span> <span class="n">CriterionIdx</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data</span> <span class="kn">import</span> <span class="n">data_classes</span> <span class="k">as</span>  <span class="n">Dcl</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data</span> <span class="kn">import</span> <span class="n">ERMESS_meteo</span> <span class="k">as</span> <span class="n">Eme</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.energy_production_model</span> <span class="kn">import</span> <span class="n">ERMESS_PV_model</span> <span class="k">as</span> <span class="n">EPV</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.energy_production_model</span> <span class="kn">import</span> <span class="n">ERMESS_Wind_model</span> <span class="k">as</span> <span class="n">EWi</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.reporting</span> <span class="kn">import</span> <span class="n">ERMESS_KPI_functions</span> <span class="k">as</span> <span class="n">EKPI</span>
+
+<div class="viewcode-block" id="compute_grid_prices">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_parsers.compute_grid_prices">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_grid_prices</span><span class="p">(</span><span class="n">datetime_data</span><span class="p">,</span><span class="n">grid_price</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate detailed grid price series for each contract and hour type.</span>
+<span class="sd">    </span>
+<span class="sd">    This function maps grid price contracts to hourly time series, taking into account</span>
+<span class="sd">    weekdays, weekends, peak/off-peak hours, seasonal differences, taxes, and premiums.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        datetime_data (array-like): Array of datetime values for the simulation horizon.</span>
+<span class="sd">        grid_price (pd.DataFrame): Contract-specific price structures, seasonal hours, and premiums.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        list: List containing:</span>
+<span class="sd">            - prices_hour_type (np.ndarray): String array of shape (n_time, n_contracts) indicating the hour type for each timestep and contract.</span>
+<span class="sd">            - prices_num (np.ndarray): Numeric price values (€/kWh) of shape (n_time, n_contracts) for each timestep and contract.</span>
+<span class="sd">            - fixed_premium (np.ndarray): Array of fixed premiums per contract (€/kW).</span>
+<span class="sd">            - Overrun (np.ndarray): Array of overrun costs per contract (€/kW).</span>
+<span class="sd">            - Selling_price (np.ndarray): Array of selling prices per timestep and contract (€/kWh).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grid_price</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">prices</span> <span class="o">=</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Datetime&#39;</span><span class="p">:</span><span class="n">datetime_data</span><span class="p">,</span><span class="s1">&#39;Hour type&#39;</span><span class="p">:</span><span class="s1">&#39;NONE&#39;</span><span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">})</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">grid_price</span><span class="p">))]</span>
+    <span class="n">prices_hour_type</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prices_num</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    <span class="n">fixed_premium</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Overrun</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Selling_price</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">grid_price</span><span class="p">)):</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Weekend peak hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;Peak&#39;</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Weekend full hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;WE full&#39;</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Weekend off-peak hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;WE off&#39;</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Workday peak hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;Peak&#39;</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Workday full hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;W full&#39;</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">dayofweek</span><span class="p">)</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Workday off-peak hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))),</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;W off&#39;</span>
+    
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Peak&#39;</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Peak (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;WE full&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer full hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;W full&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer full hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;WE off&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer off-peak hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;W off&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Summer off-peak hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;WE full&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter full hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;W full&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter full hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;WE off&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter off-peak hours (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;W off&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter months&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))</span> <span class="p">,</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Winter off-peak hours (c€/kWh)&#39;</span><span class="p">]</span>
+
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;TVA load&#39;</span><span class="p">])</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">+=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;CSPE (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span>
+        <span class="n">prices_hour_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Hour type&#39;</span><span class="p">])</span>
+        <span class="n">prices_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Price&#39;</span><span class="p">])</span>
+
+        <span class="n">fixed_premium</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Fixed premium (€/kW)&#39;</span><span class="p">])</span>
+        <span class="n">Overrun</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Power overrun (€/kW)&#39;</span><span class="p">])</span>
+        <span class="n">Selling_price</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Selling base price (c€/kWh)&#39;</span><span class="p">],</span><span class="nb">len</span><span class="p">(</span><span class="n">datetime_data</span><span class="p">)))</span>
+        <span class="n">Selling_price</span><span class="p">[</span><span class="n">i</span><span class="p">][(</span><span class="n">prices</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">))</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Selling peak hours&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)))]</span><span class="o">=</span><span class="n">grid_price</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;Selling peak price (c€/kWh)&#39;</span><span class="p">]</span>
+        <span class="n">Selling_price</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">Selling_price</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span>
+        
+        <span class="c1">#Converting into Numpy</span>
+    <span class="n">fixed_premium</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">fixed_premium</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">Overrun</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Overrun</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">Selling_price</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Selling_price</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">prices_num</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">prices_num</span><span class="p">))</span>
+    <span class="n">prices_hour_type</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">prices_hour_type</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">([</span><span class="n">prices_hour_type</span><span class="p">,</span><span class="n">prices_num</span><span class="p">,</span><span class="n">fixed_premium</span><span class="p">,</span><span class="n">Overrun</span><span class="p">,</span><span class="n">Selling_price</span><span class="p">])</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_timeseries_interpolation</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">series_datetime</span><span class="p">,</span><span class="n">series_yvalue</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Interpolate a time series to match a target datetime grid.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        datetime_model (array_like): Target datetime array (numeric or float representation) for interpolation.</span>
+<span class="sd">        series_datetime (array_like): Original datetime array corresponding to the input series_yvalue.</span>
+<span class="sd">        series_yvalue (array_like): Original series values to interpolate.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Interpolated series aligned with datetime_model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">series_datetime</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">series_yvalue</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)))</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">y_values</span><span class="p">)</span>
+
+
+
+
+<span class="k">def</span> <span class="nf">_build_production_characteristics</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build production units characteristics arrays from raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts and aggregates numerical characteristics of</span>
+<span class="sd">    photovoltaic (PV) and wind turbine (WT) production units from the input data.</span>
+<span class="sd">    It combines both technologies into unified numpy arrays used by the model.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            at least the sheets &#39;PV_production_specs&#39; and &#39;WT_production_specs&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - characteristics_num (np.ndarray): 2D array of numerical characteristics</span>
+<span class="sd">              for all production units (PV + WT).</span>
+<span class="sd">            - ids (np.ndarray): Array of unique identifiers for each production unit.</span>
+<span class="sd">            - names (np.ndarray): Array of characteristic names.   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Capital unit cost (€)&#39;</span><span class="p">,</span><span class="s1">&#39;Operational unit cost (€/yrs)&#39;</span><span class="p">,</span><span class="s1">&#39;Lifetime (years)&#39;</span><span class="p">,</span><span class="s1">&#39;eqCO2 Emissions (gCO2/kWh)&#39;</span><span class="p">,</span><span class="s1">&#39;EROI&#39;</span><span class="p">]</span>
+
+    <span class="n">PV_specs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;PV_production_specs&quot;</span><span class="p">][</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">WT_specs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;WT_production_specs&quot;</span><span class="p">][</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="n">characteristics_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">((</span><span class="n">PV_specs</span><span class="p">,</span> <span class="n">WT_specs</span><span class="p">))</span>
+    
+    <span class="n">capacities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PV_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Capacity&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;WT_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Capacity&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)))</span>
+    <span class="n">groups_ID</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PV_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Surface group&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">),</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;WT_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Surface group&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)))</span>
+    <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">groups_ID</span><span class="o">==</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">groups_ID</span><span class="p">)]</span>  
+
+    <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;PV_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">),</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;WT_production_specs&quot;</span><span class="p">][</span><span class="s2">&quot;Id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">characteristics_num</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">capacities</span><span class="p">,</span> <span class="n">groups</span>
+
+<span class="k">def</span> <span class="nf">_compute_current_production</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">,</span> <span class="n">timezone</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute interpolated current production time series.</span>
+<span class="sd">    </span>
+<span class="sd">    This function interpolates the measured or provided current production</span>
+<span class="sd">    onto the model time grid and ensures non-negative values.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;TimeSeries&#39; sheet.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Target time index for the model.</span>
+<span class="sd">        timezone (str): Timezone used to localize datetime values.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Interpolated current production time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">series_datetime</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Datetime&quot;</span><span class="p">],</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y %H:%M&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span><span class="n">timezone</span><span class="p">,</span><span class="n">nonexistent</span><span class="o">=</span><span class="s2">&quot;shift_forward&quot;</span><span class="p">,</span><span class="n">ambiguous</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">prod</span> <span class="o">=</span> <span class="n">_timeseries_interpolation</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">series_datetime</span><span class="p">,</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Current_production (W)&quot;</span><span class="p">])</span>
+    <span class="n">prod</span><span class="p">[</span><span class="n">prod</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">prod</span>
+
+<span class="k">def</span> <span class="nf">_compute_production_manual</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute production time series from user-defined unit productions.</span>
+<span class="sd">    </span>
+<span class="sd">    This function reads production time series directly provided by the user</span>
+<span class="sd">    and interpolates them onto the model time grid.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Unit_productions&#39; sheet.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Target time index for the model.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - unit_prods (np.ndarray): 2D array of interpolated unit productions.</span>
+<span class="sd">            - datetime_prods (pandas.Series): Original datetime index of input data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Unit_productions&quot;</span><span class="p">]</span>
+    <span class="n">unit_prods</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;Datetime&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="n">datetime_prods</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;Datetime&quot;</span><span class="p">],</span><span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y %H:%M&quot;</span><span class="p">)</span>
+
+    <span class="n">unit_prods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_timeseries_interpolation</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">datetime_prods</span><span class="p">,</span><span class="n">unit_prods</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">unit_prods</span><span class="p">))</span> <span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">unit_prods</span>
+
+<span class="k">def</span> <span class="nf">_compute_production_automatic</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">,</span> <span class="n">MeteoData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute production time series using physical models for PV and wind.</span>
+<span class="sd">    </span>
+<span class="sd">    This function generates production profiles based on meteorological data,</span>
+<span class="sd">    either provided manually or retrieved automatically. It applies PV and wind</span>
+<span class="sd">    models to compute unit production.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">        site (SiteData): Site information including location and timezone.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Target time index.</span>
+<span class="sd">        meteo_mode (str): Meteorological data mode (&#39;manual&#39; or &#39;automatic&#39;).</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple:</span>
+<span class="sd">            - unit_prods (np.ndarray): 2D array of production time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="c1"># --- PV ---</span>
+    <span class="n">PV_specs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;PV_production_specs&quot;</span><span class="p">]</span>
+
+    <span class="n">PV_TempParam_default</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">3.47</span><span class="p">,</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.0594</span><span class="p">,</span><span class="s1">&#39;deltaT&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span> <span class="c1">#SAPM coeffs</span>
+    <span class="n">PV_FixModMount</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;Fixed&quot;</span><span class="p">,</span><span class="s2">&quot;surface_tilt&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Tilt (°)&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="s2">&quot;surface_azimuth&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Azimuth (°)&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="s2">&quot;racking_model&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Mounting&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">PV_specs</span><span class="p">))]</span>
+    <span class="n">PV_arrayParam</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;surface_type&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Surface type&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="s2">&quot;module_type&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Module type&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="s2">&quot;modules_per_string&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Modules per string&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span><span class="s2">&quot;strings&quot;</span><span class="p">:</span><span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Strings&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]}</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">PV_specs</span><span class="p">))]</span>
+    <span class="n">LossesParam_default</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;soiling&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span><span class="s2">&quot;shading&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span><span class="s2">&quot;snow&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="s2">&quot;mismatch&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span><span class="s2">&quot;wiring&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span><span class="s2">&quot;connections&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span><span class="s2">&quot;lid&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span><span class="s2">&quot;nameplate_rating&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span><span class="s2">&quot;age&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span><span class="s2">&quot;availability&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>   
+
+    <span class="n">PV_meteo</span> <span class="o">=</span> <span class="n">MeteoData</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,[</span><span class="s1">&#39;ghi&#39;</span><span class="p">,</span><span class="s1">&#39;temp_air&#39;</span><span class="p">,</span><span class="s1">&#39;wind_speed&#39;</span><span class="p">]]</span>
+    <span class="n">Wind_meteo</span> <span class="o">=</span> <span class="n">MeteoData</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,[</span><span class="s1">&#39;wind_speed&#39;</span><span class="p">,</span><span class="s1">&#39;temperature&#39;</span><span class="p">,</span><span class="s1">&#39;pressure&#39;</span><span class="p">]]</span>
+
+    <span class="n">prods_U_PV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">EPV</span><span class="o">.</span><span class="n">pvmodel</span><span class="p">(</span><span class="n">site</span><span class="p">,</span> <span class="n">PV_meteo</span><span class="p">,</span> <span class="n">PV_TempParam_default</span><span class="p">,</span> <span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Module&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">PV_specs</span><span class="p">[</span><span class="s1">&#39;Inverter&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">PV_FixModMount</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">PV_arrayParam</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="n">LossesParam_default</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="kc">False</span><span class="p">,</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">PV_specs</span><span class="p">))])</span>
+    <span class="n">prods_U_PV</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">prods_U_PV</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">prods_U_PV</span><span class="p">)</span>
+
+    <span class="c1"># --- WT ---</span>
+    <span class="n">WT_specs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;WT_production_specs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;Model&#39;</span><span class="p">,</span><span class="s1">&#39;Hub height (m)&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;Hub height (m)&#39;</span><span class="p">:</span><span class="s1">&#39;hub_height&#39;</span><span class="p">,</span><span class="s1">&#39;Model&#39;</span><span class="p">:</span><span class="s1">&#39;turbine_type&#39;</span><span class="p">})</span>
+    <span class="n">WT_prod</span> <span class="o">=</span> <span class="p">[</span><span class="n">EWi</span><span class="o">.</span><span class="n">default_wind_turbines</span><span class="p">(</span><span class="n">WT_specs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">WT_specs</span><span class="p">))]</span>
+
+    <span class="n">Terrain_type</span> <span class="o">=</span>  <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Terrain type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Roughness_length</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;off-shore&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.005</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;no vegetation, no obstacles&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.005</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;off-shore&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.03</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;flat terrain, grass, isloated obstacles&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.1</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;low crops, occasional obstacles&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.25</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;high crops, scattered obstacles&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">0.5</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;parkland, bushes, numerous obstacles&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;regular large obstacles (suburbs, forest)&#39;</span> <span class="k">else</span> <span class="p">(</span><span class="mf">2.5</span> <span class="k">if</span> <span class="n">Terrain_type</span><span class="o">==</span><span class="s1">&#39;city centre&#39;</span> <span class="k">else</span> <span class="mf">0.5</span><span class="p">))))))))</span>
+    <span class="n">Wind_meteo</span><span class="p">[(</span><span class="s1">&#39;roughness_length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Roughness_length</span>
+
+    <span class="n">prods_U_WT</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">EWi</span><span class="o">.</span><span class="n">windmodel</span><span class="p">(</span><span class="n">weather</span><span class="o">=</span><span class="n">Wind_meteo</span><span class="p">,</span> <span class="n">MyTurbineDict</span><span class="o">=</span><span class="n">WT_prod</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">WT_prod</span><span class="p">))])</span>
+
+    <span class="c1"># concat</span>
+    <span class="n">unit_prods</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">prods_U_PV</span><span class="p">,</span> <span class="n">prods_U_WT</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">unit_prods</span>
+
+<span class="k">def</span> <span class="nf">_parse_site</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse site geographical and timezone information.</span>
+
+<span class="sd">    This function extracts latitude, longitude, and altitude from the input</span>
+<span class="sd">    data and determines the associated timezone.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Environment&#39; sheet.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        SiteData: Dataclass containing site information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lat</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Latitude (°)&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">lon</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Longitude (°)&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">alt</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Altitude (m)&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">tz</span> <span class="o">=</span> <span class="n">timezonefinder</span><span class="o">.</span><span class="n">TimezoneFinder</span><span class="p">()</span><span class="o">.</span><span class="n">certain_timezone_at</span><span class="p">(</span><span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span><span class="n">lng</span><span class="o">=</span><span class="n">lon</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">SiteData</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span><span class="n">longitude</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span><span class="n">altitude</span><span class="o">=</span><span class="n">alt</span><span class="p">,</span><span class="n">timezone</span><span class="o">=</span><span class="n">tz</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_output_config</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">node_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse output configuration data.</span>
+
+<span class="sd">    This function extracts preferences for the output from the user.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Outputs&#39; sheet.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        SiteData: Dataclass containing site information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">node_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Outputs&quot;</span><span class="p">][</span><span class="s2">&quot;File name&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">output_file_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s2">_node_</span><span class="si">{</span><span class="n">node_id</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">else</span>  <span class="p">:</span> 
+        <span class="n">output_file_name</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Outputs&quot;</span><span class="p">][</span><span class="s2">&quot;File name&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">export_type</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Outputs&quot;</span><span class="p">][</span><span class="s2">&quot;export type&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">export_charts</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Outputs&quot;</span><span class="p">][</span><span class="s2">&quot;export charts&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">PostProcessConfig</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="n">export_type</span><span class="p">,</span><span class="n">export_charts</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">site</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build the model datetime index and time-related parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    This function generates the simulation time grid based on input time series</span>
+<span class="sd">    and time resolution.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">        site (SiteData): Site information including timezone.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        TimeData: Dataclass containing:</span>
+<span class="sd">            - datetime (pandas.DatetimeIndex)</span>
+<span class="sd">            - time_resolution (float)</span>
+<span class="sd">            - duration_years (float)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">time_resolution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;time resolution (steps/h)&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">datetime_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;TimeSeries&#39;</span><span class="p">][</span><span class="s1">&#39;Datetime&#39;</span><span class="p">],</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y %H:%M&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="s1">&#39;1s&#39;</span><span class="p">)</span>
+    
+    <span class="n">datetime_model</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">datetime_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">datetime_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">freq</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mi">60</span><span class="o">/</span><span class="n">time_resolution</span><span class="p">)</span><span class="si">}</span><span class="s2">min&quot;</span><span class="p">,</span><span class="n">tz</span><span class="o">=</span><span class="n">site</span><span class="o">.</span><span class="n">timezone</span><span class="p">)</span>
+    <span class="n">duration_years</span> <span class="o">=</span> <span class="p">(</span><span class="n">datetime_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">datetime_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">365</span>
+    <span class="n">n_bits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">)</span>
+    <span class="n">n_days</span><span class="o">=</span><span class="n">n_bits</span><span class="o">/</span><span class="n">time_resolution</span><span class="o">/</span><span class="mi">24</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">TimeData</span><span class="p">(</span><span class="n">n_bits</span> <span class="o">=</span> <span class="n">n_bits</span><span class="p">,</span> <span class="n">n_days</span> <span class="o">=</span> <span class="n">n_days</span><span class="p">,</span> <span class="n">datetime</span><span class="o">=</span><span class="n">datetime_model</span><span class="p">,</span> <span class="n">time_resolution</span><span class="o">=</span><span class="n">time_resolution</span><span class="p">,</span> <span class="n">duration_years</span><span class="o">=</span><span class="n">duration_years</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_continuous_storage</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse storage technologies and characteristics (continuous model).</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts storage technology types and their numerical</span>
+<span class="sd">    characteristics, including derived power costs.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Storages&#39; sheet.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ContinuousStorageData: Dataclass containing storage technologies and characteristics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Storage model&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Energy cost (€/kWh)&quot;</span><span class="p">,</span><span class="s2">&quot;PCS cost (€/kW)&quot;</span><span class="p">,</span><span class="s2">&quot;BOP cost (€/kW)&quot;</span><span class="p">,</span><span class="s2">&quot;O&amp;M cost (€/kW-yr.)&quot;</span><span class="p">,</span><span class="s2">&quot;Round-trip efficiency&quot;</span><span class="p">,</span><span class="s2">&quot;Depth of discharge&quot;</span><span class="p">,</span><span class="s2">&quot;Emissions (gCO2eq/kWh)&quot;</span><span class="p">,</span><span class="s2">&quot;Lifetime (years)&quot;</span><span class="p">,</span><span class="s2">&quot;Cycle life&quot;</span><span class="p">,</span><span class="s2">&quot;Installation cost (€)&quot;</span><span class="p">,</span><span class="s2">&quot;ESOEI&quot;</span><span class="p">]</span>
+
+
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span> <span class="p">:</span>
+        <span class="n">Cost_power</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage continuous model&#39;</span><span class="p">][</span><span class="s1">&#39;PCS cost (€/kW)&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage continuous model&#39;</span><span class="p">][</span><span class="s1">&#39;BOP cost (€/kW)&#39;</span><span class="p">]</span>
+        <span class="n">storage_characteristics</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage continuous model&#39;</span><span class="p">][</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">storage_techs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage continuous model&#39;</span><span class="p">][</span><span class="s1">&#39;Technology&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="n">storage_characteristics</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">storage_characteristics</span><span class="p">,</span><span class="n">Cost_power</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">n_store</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">storage_techs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">ContinuousStorageData</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">n_store</span><span class="o">=</span><span class="n">n_store</span><span class="p">,</span><span class="n">techs</span><span class="o">=</span><span class="n">storage_techs</span><span class="p">,</span> <span class="n">characteristics</span><span class="o">=</span><span class="n">storage_characteristics</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<span class="k">def</span> <span class="nf">_parse_discrete_storage</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse storage technologies and characteristics (discrete model).</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts storage technology types and their numerical</span>
+<span class="sd">    characteristics, including derived power costs.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Storages&#39; sheet.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        DiscreteStorageData: Dataclass containing storage technologies and characteristics.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Storage model&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Nominal energy (kWh)&#39;</span><span class="p">,</span><span class="s1">&#39;Charge power (kW)&#39;</span><span class="p">,</span><span class="s1">&#39;Discharge power (kW)&#39;</span><span class="p">,</span><span class="s1">&#39;Capital unit cost (€)&#39;</span><span class="p">,</span><span class="s1">&#39;O&amp;M cost (€/yrs)&#39;</span><span class="p">,</span><span class="s1">&#39;Round-trip efficiency&#39;</span><span class="p">,</span><span class="s1">&#39;Depth of discharge&#39;</span><span class="p">,</span><span class="s1">&#39;unit eqCO2 Emissions (gCO2)&#39;</span><span class="p">,</span><span class="s1">&#39;Lifetime (years)&#39;</span><span class="p">,</span><span class="s1">&#39;Cycle life&#39;</span><span class="p">,</span><span class="s1">&#39;ESOEI&#39;</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;discrete&quot;</span> <span class="p">:</span>
+        <span class="n">storage_ids</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage discrete model&#39;</span><span class="p">][</span><span class="s1">&#39;Id&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;U&#39;</span><span class="p">)</span>
+        <span class="n">storage_characteristics</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage discrete model&#39;</span><span class="p">][</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>        
+        <span class="n">storage_capacity</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Storage discrete model&#39;</span><span class="p">][</span><span class="s1">&#39;Capacity&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">n_store</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">storage_ids</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">DiscreteStorageData</span><span class="p">(</span><span class="n">model</span><span class="p">,</span><span class="n">n_store</span><span class="o">=</span><span class="n">n_store</span><span class="p">,</span><span class="n">techs</span><span class="o">=</span><span class="n">storage_ids</span><span class="p">,</span> <span class="n">characteristics</span><span class="o">=</span><span class="n">storage_characteristics</span><span class="p">,</span><span class="n">capacity</span><span class="o">=</span><span class="n">storage_capacity</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+<span class="k">def</span> <span class="nf">_parse_loads</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">,</span> <span class="n">timezone</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse and interpolate load time series.</span>
+<span class="sd">    </span>
+<span class="sd">    This function processes non-movable and movable loads and interpolates them</span>
+<span class="sd">    onto the model time grid.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Target time index.</span>
+<span class="sd">        timezone (str): Timezone for datetime localization.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        LoadData: Dataclass containing load time series.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Load&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">series_datetime</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Datetime&quot;</span><span class="p">],</span>
+        <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y %H:%M&quot;</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">tz_localize</span><span class="p">(</span>
+        <span class="n">timezone</span><span class="p">,</span>
+        <span class="n">nonexistent</span><span class="o">=</span><span class="s2">&quot;shift_forward&quot;</span><span class="p">,</span>
+        <span class="n">ambiguous</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;manual&quot;</span> <span class="p">:</span>
+        <span class="n">non_movable</span> <span class="o">=</span> <span class="n">_timeseries_interpolation</span><span class="p">(</span>
+            <span class="n">datetime_model</span><span class="p">,</span>
+            <span class="n">series_datetime</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Non-controllable load (kW)&quot;</span><span class="p">])</span>
+    
+        <span class="n">yearly</span> <span class="o">=</span> <span class="n">_timeseries_interpolation</span><span class="p">(</span>
+            <span class="n">datetime_model</span><span class="p">,</span>
+            <span class="n">series_datetime</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Yearly movable load (kW)&quot;</span><span class="p">]</span> <span class="p">)</span>
+    
+        <span class="n">daily</span> <span class="o">=</span> <span class="n">_timeseries_interpolation</span><span class="p">(</span>
+            <span class="n">datetime_model</span><span class="p">,</span>
+            <span class="n">series_datetime</span><span class="p">,</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;TimeSeries&quot;</span><span class="p">][</span><span class="s2">&quot;Daily movable load (kW)&quot;</span><span class="p">])</span>
+    <span class="k">else</span> <span class="p">:</span> 
+        <span class="kn">from</span> <span class="nn">ERMESS_scripts.load_model.src</span> <span class="kn">import</span> <span class="n">ERMESS_Load_model</span> <span class="k">as</span> <span class="n">Elo</span>
+        <span class="n">building_list</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Automatic load specs&quot;</span><span class="p">]</span>
+        <span class="n">load_flexibility</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Load flexibility&quot;</span><span class="p">]</span>
+        <span class="n">meteoData</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">meteoData</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">holidays</span><span class="p">,</span><span class="n">vacation_starts</span><span class="p">,</span><span class="n">vacation_ends</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Holidays&quot;</span><span class="p">][</span><span class="s2">&quot;holidays dates&quot;</span><span class="p">],</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Holidays&quot;</span><span class="p">][</span><span class="s2">&quot;vacation start dates&quot;</span><span class="p">],</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;Holidays&quot;</span><span class="p">][</span><span class="s2">&quot;vacation end dates&quot;</span><span class="p">]</span>
+        <span class="n">vacations</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">((</span><span class="n">vacation_starts</span><span class="p">,</span><span class="n">vacation_ends</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="n">non_movable</span><span class="p">,</span><span class="n">daily</span><span class="p">,</span><span class="n">yearly</span> <span class="o">=</span> <span class="n">Elo</span><span class="o">.</span><span class="n">generate_microgrid_load</span><span class="p">(</span><span class="n">building_list</span><span class="p">,</span><span class="n">load_flexibility</span><span class="p">,</span><span class="n">meteoData</span><span class="p">,</span><span class="n">holidays</span><span class="p">,</span><span class="n">vacations</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">LoadData</span><span class="p">(</span><span class="n">non_movable</span><span class="o">=</span><span class="n">non_movable</span><span class="p">,</span><span class="n">yearly_movable</span><span class="o">=</span><span class="n">yearly</span><span class="p">,</span><span class="n">daily_movable</span><span class="o">=</span><span class="n">daily</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_genset</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse diesel generator (genset) characteristics.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data containing</span>
+<span class="sd">            the &#39;Diesel generator&#39; sheet.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        GensetData: Dataclass containing generator parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dg</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Diesel generator&quot;</span><span class="p">]</span>
+    
+    <span class="n">fuel_cost</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">lifetime</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">unit_cost</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">maintenance_cost</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">emissions</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">eroi</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;Value&quot;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+    <span class="n">fuel_consumption</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dg</span><span class="p">[</span><span class="s2">&quot;DG fuel consumption&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">11</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">GensetData</span><span class="p">(</span><span class="n">fuel_cost</span><span class="p">,</span><span class="n">lifetime</span><span class="p">,</span><span class="n">unit_cost</span><span class="p">,</span><span class="n">maintenance_cost</span><span class="p">,</span><span class="n">fuel_consumption</span><span class="p">,</span><span class="n">emissions</span><span class="p">,</span><span class="n">eroi</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_grid</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse grid connection parameters and electricity pricing.</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts grid-related parameters and computes time-dependent</span>
+<span class="sd">    electricity prices.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Model time index.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        GridData: Dataclass containing grid characteristics and pricing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid_price</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Grid_prices&quot;</span><span class="p">]</span>
+    <span class="n">Contract_Ids</span> <span class="o">=</span> <span class="n">grid_price</span><span class="p">[</span><span class="s1">&#39;Contract_Id&#39;</span><span class="p">]</span>
+    <span class="p">(</span><span class="n">Grid_Fossil_fuel_ratio</span><span class="p">,</span><span class="n">grid_emissions</span><span class="p">,</span><span class="n">grid_ratio</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Main grid fossil fuel ratio&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Main grid emissions (gCO2/kWh)&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Main grid ratio primary over final energy&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="p">(</span><span class="n">prices_hour_type</span><span class="p">,</span><span class="n">prices_num</span><span class="p">,</span><span class="n">fixed_premium</span><span class="p">,</span><span class="n">overrun</span><span class="p">,</span><span class="n">selling_price</span><span class="p">)</span> <span class="o">=</span> <span class="n">compute_grid_prices</span><span class="p">(</span><span class="n">datetime_model</span><span class="p">,</span> <span class="n">grid_price</span><span class="p">)</span>
+    <span class="n">n_contracts</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Contract_Ids</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">GridData</span><span class="p">(</span><span class="n">n_contracts</span> <span class="o">=</span> <span class="n">n_contracts</span><span class="p">,</span>
+                        <span class="n">fossil_fuel_ratio</span><span class="o">=</span><span class="n">Grid_Fossil_fuel_ratio</span><span class="p">,</span>
+                        <span class="n">energy_ratio</span><span class="o">=</span><span class="n">grid_ratio</span><span class="p">,</span>
+                        <span class="n">CO2eq_emissions</span><span class="o">=</span><span class="n">grid_emissions</span><span class="p">,</span>
+                        <span class="n">price_hour_type</span><span class="o">=</span><span class="n">prices_hour_type</span><span class="p">,</span>
+                        <span class="n">prices</span><span class="o">=</span><span class="n">prices_num</span><span class="p">,</span>
+                        <span class="n">fixed_premium</span><span class="o">=</span> <span class="n">fixed_premium</span><span class="p">,</span>
+                        <span class="n">Overrun</span><span class="o">=</span> <span class="n">overrun</span><span class="p">,</span>
+                        <span class="n">Selling_price</span><span class="o">=</span> <span class="n">selling_price</span><span class="p">,</span>
+                        <span class="n">Contract_Ids</span><span class="o">=</span> <span class="n">Contract_Ids</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_meteo</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">siteData</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse and compute meteo data.</span>
+<span class="sd">    </span>
+<span class="sd">    This function handles both manual and automatic production modes.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        MeteoData: Dataclass containing all meteo information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">meteo_mode</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Meteo&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="n">meteo_mode</span> <span class="o">==</span> <span class="s2">&quot;manual&quot;</span><span class="p">:</span>
+
+        <span class="n">Meteodata</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Meteo&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="p">[</span><span class="s1">&#39;GHI (W/m²)&#39;</span><span class="p">,</span> <span class="s1">&#39;DNI (W/m²)&#39;</span><span class="p">,</span> <span class="s1">&#39;DHI (W/m²)&#39;</span><span class="p">,</span><span class="s1">&#39;Air temperature (°C)&#39;</span><span class="p">,</span> <span class="s1">&#39;Wind speed (m/s)&#39;</span>
+        <span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;GHI (W/m²)&#39;</span><span class="p">:</span> <span class="s1">&#39;ghi&#39;</span><span class="p">,</span><span class="s1">&#39;DNI (W/m²)&#39;</span><span class="p">:</span> <span class="s1">&#39;dni&#39;</span><span class="p">,</span><span class="s1">&#39;DHI (W/m²)&#39;</span><span class="p">:</span> <span class="s1">&#39;dhi&#39;</span><span class="p">,</span><span class="s1">&#39;Air temperature (°C)&#39;</span><span class="p">:</span> <span class="s1">&#39;temp_air&#39;</span><span class="p">,</span><span class="s1">&#39;Wind speed (m/s)&#39;</span><span class="p">:</span> <span class="s1">&#39;wind_speed&#39;</span>
+        <span class="p">})</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">CDSAPI_key</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;CDSAPI key&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Meteodata</span> <span class="o">=</span> <span class="n">Eme</span><span class="o">.</span><span class="n">import_meteo</span><span class="p">(</span><span class="n">siteData</span><span class="o">.</span><span class="n">latitude</span><span class="p">,</span><span class="n">siteData</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span><span class="n">siteData</span><span class="o">.</span><span class="n">altitude</span><span class="p">,</span><span class="n">datetime_model</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">datetime_model</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="n">siteData</span><span class="o">.</span><span class="n">timezone</span><span class="p">,</span><span class="n">CDSAPI_key</span><span class="p">)</span>
+        
+    <span class="k">return</span><span class="p">(</span><span class="n">Meteodata</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_production</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">datetime_model</span><span class="p">,</span> <span class="n">MeteoData</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse and compute production data for all units.</span>
+<span class="sd">    </span>
+<span class="sd">    This function handles both manual and automatic production modes,</span>
+<span class="sd">    computes unit production, and assembles all production-related data.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">        site (SiteData): Site information.</span>
+<span class="sd">        datetime_model (pandas.DatetimeIndex): Model time index.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ProductionData: Dataclass containing all production information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">env</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">]</span>
+
+    <span class="n">production_mode</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;Production&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+ 
+
+    <span class="c1"># =========================</span>
+    <span class="c1"># 1. COMPUTE UNIT PRODUCTIONS</span>
+    <span class="c1"># =========================</span>
+
+    <span class="k">if</span> <span class="n">production_mode</span> <span class="o">==</span> <span class="s2">&quot;automatic&quot;</span><span class="p">:</span>
+
+        <span class="n">unit_prods</span> <span class="o">=</span> <span class="n">_compute_production_automatic</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">site</span><span class="p">,</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">MeteoData</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">production_mode</span> <span class="o">==</span> <span class="s2">&quot;manual&quot;</span><span class="p">:</span>
+
+        <span class="n">unit_prods</span> <span class="o">=</span> <span class="n">_compute_production_manual</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">datetime_model</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown production mode: </span><span class="si">{</span><span class="n">production_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># =========================</span>
+    <span class="c1"># 2. CHARACTERISTICS</span>
+    <span class="c1"># =========================</span>
+
+    <span class="n">characteristics_num</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">capacities</span><span class="p">,</span> <span class="n">groups</span> <span class="o">=</span> <span class="n">_build_production_characteristics</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="c1"># =========================</span>
+    <span class="c1"># 3. CURRENT PRODUCTION</span>
+    <span class="c1"># =========================</span>
+
+    <span class="n">current_prod</span> <span class="o">=</span> <span class="n">_compute_current_production</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">datetime_model</span><span class="p">,</span><span class="n">site</span><span class="o">.</span><span class="n">timezone</span><span class="p">)</span>
+
+    <span class="c1"># =========================</span>
+    <span class="c1"># 4. POST PROCESSING</span>
+    <span class="c1"># =========================</span>
+
+    <span class="n">volumes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">unit_prods</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">characteristics_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">characteristics_num</span><span class="p">,</span><span class="n">volumes</span><span class="p">))</span>
+
+    <span class="n">numbers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">characteristics_num</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">ProductionData</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="n">ids</span><span class="p">,</span><span class="n">characteristics_num</span><span class="o">=</span><span class="n">characteristics_num</span><span class="p">,</span><span class="n">capacities</span><span class="o">=</span><span class="n">capacities</span><span class="p">,</span><span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span><span class="n">current_prod</span><span class="o">=</span><span class="n">current_prod</span><span class="p">,</span><span class="n">unit_prods</span><span class="o">=</span><span class="n">unit_prods</span><span class="p">,</span><span class="n">numbers</span><span class="o">=</span><span class="n">numbers</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_constraint</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a constraint label into its associated ConstraintIdx enum.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value (str): Constraint label read from input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ConstraintIdx | None: Matching constraint enum value if found,</span>
+<span class="sd">        otherwise ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;Self-sufficiency&quot;</span><span class="p">:</span> <span class="n">ConstraintIdx</span><span class="o">.</span><span class="n">Self_sufficiency</span><span class="p">,</span>
+        <span class="s2">&quot;Self-consumption&quot;</span><span class="p">:</span> <span class="n">ConstraintIdx</span><span class="o">.</span><span class="n">Self_consumption</span><span class="p">,</span>
+        <span class="s2">&quot;REN fraction&quot;</span><span class="p">:</span> <span class="n">ConstraintIdx</span><span class="o">.</span><span class="n">REN_fraction</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_criterion</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert a criterion label into its associated CriterionIdx enum.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        value (str): Criterion label read from input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        CriterionIdx | None: Matching criterion enum value if found,</span>
+<span class="sd">        otherwise ``None``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;LCOE&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">LCOE</span><span class="p">,</span>
+        <span class="s2">&quot;Annual net benefits&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Annual_net_benefits</span><span class="p">,</span>
+        <span class="s2">&quot;NPV&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">NPV</span><span class="p">,</span>
+        <span class="s2">&quot;Self-sufficiency&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Self_sufficiency</span><span class="p">,</span>
+        <span class="s2">&quot;Self-consumption&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Self_consumption</span><span class="p">,</span>
+        <span class="s2">&quot;Autonomy&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Autonomy</span><span class="p">,</span>
+        <span class="s2">&quot;eqCO2 Emissions&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">EqCO2emissions</span><span class="p">,</span>
+        <span class="s2">&quot;fossil fuel consumption&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Fossil_fuel_consumption</span><span class="p">,</span>
+        <span class="s2">&quot;EROI&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">EROI</span><span class="p">,</span>
+        <span class="s2">&quot;Energy losses&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Energy_losses</span><span class="p">,</span>
+        <span class="s2">&quot;Maximum power from grid&quot;</span><span class="p">:</span> <span class="n">CriterionIdx</span><span class="o">.</span><span class="n">Max_power_from_grid</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_optimization</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse optimization configuration and constraints.</span>
+<span class="sd">    </span>
+<span class="sd">    This function converts user-defined optimization settings into numerical</span>
+<span class="sd">    parameters used by the model.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        OptimizationData: Dataclass containing optimization parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">constraint_str</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Constraint&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                
+    <span class="n">constraint_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Constraint level&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">criterion</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;Optimisation criterion&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="n">constraint_num</span> <span class="o">=</span> <span class="n">_parse_constraint</span><span class="p">(</span><span class="n">constraint_str</span><span class="p">)</span>
+    <span class="n">criterion_num</span> <span class="o">=</span> <span class="n">_parse_criterion</span><span class="p">(</span><span class="n">criterion</span><span class="p">)</span>
+            
+    <span class="n">type_optim</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Environment&#39;</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>   
+    
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">OptimizationData</span><span class="p">(</span><span class="n">constraint_num</span><span class="o">=</span><span class="n">constraint_num</span><span class="p">,</span><span class="n">constraint_level</span><span class="o">=</span><span class="n">constraint_level</span><span class="p">,</span><span class="n">criterion_num</span><span class="o">=</span><span class="n">criterion_num</span><span class="p">,</span><span class="n">type_optim</span><span class="o">=</span><span class="n">type_optim</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_hyperparameters</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse genetic algorithm hyperparameters.</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts initialization and evolution parameters, as well as</span>
+<span class="sd">    operator weights for the optimization process.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        HyperparametersData: Dataclass containing GA hyperparameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">r_cross_init</span><span class="p">,</span><span class="n">elitism_probability_init</span><span class="p">,</span><span class="n">cost_constraint_init</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters&#39;</span><span class="p">][</span><span class="s1">&#39;Initialisation values&#39;</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">7</span><span class="p">])]</span>
+    <span class="n">n_iter_init</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters&#39;</span><span class="p">][</span><span class="s1">&#39;Initialisation values&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">r_cross</span><span class="p">,</span><span class="n">elitism_probability</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters&#39;</span><span class="p">][</span><span class="s1">&#39;Evolution values&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">n_iter</span><span class="p">,</span><span class="n">nb_ere</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span><span class="n">n_nodes</span><span class="p">,</span><span class="n">n_core</span><span class="p">,</span><span class="n">cost_constraint</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters&#39;</span><span class="p">][</span><span class="s1">&#39;Evolution values&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">:</span><span class="mi">8</span><span class="p">])</span>
+    
+    <span class="n">hyperparameters_operators_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters&#39;</span><span class="p">][[</span><span class="s1">&#39;Contract&#39;</span><span class="p">,</span><span class="s1">&#39;Production&#39;</span><span class="p">,</span><span class="s1">&#39;Storage volume&#39;</span><span class="p">,</span><span class="s1">&#39;Storage_global&#39;</span><span class="p">,</span><span class="s1">&#39;Storage_power&#39;</span><span class="p">,</span><span class="s1">&#39;Storage_trades_consistency&#39;</span><span class="p">,</span><span class="s1">&#39;Storage_patterns&#39;</span><span class="p">,</span><span class="s1">&#39;Inter_storages&#39;</span><span class="p">,</span><span class="s1">&#39;Storage_mix&#39;</span><span class="p">,</span><span class="s1">&#39;Curve_smoothing&#39;</span><span class="p">,</span><span class="s1">&#39;Constraint_forcing&#39;</span><span class="p">,</span><span class="s1">&#39;Interdaily_consistency&#39;</span><span class="p">,</span><span class="s1">&#39;DSM_trades_consistency&#39;</span><span class="p">,</span><span class="s1">&#39;DSM_noise&#39;</span><span class="p">]])</span>        
+                    
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">HyperparametersData</span><span class="p">(</span><span class="n">n_iter</span><span class="o">=</span><span class="n">n_iter</span><span class="p">,</span><span class="n">n_iter_init</span><span class="o">=</span><span class="n">n_iter_init</span><span class="p">,</span><span class="n">elitism_probability_init</span><span class="o">=</span><span class="n">elitism_probability_init</span><span class="p">,</span><span class="n">nb_ere</span><span class="o">=</span><span class="n">nb_ere</span><span class="p">,</span><span class="n">n_pop</span><span class="o">=</span><span class="n">n_pop</span><span class="p">,</span><span class="n">r_cross</span><span class="o">=</span><span class="n">r_cross</span><span class="p">,</span><span class="n">r_cross_init</span><span class="o">=</span><span class="n">r_cross_init</span><span class="p">,</span><span class="n">n_nodes</span><span class="o">=</span><span class="n">n_nodes</span><span class="p">,</span><span class="n">n_core</span><span class="o">=</span><span class="n">n_core</span><span class="p">,</span><span class="n">cost_constraint</span><span class="o">=</span><span class="n">cost_constraint</span><span class="p">,</span><span class="n">elitism_probability</span><span class="o">=</span><span class="n">elitism_probability</span><span class="p">,</span><span class="n">operators_num</span><span class="o">=</span><span class="n">hyperparameters_operators_num</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_hyperparametersPro</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse advanced (professional mode) hyperparameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        HyperparametersProData: Dataclass containing advanced parameters.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">r_cross_pro</span><span class="p">,</span><span class="n">elitism_probability</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters_pro&#39;</span><span class="p">][</span><span class="s1">&#39;Evolution values&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">n_iter_pro</span><span class="p">,</span><span class="n">n_pop_pro</span><span class="p">,</span><span class="n">cost_constraint_pro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters_pro&#39;</span><span class="p">][</span><span class="s1">&#39;Evolution values&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">])</span>
+    
+    <span class="n">hyperparameters_operators_num_pro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Hyperparameters_pro&#39;</span><span class="p">][[</span><span class="s1">&#39;Contract&#39;</span><span class="p">,</span><span class="s1">&#39;Production&#39;</span><span class="p">,</span><span class="s1">&#39;Strategy&#39;</span><span class="p">,</span><span class="s1">&#39;Discharge order&#39;</span><span class="p">,</span><span class="s1">&#39;Energy use&#39;</span><span class="p">,</span><span class="s1">&#39;Overlap&#39;</span><span class="p">,</span><span class="s1">&#39;DSM minimum levels&#39;</span><span class="p">,</span><span class="s1">&#39;DG control&#39;</span><span class="p">,</span><span class="s1">&#39;storages capacity&#39;</span><span class="p">,</span><span class="s1">&#39;storages power&#39;</span><span class="p">,</span><span class="s1">&#39;Initial SOC&#39;</span><span class="p">]])</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">HyperparametersProData</span><span class="p">(</span><span class="n">r_cross</span> <span class="o">=</span> <span class="n">r_cross_pro</span> <span class="p">,</span> <span class="n">n_pop</span> <span class="o">=</span> <span class="n">n_pop_pro</span> <span class="p">,</span> <span class="n">n_iter</span> <span class="o">=</span> <span class="n">n_iter_pro</span> <span class="p">,</span><span class="n">cost_constraint</span><span class="o">=</span><span class="n">cost_constraint_pro</span><span class="p">,</span><span class="n">elitism_probability</span><span class="o">=</span><span class="n">elitism_probability</span><span class="p">,</span><span class="n">operators_num</span><span class="o">=</span><span class="n">hyperparameters_operators_num_pro</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_dispatching</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse dispatching strategy and control parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    This function extracts user-defined dispatching rules such as storage</span>
+<span class="sd">    discharge order, DSM constraints, and generator control.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        DispatchingData: Dataclass containing dispatching configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">defined_items</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;User-Defined&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Yes&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="s1">&#39;Storages management&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="p">:</span>
+        <span class="n">Discharge_order</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Discharge order&#39;</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)[</span><span class="o">~</span><span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Storages&#39;</span><span class="p">]))])</span><span class="o">-</span><span class="mi">1</span> 
+        <span class="n">Intern_overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Overlap levels (%)&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="n">Extern_overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;DG/grid overlap levels (%)&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">9</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="n">Overlaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">row_stack</span><span class="p">((</span><span class="n">Intern_overlap</span><span class="p">,</span><span class="n">Extern_overlap</span><span class="p">))</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">Discharge_order</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">Overlaps</span> <span class="o">=</span> <span class="kc">None</span>   
+    
+    <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="p">:</span>
+        <span class="n">energy_use_repartition_DSM</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Repartition coefficients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Repartition coefficients&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Repartition coefficients&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;D_DSM minimum levels&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">24</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Y_DSM minimum levels&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:</span><span class="mi">12</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">energy_use_repartition_DSM</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="kc">None</span>
+        
+    <span class="k">if</span> <span class="s1">&#39;Genset control&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="p">:</span>
+        <span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Diesel generator&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Diesel generator&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;Dispatching&#39;</span><span class="p">][</span><span class="s1">&#39;Diesel generator&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">DG_strategy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">DG_min_production</span> <span class="o">=</span> <span class="kc">None</span>
+   
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">DispatchingData</span><span class="p">(</span><span class="n">defined_items</span><span class="p">,</span> <span class="n">Discharge_order</span><span class="p">,</span> <span class="n">Overlaps</span><span class="p">,</span> <span class="n">energy_use_repartition_DSM</span><span class="p">,</span> <span class="n">D_DSM_minimum_levels</span><span class="p">,</span> <span class="n">Y_DSM_minimum_levels</span><span class="p">,</span> <span class="n">DG_strategy</span><span class="p">,</span> <span class="n">DG_min_runtime</span><span class="p">,</span> <span class="n">DG_min_production</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_parse_ERMESSInputs</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">node_id</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse full ERMESS input data structure.</span>
+<span class="sd">    </span>
+<span class="sd">    This is the main parser that orchestrates all sub-parsers to build</span>
+<span class="sd">    a complete ERMESSInputs object from raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    It handles:</span>
+<span class="sd">    - Site and time data</span>
+<span class="sd">    - Loads, storage, and production</span>
+<span class="sd">    - Grid or genset configuration</span>
+<span class="sd">    - Optimization and hyperparameters</span>
+<span class="sd">    - Optional professional mode features</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        data (dict[str, pandas.DataFrame]): Raw input data.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        ERMESSInputs: Fully structured input object for the optimization model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">siteData</span> <span class="o">=</span> <span class="n">_parse_site</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">TimeData</span> <span class="o">=</span> <span class="n">_parse_datetime</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">siteData</span><span class="p">)</span>
+    <span class="n">continu_storageData</span> <span class="o">=</span> <span class="n">_parse_continuous_storage</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">discrete_storageData</span> <span class="o">=</span> <span class="n">_parse_discrete_storage</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+    <span class="n">meteoData</span> <span class="o">=</span> <span class="n">_parse_meteo</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">siteData</span><span class="p">,</span> <span class="n">TimeData</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+    
+    <span class="n">productionData</span> <span class="o">=</span> <span class="n">_parse_production</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">siteData</span><span class="p">,</span> <span class="n">TimeData</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">)</span>
+    <span class="n">loadsData</span> <span class="o">=</span> <span class="n">_parse_loads</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TimeData</span><span class="o">.</span><span class="n">datetime</span><span class="p">,</span> <span class="n">siteData</span><span class="o">.</span><span class="n">timezone</span><span class="p">,</span> <span class="n">meteoData</span><span class="p">,</span> <span class="n">TimeData</span><span class="o">.</span><span class="n">time_resolution</span><span class="p">)</span>
+    
+    <span class="n">optimizationData</span> <span class="o">=</span> <span class="n">_parse_optimization</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">postProcessConfigData</span> <span class="o">=</span> <span class="n">_parse_output_config</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="n">node_id</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">optimizationData</span><span class="o">.</span><span class="n">type_optim</span><span class="o">==</span><span class="s1">&#39;pro&#39;</span><span class="p">:</span>
+        <span class="n">hyperparametersProData</span> <span class="o">=</span> <span class="n">_parse_hyperparametersPro</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">dispatchingData</span> <span class="o">=</span> <span class="n">_parse_dispatching</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">hyperparametersData</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">hyperparametersProData</span> <span class="o">=</span> <span class="n">_parse_hyperparametersPro</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">dispatchingData</span> <span class="o">=</span> <span class="n">_parse_dispatching</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">hyperparametersData</span> <span class="o">=</span> <span class="n">_parse_hyperparameters</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Connection&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tracking</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;Environment&quot;</span><span class="p">][</span><span class="s2">&quot;Tracking&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">connection</span> <span class="o">==</span> <span class="s2">&quot;On-grid&quot;</span><span class="p">:</span>
+        <span class="n">gridData</span> <span class="o">=</span> <span class="n">_parse_grid</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">TimeData</span><span class="o">.</span><span class="n">datetime</span><span class="p">)</span>
+        <span class="n">gensetData</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">elif</span> <span class="n">connection</span> <span class="o">==</span> <span class="s2">&quot;Off-grid&quot;</span><span class="p">:</span>
+        <span class="n">gensetData</span> <span class="o">=</span> <span class="n">_parse_genset</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">gridData</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown connection type: </span><span class="si">{</span><span class="n">connection</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Dcl</span><span class="o">.</span><span class="n">ERMESSInputs</span><span class="p">(</span>
+        <span class="n">time</span><span class="o">=</span> <span class="n">TimeData</span><span class="p">,</span>
+        <span class="n">production</span><span class="o">=</span> <span class="n">productionData</span><span class="p">,</span>
+        <span class="n">continu_storage</span><span class="o">=</span> <span class="n">continu_storageData</span><span class="p">,</span>
+        <span class="n">discrete_storage</span><span class="o">=</span> <span class="n">discrete_storageData</span><span class="p">,</span>
+        <span class="n">load</span><span class="o">=</span> <span class="n">loadsData</span><span class="p">,</span>
+        <span class="n">grid</span><span class="o">=</span> <span class="n">gridData</span><span class="p">,</span>
+        <span class="n">genset</span><span class="o">=</span> <span class="n">gensetData</span><span class="p">,</span>
+        <span class="n">optimization</span><span class="o">=</span> <span class="n">optimizationData</span><span class="p">,</span>
+        <span class="n">hyperparameters</span><span class="o">=</span> <span class="n">hyperparametersData</span><span class="p">,</span>
+        <span class="n">hyperparameterspro</span><span class="o">=</span> <span class="n">hyperparametersProData</span><span class="p">,</span>
+        <span class="n">dispatching</span><span class="o">=</span> <span class="n">dispatchingData</span><span class="p">,</span>
+        <span class="n">connection</span><span class="o">=</span> <span class="n">connection</span><span class="p">,</span>
+        <span class="n">postProcessConfig</span> <span class="o">=</span> <span class="n">postProcessConfigData</span><span class="p">,</span>
+        <span class="n">tracking</span><span class="o">=</span> <span class="n">tracking</span>
+    <span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

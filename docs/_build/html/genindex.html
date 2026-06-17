@@ -1,0 +1,1672 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#"><link rel="search" title="Search" href="search.html">
+        <link rel="prefetch" href="_static/ermess_logo.png" as="image">
+
+    <!-- Generated with Sphinx 7.3.7 and Furo 2025.12.19 --><title>Index - ERMESS 1.0.0 documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=acfd86a5" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">ERMESS 1.0.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/ermess_logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">ERMESS 1.0.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="api/ERMESS_scripts.html">ERMESS_scripts package</a><input aria-label="Toggle navigation of ERMESS_scripts package" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.cost.html">ERMESS_scripts.cost package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.data.html">ERMESS_scripts.data package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.energy_management_model.html">ERMESS_scripts.energy_management_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.energy_production_model.html">ERMESS_scripts.energy_production_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.evolutionnary_core.html">ERMESS_scripts.evolutionnary_core package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.load_model.html">ERMESS_scripts.load_model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/ERMESS_scripts.reporting.html">ERMESS_scripts.reporting package</a></li>
+</ul>
+</li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#H"><strong>H</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#J"><strong>J</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#V"><strong>V</strong></a> | <a href="#W"><strong>W</strong></a> | <a href="#Y"><strong>Y</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.adaptation_hyperparameters_initialisation">adaptation_hyperparameters_initialisation() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.graphs_excel.add_excel_charts">add_excel_charts() (in module ERMESS_scripts.reporting.graphs_excel)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.altitude">altitude (ERMESS_scripts.data.data_classes.SiteData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Annual_net_benefits">Annual_net_benefits (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Annual_net_benefits_pro">Annual_net_benefits_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Annual_net_benefits_research">Annual_net_benefits_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.annualize">annualize() (in module ERMESS_scripts.reporting.ERMESS_KPI_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.anti_windup">anti_windup (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Autonomy">Autonomy (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Autonomy_pro">Autonomy_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Autonomy_research">Autonomy_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.base_load">base_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_storages_model.battery_charge">battery_charge() (in module ERMESS_scripts.energy_management_model.ERMESS_storages_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_storages_model.battery_discharge">battery_discharge() (in module ERMESS_scripts.energy_management_model.ERMESS_storages_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.beta">beta (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.BOP_Cost">BOP_Cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.bouclages_old">bouclages_old() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_builder.build_environment">build_environment() (in module ERMESS_scripts.data.data_builder)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.build_numba_params">build_numba_params() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.build_results">build_results() (in module ERMESS_scripts.reporting.post_processing)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.capacities">capacities (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.capacity">capacity (ERMESS_scripts.data.data_classes.DiscreteStorageData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Capex">Capex (ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.characteristics">characteristics (ERMESS_scripts.data.data_classes.ContinuousStorageData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.characteristics">(ERMESS_scripts.data.data_classes.DiscreteStorageData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.characteristics_num">characteristics_num (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Charge_power">Charge_power (ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.check_bouclage">check_bouclage() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams.class_type">class_type (ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.class_type">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.CO2eq_emissions">CO2eq_emissions (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.combine_populations">combine_populations() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.combining_solutions">combining_solutions() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.compute_diversity_pro">compute_diversity_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.compute_economic_comparisons">compute_economic_comparisons() (in module ERMESS_scripts.reporting.post_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_parsers.compute_grid_prices">compute_grid_prices() (in module ERMESS_scripts.data.data_parsers)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.compute_KPI">compute_KPI() (in module ERMESS_scripts.reporting.ERMESS_KPI_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.compute_occupancy">compute_occupancy() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.connection">connection (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Constraint_forcing">Constraint_forcing (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.constraint_level">constraint_level (ERMESS_scripts.data.data_classes.OptimizationData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.constraint_num">constraint_num (ERMESS_scripts.data.data_classes.OptimizationData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx">ConstraintIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.continu_storage">continu_storage (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData">ContinuousStorageData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Contract">Contract (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Contract">(ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.contract">contract (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.contract">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Contract_Ids">Contract_Ids (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.convert_storage_configuration">convert_storage_configuration() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro.copy">copy() (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro method)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Non_JIT_Individual_res.copy">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Non_JIT_Individual_res method)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_DDSM_interdaily_patterns_operator">Copy_DDSM_interdaily_patterns_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_interdaily_patterns_operator">Copy_interdaily_patterns_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Copy_YDSM_interdaily_patterns_operator">Copy_YDSM_interdaily_patterns_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.cost_constraint">cost_constraint (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.cost_constraint">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.criterion_num">criterion_num (ERMESS_scripts.data.data_classes.OptimizationData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx">CriterionIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.crossover_reduit">crossover_reduit() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.crossover_reduit_pro">crossover_reduit_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.current_prod">current_prod (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Curve_smoothing">Curve_smoothing (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Cycle_life">Cycle_life (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.D_DSM">D_DSM (ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.D_DSM_minimum_levels">D_DSM_minimum_levels (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.daily_movable">daily_movable (ERMESS_scripts.data.data_classes.LoadData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.datetime">datetime (ERMESS_scripts.data.data_classes.TimeData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.default_wind_turbines">default_wind_turbines() (in module ERMESS_scripts.energy_production_model.ERMESS_Wind_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Defined_items">Defined_items (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx">DefinedItemsIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Depth_of_discharge">Depth_of_discharge (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.DG_control">DG_control (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_min_production">DG_min_production (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_min_runtime">DG_min_runtime (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.DG_strategy">DG_strategy (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.dhw_load">dhw_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_PV_model.dimensionnement_pv">dimensionnement_pv() (in module ERMESS_scripts.energy_production_model.ERMESS_PV_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Discharge_order">Discharge_order (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Discharge_order">(ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Discharge_power">Discharge_power (ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.discrete_storage">discrete_storage (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData">DiscreteStorageData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.dispatching">dispatching (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData">DispatchingData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Distribute_storage_roles_operator">Distribute_storage_roles_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.DSM">DSM (ERMESS_scripts.data.indices.DefinedItemsIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.DSM_levels">DSM_levels (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.DSM_noise">DSM_noise (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.DSM_trades_consistency">DSM_trades_consistency (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.duration_years">duration_years (ERMESS_scripts.data.data_classes.TimeData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.elitism_probability">elitism_probability (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.elitism_probability">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.elitism_probability_init">elitism_probability_init (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Emissions">Emissions (ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Emissions">(ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Energy_cost">Energy_cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Energy_losses">Energy_losses (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.energy_ratio">energy_ratio (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Energy_use">Energy_use (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.energy_use_coefficient">energy_use_coefficient (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.energy_use_repartition_DSM">energy_use_repartition_DSM (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.enforce_energy_consistency">enforce_energy_consistency() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.eqCO2_emissions_pro">eqCO2_emissions_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.eqCO2_emissions_research">eqCO2_emissions_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.EqCO2emissions">EqCO2emissions (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ere_evolutive_research_PARALLEL">ere_evolutive_research_PARALLEL() (in module ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.ERMESS_pro_PARALLEL">ERMESS_pro_PARALLEL() (in module ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing)</a>
+</li>
+        <li>
+    ERMESS_scripts
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.html#module-ERMESS_scripts">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.cost
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.cost.html#module-ERMESS_scripts.cost">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.cost.ERMESS_cost_functions
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.cost.html#module-ERMESS_scripts.cost.ERMESS_cost_functions">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.data_builder
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_builder">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.data_classes
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_classes">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.data_parsers
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_parsers">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.data_reader
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_reader">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.data_validation
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_validation">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.ERMESS_meteo
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.ERMESS_meteo">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.data.indices
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.indices">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_management_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_management_model.ERMESS_EMS_models
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_EMS_models">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_management_model.ERMESS_storages_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_storages_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_production_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_production_model.ERMESS_PV_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_PV_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.energy_production_model.ERMESS_Wind_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_Wind_model">module</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    ERMESS_scripts.evolutionnary_core
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_functions
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_functions_research
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_research">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.load_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.load_model.config_profiles
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.config_profiles">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.load_model.ERMESS_Load_model
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.ERMESS_Load_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.charts_config
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.charts_config">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.ERMESS_evaluation_operators
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_evaluation_operators">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.ERMESS_KPI_functions
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_KPI_functions">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.graphs
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.graphs_excel
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs_excel">module</a>
+</li>
+        </ul></li>
+        <li>
+    ERMESS_scripts.reporting.post_processing
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.post_processing">module</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs">ERMESSInputs (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.EROI">EROI (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.EROI">(ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.EROI">(ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.EROI_pro">EROI_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.EROI_research">EROI_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.ESOEI">ESOEI (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.EV_load">EV_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_pro">evolutionnary_algorithm_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm.evolutionnary_algorithm_research">evolutionnary_algorithm_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.export_charts">export_charts (ERMESS_scripts.data.data_classes.PostProcessConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.export_to_excel">export_to_excel() (in module ERMESS_scripts.reporting.post_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.export_type">export_type (ERMESS_scripts.data.data_classes.PostProcessConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx.Extern">Extern (ERMESS_scripts.data.indices.OverlapsCharIdx attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig.file_name">file_name (ERMESS_scripts.data.data_classes.PostProcessConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.find_constraint_levels">find_constraint_levels() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_pro">find_cost_function_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.find_cost_function_pro">(in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_research">find_cost_function_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.find_cost_function_research">(in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.fitness">fitness (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.fitness">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.fitness_list">fitness_list() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.fixed_premium">fixed_premium (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_constraint_operator">Force_constraint_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_DDSM_trades_consistency_operator">Force_DDSM_trades_consistency_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_storage_trade_consistency_operator">Force_storage_trade_consistency_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Force_YDSM_trades_consistency_operator">Force_YDSM_trades_consistency_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Fossil_fuel_consumption">Fossil_fuel_consumption (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Fossil_fuel_consumption_pro">Fossil_fuel_consumption_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Fossil_fuel_consumption_research">Fossil_fuel_consumption_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.fossil_fuel_ratio">fossil_fuel_ratio (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_CO2eq_emissions">fuel_CO2eq_emissions (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_consumption">fuel_consumption (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.fuel_cost">fuel_cost (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_ar1">generate_ar1() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_microgrid_load">generate_microgrid_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.generate_occupancy_and_activity">generate_occupancy_and_activity() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.genset">genset (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.Genset">Genset (ERMESS_scripts.data.indices.DefinedItemsIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData">GensetData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams">GensetParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy">GensetParamsDummy (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.charts_config.get_charts_config">get_charts_config() (in module ERMESS_scripts.reporting.charts_config)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams">GlobalParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.grid">grid (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData">GridData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams">GridParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy">GridParamsDummy (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.groups">groups (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="H" class="genindex-section">
+  <h2>H</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.hvac_load">hvac_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.hyperparameters">hyperparameters (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData">HyperparametersData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.hyperparameterspro">hyperparameterspro (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData">HyperparametersProData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.ids">ids (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.ERMESS_meteo.import_meteo">import_meteo() (in module ERMESS_scripts.data.ERMESS_meteo)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx">Indiv_Pro_StoreCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro">Individual_pro (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res">Individual_res (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.init_and_evolution_pro">init_and_evolution_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_high_res_population">init_high_res_population() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_low_res_population">init_low_res_population() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.init_pro_population">init_pro_population() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.initial_population_pro">initial_population_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.initial_population_research">initial_population_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.initial_population_research_PARALLEL">initial_population_research_PARALLEL() (in module ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Initial_SOC">Initial_SOC (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.Initialize_ERMESS_research">Initialize_ERMESS_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Installation_cost">Installation_cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Inter_storages">Inter_storages (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Interdaily_consistency">Interdaily_consistency (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx.Intern">Intern (ERMESS_scripts.data.indices.OverlapsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Inv_length">Inv_length (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Inv_magnitude">Inv_magnitude (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_holiday">is_holiday() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.is_vacation">is_vacation() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.it_load">it_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="J" class="genindex-section">
+  <h2>J</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.jitting_pop_pro">jitting_pop_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.jitting_pop_res">jitting_pop_res() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="K" class="genindex-section">
+  <h2>K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Kd">Kd (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Ki">Ki (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.Kp">Kp (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.latitude">latitude (ERMESS_scripts.data.data_classes.SiteData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.LCOE">LCOE (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.LCOE_pro">LCOE_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.LCOE_research">LCOE_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.energy_management_model.html#ERMESS_scripts.energy_management_model.ERMESS_EMS_models.LFE_CCE">LFE_CCE() (in module ERMESS_scripts.energy_management_model.ERMESS_EMS_models)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.lifetime">lifetime (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Lifetime">Lifetime (ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Lifetime">(ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.lighting_load">lighting_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.load">load (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_reader.load_excel">load_excel() (in module ERMESS_scripts.data.data_reader)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData">LoadData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.longitude">longitude (ERMESS_scripts.data.data_classes.SiteData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Losses_pro">Losses_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Losses_research">Losses_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.maintenance_cost">maintenance_cost (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Max_average">Max_average (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Max_deviation">Max_deviation (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Max_import_power_pro">Max_import_power_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Max_import_power_research">Max_import_power_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Max_power_from_grid">Max_power_from_grid (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Merge_opposite_storage_flows_operator">Merge_opposite_storage_flows_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Min_average">Min_average (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Min_deviation">Min_deviation (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx.Min_deviation">(ERMESS_scripts.data.indices.OperatorsProCharIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.model">model (ERMESS_scripts.data.data_classes.ContinuousStorageData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.model">(ERMESS_scripts.data.data_classes.DiscreteStorageData attribute)</a>
+</li>
+        </ul></li>
+        <li>
+    module
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.html#module-ERMESS_scripts">ERMESS_scripts</a>
+</li>
+          <li><a href="api/ERMESS_scripts.cost.html#module-ERMESS_scripts.cost">ERMESS_scripts.cost</a>
+</li>
+          <li><a href="api/ERMESS_scripts.cost.html#module-ERMESS_scripts.cost.ERMESS_cost_functions">ERMESS_scripts.cost.ERMESS_cost_functions</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data">ERMESS_scripts.data</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_builder">ERMESS_scripts.data.data_builder</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_classes">ERMESS_scripts.data.data_classes</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_parsers">ERMESS_scripts.data.data_parsers</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_reader">ERMESS_scripts.data.data_reader</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.data_validation">ERMESS_scripts.data.data_validation</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.ERMESS_meteo">ERMESS_scripts.data.ERMESS_meteo</a>
+</li>
+          <li><a href="api/ERMESS_scripts.data.html#module-ERMESS_scripts.data.indices">ERMESS_scripts.data.indices</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model">ERMESS_scripts.energy_management_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_EMS_models">ERMESS_scripts.energy_management_model.ERMESS_EMS_models</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_management_model.html#module-ERMESS_scripts.energy_management_model.ERMESS_storages_model">ERMESS_scripts.energy_management_model.ERMESS_storages_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model">ERMESS_scripts.energy_production_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_PV_model">ERMESS_scripts.energy_production_model.ERMESS_PV_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.energy_production_model.html#module-ERMESS_scripts.energy_production_model.ERMESS_Wind_model">ERMESS_scripts.energy_production_model.ERMESS_Wind_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core">ERMESS_scripts.evolutionnary_core</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm">ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_algorithm</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators">ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions">ERMESS_scripts.evolutionnary_core.ERMESS_functions</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro">ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_functions_research">ERMESS_scripts.evolutionnary_core.ERMESS_functions_research</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing">ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing</a>
+</li>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#module-ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation">ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation</a>
+</li>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model">ERMESS_scripts.load_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.config_profiles">ERMESS_scripts.load_model.config_profiles</a>
+</li>
+          <li><a href="api/ERMESS_scripts.load_model.html#module-ERMESS_scripts.load_model.ERMESS_Load_model">ERMESS_scripts.load_model.ERMESS_Load_model</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting">ERMESS_scripts.reporting</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.charts_config">ERMESS_scripts.reporting.charts_config</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_evaluation_operators">ERMESS_scripts.reporting.ERMESS_evaluation_operators</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.ERMESS_KPI_functions">ERMESS_scripts.reporting.ERMESS_KPI_functions</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs">ERMESS_scripts.reporting.graphs</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.graphs_excel">ERMESS_scripts.reporting.graphs_excel</a>
+</li>
+          <li><a href="api/ERMESS_scripts.reporting.html#module-ERMESS_scripts.reporting.post_processing">ERMESS_scripts.reporting.post_processing</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DDSM_levels_operator">Mutate_DDSM_levels_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DDSM_points_operator">Mutate_DDSM_points_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DG_min_production_operator">Mutate_DG_min_production_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DG_min_runtime_operator">Mutate_DG_min_runtime_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_DSM_storage_distribution_operator">Mutate_DSM_storage_distribution_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_EMS_Overlap_operator">Mutate_EMS_Overlap_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_initSOC_operator">Mutate_initSOC_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_production_capacity_operator">Mutate_production_capacity_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_production_capacity_operator_pro">Mutate_production_capacity_operator_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_dailypattern_operator">Mutate_storage_dailypattern_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_global_operator">Mutate_storage_global_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_points_operator">Mutate_storage_points_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_windows_noise_operator">Mutate_storage_windows_noise_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storage_windows_scaling_operator">Mutate_storage_windows_scaling_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_capacity_operator">Mutate_storages_capacity_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_inpower_operator">Mutate_storages_inpower_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_outpower_operator">Mutate_storages_outpower_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_units_operator_pro">Mutate_storages_units_operator_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_storages_units_operator_research">Mutate_storages_units_operator_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_YDSM_levels_operator">Mutate_YDSM_levels_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Mutate_YDSM_points_operator">Mutate_YDSM_points_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams">MutationParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.n_bits">n_bits (ERMESS_scripts.data.data_classes.TimeData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.n_contracts">n_contracts (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_core">n_core (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.n_days">n_days (ERMESS_scripts.data.data_classes.TimeData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_iter">n_iter (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.n_iter">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_iter_init">n_iter_init (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_nodes">n_nodes (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.n_pop">n_pop (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.n_pop">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.n_store">n_store (ERMESS_scripts.data.data_classes.ContinuousStorageData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.n_store">(ERMESS_scripts.data.data_classes.DiscreteStorageData attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.nb_ere">nb_ere (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.non_JIT_bouclages">non_JIT_bouclages() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.Non_JIT_Environnement">Non_JIT_Environnement (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro">Non_JIT_Individual_pro (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Non_JIT_Individual_res">Non_JIT_Individual_res (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.NON_JIT_mutation_contraintes_pro">NON_JIT_mutation_contraintes_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.NON_JIT_mutation_contraintes_research">NON_JIT_mutation_contraintes_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.non_movable">non_movable (ERMESS_scripts.data.data_classes.LoadData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.NPV">NPV (ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.NPV_pro">NPV_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.NPV_research">NPV_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.numbers">numbers (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.OM_Cost">OM_Cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.operators_num">operators_num (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.operators_num">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx">OperatorsCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX">OperatorsOpeIdX (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx">OperatorsProCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx">OperatorsProOpeIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Opex">Opex (ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.optimization">optimization (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData">OptimizationData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.output_build_production">output_build_production() (in module ERMESS_scripts.reporting.post_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Overlap">Overlap (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Overlaps">Overlaps (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OverlapsCharIdx">OverlapsCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Overrun">Overrun (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing.parallel_fitness">parallel_fitness() (in module ERMESS_scripts.evolutionnary_core.ERMESS_parallel_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.PCS_Cost">PCS_Cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PID_correction">PID_correction() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig">PIDConfig (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.graphs.plot">plot() (in module ERMESS_scripts.reporting.graphs)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_D_DSM_min_levels">PMS_D_DSM_min_levels (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_DG_min_production">PMS_DG_min_production (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_DG_min_runtime">PMS_DG_min_runtime (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_discharge_order">PMS_discharge_order (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_strategy">PMS_strategy (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_taking_over">PMS_taking_over (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.PMS_Y_DSM_min_levels">PMS_Y_DSM_min_levels (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.post_processing.post_traitement">post_traitement() (in module ERMESS_scripts.reporting.post_processing)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.PostProcessConfig">PostProcessConfig (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.postProcessConfig">postProcessConfig (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Power_Cost">Power_Cost (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.prices">prices (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.prices_hour_type">prices_hour_type (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.pro_to_research">pro_to_research() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsCharIdx.Probability">Probability (ERMESS_scripts.data.indices.OperatorsCharIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProCharIdx.Probability">(ERMESS_scripts.data.indices.OperatorsProCharIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx">ProdCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.production">production (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Production">Production (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Production">(ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.production_set">production_set (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.production_set">(ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData">ProductionData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams">ProParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_PV_model.pvmodel">pvmodel() (in module ERMESS_scripts.energy_production_model.ERMESS_PV_model)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.r_cross">r_cross (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersProData.r_cross">(ERMESS_scripts.data.data_classes.HyperparametersProData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.HyperparametersData.r_cross_init">r_cross_init (ERMESS_scripts.data.data_classes.HyperparametersData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.RandomFactors">RandomFactors (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reallocate_storage_mix_points_operator">Reallocate_storage_mix_points_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.reduce_power_trading_operator">reduce_power_trading_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reduce_storage_power_operator">Reduce_storage_power_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Reduce_storage_volume_operator">Reduce_storage_volume_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.REN_fraction">REN_fraction (ERMESS_scripts.data.indices.ConstraintIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams">RENSystemsParams (class in ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx.Round_trip_efficiency">Round_trip_efficiency (ERMESS_scripts.data.indices.StorCharIdx attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.selection_tournament">selection_tournament() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.Self_consumption">Self_consumption (ERMESS_scripts.data.indices.ConstraintIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Self_consumption">(ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_consumption_pro">Self_consumption_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_consumption_research">Self_consumption_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ConstraintIdx.Self_sufficiency">Self_sufficiency (ERMESS_scripts.data.indices.ConstraintIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.CriterionIdx.Self_sufficiency">(ERMESS_scripts.data.indices.CriterionIdx attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_sufficiency_pro">Self_sufficiency_pro() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.cost.html#ERMESS_scripts.cost.ERMESS_cost_functions.Self_sufficiency_research">Self_sufficiency_research() (in module ERMESS_scripts.cost.ERMESS_cost_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GridData.Selling_price">Selling_price (ERMESS_scripts.data.data_classes.GridData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.separate_loads">separate_loads() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.load_model.html#ERMESS_scripts.load_model.ERMESS_Load_model.shared_load">shared_load() (in module ERMESS_scripts.load_model.ERMESS_Load_model)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData">SiteData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_DDSM_windows_operator">Smooth_DDSM_windows_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_interdaily_storage_timeseries_operator">Smooth_interdaily_storage_timeseries_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_storage_noise_operator">Smooth_storage_noise_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Smooth_YDSM_windows_operator">Smooth_YDSM_windows_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.SOC_init">SOC_init (ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.DefinedItemsIdx.Storage">Storage (ERMESS_scripts.data.indices.DefinedItemsIdx attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Storage_capacities">Storage_capacities (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.storage_charge_energy">storage_charge_energy() (in module ERMESS_scripts.reporting.ERMESS_KPI_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.reporting.html#ERMESS_scripts.reporting.ERMESS_KPI_functions.storage_discharge_energy">storage_discharge_energy() (in module ERMESS_scripts.reporting.ERMESS_KPI_functions)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_global">Storage_global (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_mix">Storage_mix (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_patterns">Storage_patterns (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_power">Storage_power (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Storage_powers">Storage_powers (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.storage_sum">storage_sum (ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_trades_consistency">Storage_trades_consistency (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.storage_TS">storage_TS (ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsOpeIdX.Storage_volume">Storage_volume (ERMESS_scripts.data.indices.OperatorsOpeIdX attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro.storages">storages (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.StorCharIdx">StorCharIdx (class in ERMESS_scripts.data.indices)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.OperatorsProOpeIdx.Strategy">Strategy (ERMESS_scripts.data.indices.OperatorsProOpeIdx attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.switch_contract_operator">switch_contract_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_dispatching_strategy_operator">Switch_dispatching_strategy_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_intragroup_productor_operator">Switch_intragroup_productor_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Switch_storages_order_operator">Switch_storages_order_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ContinuousStorageData.techs">techs (ERMESS_scripts.data.data_classes.ContinuousStorageData attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DiscreteStorageData.techs">(ERMESS_scripts.data.data_classes.DiscreteStorageData attribute)</a>
+</li>
+        </ul></li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.time">time (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData.time_resolution">time_resolution (ERMESS_scripts.data.data_classes.TimeData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.TimeData">TimeData (class in ERMESS_scripts.data.data_classes)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.SiteData.timezone">timezone (ERMESS_scripts.data.data_classes.SiteData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ERMESSInputs.tracking">tracking (ERMESS_scripts.data.data_classes.ERMESSInputs attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.trades">trades (ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Transfer_production_capacity_operator">Transfer_production_capacity_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Transfer_storage_flows_operator">Transfer_storage_flows_operator() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.OptimizationData.type_optim">type_optim (ERMESS_scripts.data.data_classes.OptimizationData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.u_max">u_max (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.u_min">u_min (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.GensetData.unit_cost">unit_cost (ERMESS_scripts.data.data_classes.GensetData attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.ProductionData.unit_prods">unit_prods (ERMESS_scripts.data.data_classes.ProductionData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.unjitting_pop_pro">unjitting_pop_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.unjitting_pop_res">unjitting_pop_res() (in module ERMESS_scripts.evolutionnary_core.ERMESS_functions_research)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators.Update_storage_powers_pro">Update_storage_powers_pro() (in module ERMESS_scripts.evolutionnary_core.ERMESS_evolutionnary_operators)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="V" class="genindex-section">
+  <h2>V</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.validate">validate() (ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx.Volume">Volume (ERMESS_scripts.data.indices.Indiv_Pro_StoreCharIdx attribute)</a>
+
+        <ul>
+          <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.indices.ProdCharIdx.Volume">(ERMESS_scripts.data.indices.ProdCharIdx attribute)</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="W" class="genindex-section">
+  <h2>W</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.energy_production_model.html#ERMESS_scripts.energy_production_model.ERMESS_Wind_model.windmodel">windmodel() (in module ERMESS_scripts.energy_production_model.ERMESS_Wind_model)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation.write_node_population">write_node_population() (in module ERMESS_scripts.evolutionnary_core.ERMESS_research_initialisation)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Y" class="genindex-section">
+  <h2>Y</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res.Y_DSM">Y_DSM (ERMESS_scripts.evolutionnary_core.ERMESS_functions_research.Individual_res attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.DispatchingData.Y_DSM_minimum_levels">Y_DSM_minimum_levels (ERMESS_scripts.data.data_classes.DispatchingData attribute)</a>
+</li>
+        <li><a href="api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_classes.LoadData.yearly_movable">yearly_movable (ERMESS_scripts.data.data_classes.LoadData attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, Josselin LE GAL LA SALLE
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=8d563738"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

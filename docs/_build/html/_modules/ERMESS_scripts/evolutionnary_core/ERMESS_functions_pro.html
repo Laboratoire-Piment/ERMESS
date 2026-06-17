@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Jun 10 11:33:54 2025</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">jit</span>
+<span class="kn">from</span> <span class="nn">numba.experimental</span> <span class="kn">import</span> <span class="n">jitclass</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">int64</span><span class="p">,</span> <span class="n">float64</span><span class="p">,</span> <span class="n">types</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.evolutionnary_core</span> <span class="kn">import</span> <span class="n">ERMESS_evolutionnary_operators</span> <span class="k">as</span> <span class="n">Eop</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="o">*</span>
+
+<div class="viewcode-block" id="PIDConfig">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">PIDConfig</span><span class="p">:</span>
+    <span class="n">Kp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">Ki</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span>
+    <span class="n">Kd</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">u_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">u_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">anti_windup</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span>
+
+<div class="viewcode-block" id="PIDConfig.validate">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PIDConfig.validate">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Kp</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Kp must be &gt;= 0&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ki</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Ki must be &gt;= 0&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">Kd</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Kd must be &gt;= 0&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_min</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">u_max</span><span class="p">,</span> <span class="s2">&quot;u_min must be &lt; u_max&quot;</span>
+        <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;beta must be in [0,1]&quot;</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Individual_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Individual_pro">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">([</span>
+           <span class="p">(</span><span class="s1">&#39;production_set&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+           <span class="p">(</span><span class="s1">&#39;contract&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;DG_strategy&#39;</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">string</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;discharge_order&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+           <span class="p">(</span><span class="s1">&#39;energy_use_coefficient&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;overlaps&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+           <span class="p">(</span><span class="s1">&#39;D_DSM_minimum_levels&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+           <span class="p">(</span><span class="s1">&#39;Y_DSM_minimum_levels&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+           <span class="p">(</span><span class="s1">&#39;DG_min_runtime&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;DG_min_production&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;storages&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+           <span class="p">(</span><span class="s1">&#39;fitness&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+           <span class="p">(</span><span class="s1">&#39;storage_discrete_set&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+           <span class="p">])</span>
+
+<span class="k">class</span> <span class="nc">Individual_pro</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class representing an individual result in the optimization process (Production side).</span>
+<span class="sd">    Targeted for Numba JIT compilation.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        production_set (numpy.ndarray): Set of production units.</span>
+<span class="sd">        contract (int): Contract ID.</span>
+<span class="sd">        PMS_strategy (str): Power Management System strategy.</span>
+<span class="sd">        PMS_discharge_order (numpy.ndarray): Order of discharge for PMS.</span>
+<span class="sd">        energy_use_repartition_DSM (float): Energy use repartition for DSM.</span>
+<span class="sd">        PMS_taking_over (numpy.ndarray): PMS taking over values.</span>
+<span class="sd">        PMS_D_DSM_min_levels (numpy.ndarray): Minimum levels for Daily DSM in PMS.</span>
+<span class="sd">        PMS_Y_DSM_min_levels (numpy.ndarray): Minimum levels for Yearly DSM in PMS.</span>
+<span class="sd">        PMS_DG_min_runtime (int): Minimum runtime for Diesel Generator in PMS.</span>
+<span class="sd">        PMS_DG_min_production (float): Minimum production for Diesel Generator in PMS.</span>
+<span class="sd">        storages (numpy.ndarray): Storage units.</span>
+<span class="sd">        fitness (float): Fitness score of the individual.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">production_set</span><span class="p">,</span><span class="n">contract</span><span class="p">,</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">overlaps</span><span class="p">,</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">storages</span><span class="p">,</span><span class="n">fitness</span><span class="p">,</span><span class="n">storage_discrete_set</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production_set</span> <span class="o">=</span> <span class="n">production_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contract</span> <span class="o">=</span> <span class="n">contract</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">DG_strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discharge_order</span> <span class="o">=</span> <span class="n">discharge_order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_use_coefficient</span> <span class="o">=</span> <span class="n">energy_use_coefficient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overlaps</span> <span class="o">=</span> <span class="n">overlaps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">D_DSM_minimum_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">Y_DSM_minimum_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">DG_min_runtime</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">DG_min_production</span>       
+        <span class="bp">self</span><span class="o">.</span><span class="n">storages</span> <span class="o">=</span> <span class="n">storages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">fitness</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">=</span> <span class="n">storage_discrete_set</span>
+    
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a copy of an object of class Individual_pro (JIT type)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            A JIT Individual PRO object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Individual_pro</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">production_set</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">contract</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">discharge_order</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">overlaps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_discrete_set</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="convert_storage_configuration">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.convert_storage_configuration">[docs]</a>
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">convert_storage_configuration</span><span class="p">(</span><span class="n">gene</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">):</span>
+    <span class="n">storages_SOCs_Init</span> <span class="o">=</span> <span class="n">gene</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_SOC_INIT</span><span class="p">]</span>
+    <span class="n">storages_volumes</span> <span class="o">=</span> <span class="n">gene</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">*</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">specs_storage</span><span class="p">[</span><span class="n">STOR_UNIFIED_ENERGY</span><span class="p">,:]</span>
+    <span class="n">storages_charge_powers</span> <span class="o">=</span> <span class="n">gene</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">*</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">specs_storage</span><span class="p">[</span><span class="n">STOR_UNIFIED_CHARGE_POWER</span><span class="p">,:]</span>
+    <span class="n">storages_discharge_powers</span> <span class="o">=</span> <span class="n">gene</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">*</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">specs_storage</span><span class="p">[</span><span class="n">STOR_UNIFIED_DISCHARGE_POWER</span><span class="p">,:]</span>
+    
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">storages_volumes</span><span class="p">,</span><span class="n">storages_charge_powers</span><span class="p">,</span><span class="n">storages_discharge_powers</span><span class="p">,</span><span class="n">storages_SOCs_Init</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span></div>
+
+                          
+<div class="viewcode-block" id="Non_JIT_Individual_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro">[docs]</a>
+<span class="k">class</span> <span class="nc">Non_JIT_Individual_pro</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class representing an individual result in the optimization process (Production side).</span>
+<span class="sd">    Non targeted for Numba JIT compilation.</span>
+<span class="sd">    </span>
+<span class="sd">    See &#39;Individual_pro&#39; for full attribute specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">production_set</span><span class="p">,</span><span class="n">contract</span><span class="p">,</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">overlaps</span><span class="p">,</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">storages</span><span class="p">,</span><span class="n">fitness</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production_set</span> <span class="o">=</span> <span class="n">production_set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contract</span> <span class="o">=</span> <span class="n">contract</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">DG_strategy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discharge_order</span> <span class="o">=</span> <span class="n">discharge_order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_use_coefficient</span> <span class="o">=</span> <span class="n">energy_use_coefficient</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overlaps</span> <span class="o">=</span> <span class="n">overlaps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">D_DSM_minimum_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">Y_DSM_minimum_levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">DG_min_runtime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">DG_min_production</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">storages</span> <span class="o">=</span> <span class="n">storages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitness</span> <span class="o">=</span> <span class="n">fitness</span>
+        
+<div class="viewcode-block" id="Non_JIT_Individual_pro.copy">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.Non_JIT_Individual_pro.copy">[docs]</a>
+    <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;        </span>
+<span class="sd">        Creates a copy of an object of class Individual_pro (non-JIT type)</span>
+<span class="sd">        :returns: A non-JIT Individual PRO object</span>
+<span class="sd">        :rtype: object of class Individual PRO</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Non_JIT_Individual_pro</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">production_set</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">contract</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">discharge_order</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">overlaps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="bp">self</span><span class="o">.</span><span class="n">fitness</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="RandomFactors">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.RandomFactors">[docs]</a>
+<span class="k">class</span> <span class="nc">RandomFactors</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">contract</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production_main</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production_swap</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production_transfer</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_order</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dsm_energy</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overlap</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dsm_levels</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ydsm_levels</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dg_runtime</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dg_production</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_capacity</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_inpower</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_outpower</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_soc</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="mi">15</span><span class="p">]</span></div>
+
+
+       
+<div class="viewcode-block" id="jitting_pop_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.jitting_pop_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">jitting_pop_pro</span><span class="p">(</span><span class="n">pop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a list of Individual_pro objects back to a list of Non_JIT_Individual_pro objects.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        jitted_pop (list of Individual_pro): The population of JIT-compatible individuals.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        The population of non-JIT individuals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">jitted_pop</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">pop</span><span class="p">:</span>
+        <span class="n">jitted_pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Individual_pro</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">production_set</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">contract</span><span class="p">),</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">overlaps</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">storages</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">fitness</span><span class="p">)))</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">jitted_pop</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="unjitting_pop_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.unjitting_pop_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">unjitting_pop_pro</span><span class="p">(</span><span class="n">jitted_pop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a list of Individual_pro objects back to a list of Non_JIT_Individual_pro objects.</span>
+
+<span class="sd">    :param  jitted_pop : The population of JIT-compatible individuals (production side).</span>
+<span class="sd">    :type list of Individual_pro</span>
+<span class="sd">        </span>
+
+<span class="sd">    :returns: The population of non-JIT individuals.</span>
+<span class="sd">    :rtype: list of Non_JIT_Individual_pro</span>
+<span class="sd">        </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pop</span><span class="o">=</span><span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">jitted_pop</span><span class="p">:</span>
+        <span class="n">pop</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Non_JIT_Individual_pro</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">production_set</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">contract</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),(</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">overlaps</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">storages</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">ind</span><span class="o">.</span><span class="n">fitness</span><span class="p">)))</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">pop</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_build_baseline_solution_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a dummy individual corresponding to the baseline solution.</span>
+<span class="sd">    </span>
+<span class="sd">    Warnings : </span>
+<span class="sd">        The contract is by default 0 (i.e. the first given in the inputs)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">HOURS_PER_DAY</span> <span class="o">=</span> <span class="mi">24</span>
+    <span class="n">MONTH_PER_YEAR</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">production_set_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">n_units</span><span class="p">,</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">contract_baseline</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">connection</span> <span class="o">==</span> <span class="s1">&#39;On-grid&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">DG_strategy_baseline</span> <span class="o">=</span> <span class="s1">&#39;LF&#39;</span>
+    <span class="n">discharge_order_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span> <span class="p">)</span>
+    <span class="n">energy_use_coefficient_baseline</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">overlaps_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+    <span class="n">D_DSM_minimum_levels_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">HOURS_PER_DAY</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">Y_DSM_minimum_levels_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">MONTH_PER_YEAR</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">DG_min_runtime_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">DG_min_production_baseline</span> <span class="o">=</span> <span class="mf">0.</span>
+    <span class="n">storages_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">))</span>
+    <span class="n">fitness_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+    <span class="n">storage_discrete_set_baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span> <span class="p">)</span>
+    
+    <span class="k">return</span><span class="p">(</span><span class="n">Individual_pro</span><span class="p">(</span><span class="n">production_set_baseline</span><span class="p">,</span><span class="n">contract_baseline</span><span class="p">,</span><span class="n">DG_strategy_baseline</span><span class="p">,</span><span class="n">discharge_order_baseline</span><span class="p">,</span><span class="n">energy_use_coefficient_baseline</span><span class="p">,</span><span class="n">overlaps_baseline</span><span class="p">,</span><span class="n">D_DSM_minimum_levels_baseline</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels_baseline</span><span class="p">,</span><span class="n">DG_min_runtime_baseline</span><span class="p">,</span><span class="n">DG_min_production_baseline</span><span class="p">,</span><span class="n">storages_baseline</span><span class="p">,</span><span class="n">fitness_baseline</span><span class="p">,</span><span class="n">storage_discrete_set_baseline</span><span class="p">))</span>
+
+
+
+<div class="viewcode-block" id="find_cost_function_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.find_cost_function_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">find_cost_function_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the right loss function to apply to the optimization problem (PRO).</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        Context: Description of the constraints of the problem.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: ID of the appropriate cost function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">CriterionEnum</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">criterion_num</span><span class="p">)</span>
+        <span class="n">base_function</span> <span class="o">=</span> <span class="n">criterion</span><span class="o">.</span><span class="n">get_function_pro</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No proper optimisation criterion found!&quot;</span><span class="p">)</span>
+                
+    <span class="k">def</span> <span class="nf">cost_function</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">base_function</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span><span class="n">Genset_parameters</span><span class="p">,</span><span class="n">grid_parameters</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">cost_function</span><span class="p">)</span></div>
+
+                            
+<div class="viewcode-block" id="initial_population_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.initial_population_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">initial_population_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the initial population for the pro ERMESS mode.</span>
+<span class="sd">    </span>
+<span class="sd">    This function creates a population of individuals representing candidate</span>
+<span class="sd">    microgrid configurations. Each individual includes:</span>
+<span class="sd">        </span>
+<span class="sd">        - Production unit sizing (group-constrained),</span>
+<span class="sd">        - Energy contract selection,</span>
+<span class="sd">        - Power Management System (PMS) strategy parameters,</span>
+<span class="sd">        - Demand Side Management (DSM) parameters,</span>
+<span class="sd">        - Diesel generator constraints (if applicable),</span>
+<span class="sd">        - Storage sizing (capacity, charge/discharge powers, initial SOC).</span>
+<span class="sd">        </span>
+<span class="sd">    The initialization combines structured seeding (first individuals scaled</span>
+<span class="sd">    deterministically) and stochastic sampling to ensure both feasibility</span>
+<span class="sd">    and diversity in the search space. Depending on the configuration stored in ``Context.config.defined_items``,</span>
+<span class="sd">    some decision variables may be fixed from user-defined values instead of</span>
+<span class="sd">    being randomly initialized.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        Context (OptimizationContext):</span>
+<span class="sd">            Optimization context containing all data required for population</span>
+<span class="sd">            generation, including:</span>
+
+<span class="sd">            - Hyperparameters (population size),</span>
+<span class="sd">            - Production technologies and grouping constraints,</span>
+<span class="sd">            - Load profiles,</span>
+<span class="sd">            - Grid contract information,</span>
+<span class="sd">            - Storage model and characteristics,</span>
+<span class="sd">            - User-defined operational constraints and strategies.</span>
+
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        list[Individual_pro]:</span>
+<span class="sd">            List of initialized individuals.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If ``Context.storage.model`` is not one of</span>
+<span class="sd">            ``{&quot;continuous&quot;, &quot;discrete&quot;}``.</span>
+<span class="sd">    </span>
+<span class="sd">   Notes:</span>
+<span class="sd">        Production units belonging to the same production group are treated</span>
+<span class="sd">        as mutually exclusive. For each group, a single technology is selected</span>
+<span class="sd">        and all others are set to zero.</span>
+
+<span class="sd">        For continuous storage models, total storage capacity and charge/</span>
+<span class="sd">        discharge powers are randomly generated and distributed among storage</span>
+<span class="sd">        technologies using normalized random proportions.</span>
+
+<span class="sd">        For discrete storage models, storage capacities are sampled directly</span>
+<span class="sd">        from their respective integer bounds.</span>
+
+<span class="sd">        If the grid is unavailable (``Context.grid is None``), all individuals</span>
+<span class="sd">        receive a contract value of ``-1``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="n">n_pop</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span><span class="o">.</span><span class="n">n_pop</span>
+    <span class="n">Initial_prod_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">n_units</span><span class="p">)</span>
+    <span class="n">Initial_prod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Bound</span><span class="p">,</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">Bound</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)])</span>
+    <span class="n">Initial_prod</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">20</span><span class="p">)]</span><span class="o">=</span><span class="p">[((</span><span class="n">i</span><span class="o">+</span><span class="mi">11</span><span class="p">)</span><span class="o">*</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="o">/</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">20</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span> <span class="o">==</span> <span class="kc">None</span> <span class="p">:</span> 
+        <span class="n">Initial_contracts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">n_pop</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Initial_contracts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">n_contracts</span><span class="p">,</span> <span class="n">n_pop</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="s1">&#39;Genset control&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span> <span class="p">:</span>
+        <span class="n">Random_DG_strategies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)</span>
+        <span class="n">Random_DG_min_runtime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="n">n_pop</span><span class="p">)</span>
+        <span class="n">Random_DG_min_production</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="s1">&#39;Storages management&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span> <span class="p">:</span>               
+        <span class="n">Random_overlaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">Random_discharge_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span> <span class="p">:</span>
+        <span class="n">Random_energy_use_repartition</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)</span>
+        <span class="n">Random_D_DSM_min_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">23</span><span class="p">)</span>
+        <span class="n">Random_Y_DSM_min_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_pop</span><span class="p">,</span><span class="mi">11</span><span class="p">)</span>  
+        
+    
+    <span class="n">Random_storages_init_SOCs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span><span class="n">n_pop</span><span class="p">)</span>
+    <span class="n">Initial_population</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pop</span><span class="p">):</span>
+        <span class="n">ones_prod</span><span class="o">=</span><span class="p">[</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">Initial_prod_index</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">]])]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">))]</span>
+        <span class="n">Initial_prod</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ones_prod</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">n_units</span><span class="p">)])]</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">prod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">Initial_prod</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">unit_prods</span><span class="p">)</span><span class="o">/</span><span class="mi">1000</span><span class="o">+</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">current_prod</span><span class="o">/</span><span class="mi">1000</span>
+        
+        <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;continuous&quot;</span> <span class="p">:</span>
+            <span class="n">storage_total_capacity</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">max</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">prod</span><span class="o">-</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">non_movable</span><span class="p">))))</span>
+            <span class="n">storage_total_discharge_power</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">max</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">non_movable</span><span class="p">))</span>
+            <span class="n">storage_total_charge_power</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">max</span><span class="p">(</span><span class="n">prod</span><span class="p">))</span>
+            <span class="n">distributions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">distributions</span> <span class="o">=</span> <span class="n">distributions</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">distributions</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">storages_discharge_powers</span> <span class="o">=</span> <span class="n">storage_total_discharge_power</span><span class="o">*</span><span class="n">distributions</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">storages_charge_powers</span> <span class="o">=</span> <span class="n">storage_total_charge_power</span><span class="o">*</span><span class="n">distributions</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">storages_volumes</span> <span class="o">=</span> <span class="n">storage_total_capacity</span><span class="o">*</span><span class="n">distributions</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">storages_SOCs_Init</span> <span class="o">=</span> <span class="n">Random_storages_init_SOCs</span><span class="p">[:,</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">storages_param</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">storages_volumes</span><span class="p">,</span><span class="n">storages_charge_powers</span><span class="p">,</span><span class="n">storages_discharge_powers</span><span class="p">,</span><span class="n">storages_SOCs_Init</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span>
+            <span class="n">storage_discrete_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;discrete&quot;</span> <span class="p">:</span>
+            <span class="n">storage_discrete_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Bound</span><span class="p">,</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">Bound</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">bounds</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="n">storages_param</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">Random_storages_init_SOCs</span><span class="p">[:,</span><span class="n">j</span><span class="p">]))</span>
+        <span class="k">else</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown storage model&quot;</span><span class="p">)</span>
+        
+        
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;Discharge order&#39;</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span><span class="p">):</span>
+            <span class="n">discharge_order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="n">overlaps</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">overlaps</span><span class="o">/</span><span class="mi">100</span>
+            <span class="n">energy_use_coefficient</span><span class="o">=</span><span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">energy_use_coefficient</span>
+        <span class="k">else</span> <span class="p">:</span> 
+            <span class="n">discharge_order</span> <span class="o">=</span> <span class="n">Random_discharge_order</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">overlaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Random_overlaps</span><span class="p">[</span><span class="n">j</span><span class="p">,:])</span>
+            <span class="n">energy_use_coefficient</span><span class="o">=</span><span class="n">Random_energy_use_repartition</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            
+        <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span> <span class="p">:</span>
+            <span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">/</span><span class="mi">100</span>
+            <span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">/</span><span class="mi">100</span>
+        <span class="k">else</span> <span class="p">:</span> 
+            <span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Random_D_DSM_min_levels</span><span class="p">[</span><span class="n">j</span><span class="p">,:])</span>
+            <span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Random_Y_DSM_min_levels</span><span class="p">[</span><span class="n">j</span><span class="p">,:])</span>
+            
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;Genset control&#39;</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span><span class="p">):</span>
+            <span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">DG_strategy</span>
+            <span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">DG_min_runtime</span>
+            <span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">DG_min_production</span>
+        <span class="k">else</span> <span class="p">:</span> 
+            <span class="n">DG_strategy</span> <span class="o">=</span> <span class="s1">&#39;LF&#39;</span> <span class="k">if</span> <span class="n">Random_DG_strategies</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.5</span> <span class="k">else</span> <span class="s1">&#39;CC&#39;</span>
+            <span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">Random_DG_min_runtime</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">DG_min_production</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">non_movable</span><span class="p">)</span><span class="o">*</span><span class="mf">0.2</span><span class="o">*</span><span class="n">Random_DG_min_production</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+        <span class="n">Init_pop_j</span><span class="o">=</span><span class="n">Individual_pro</span><span class="p">(</span><span class="n">production_set</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">Initial_prod</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span><span class="n">contract</span><span class="o">=</span><span class="n">Initial_contracts</span><span class="p">[</span><span class="n">j</span><span class="p">],</span><span class="n">DG_strategy</span><span class="o">=</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">discharge_order</span><span class="o">=</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">energy_use_coefficient</span><span class="o">=</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">overlaps</span><span class="o">=</span><span class="n">overlaps</span><span class="p">,</span><span class="n">D_DSM_minimum_levels</span><span class="o">=</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels</span><span class="o">=</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">DG_min_runtime</span><span class="o">=</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">DG_min_production</span><span class="o">=</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">storages</span><span class="o">=</span><span class="n">storages_param</span><span class="p">,</span><span class="n">fitness</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span><span class="n">storage_discrete_set</span><span class="o">=</span><span class="n">storage_discrete_set</span><span class="p">)</span>
+        <span class="n">Initial_population</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Init_pop_j</span><span class="p">)</span>
+       
+    <span class="k">return</span><span class="p">(</span><span class="n">Initial_population</span><span class="p">)</span>   </div>
+
+
+<div class="viewcode-block" id="compute_diversity_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.compute_diversity_pro">[docs]</a>
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">compute_diversity_pro</span><span class="p">(</span><span class="n">fitnesses</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    JIT-compatible computation of population diversity based on fitness dispersion. </span>
+<span class="sd">    </span>
+<span class="sd">    Diversity is defined as the standard deviation of fitness values</span>
+<span class="sd">    across the population.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        fitnesses (ndarray): Array of fitness values for the current population.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Standard deviation of fitness values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">diversity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">fitnesses</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">diversity</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PID_correction">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.PID_correction">[docs]</a>
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">PID_correction</span> <span class="p">(</span><span class="n">stagnation</span><span class="p">,</span><span class="n">diversity_threshold</span><span class="p">,</span><span class="n">diversity</span><span class="p">,</span><span class="n">integrale_PID</span><span class="p">,</span><span class="n">prev_error</span><span class="p">,</span><span class="n">Kp</span><span class="p">,</span><span class="n">Ki</span><span class="p">,</span><span class="n">Kd</span><span class="p">,</span><span class="n">u_min</span><span class="p">,</span><span class="n">u_max</span><span class="p">,</span><span class="n">anti_windup</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adaptive mutation control. This function adjusts the mutation factor according to population</span>
+<span class="sd">    diversity and stagnation level using a proportional–integral–derivative</span>
+<span class="sd">    (PID) controller.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        stagnation (int): Number of consecutive generations without improvement.</span>
+<span class="sd">        diversity_threshold (float): Target diversity level.</span>
+<span class="sd">        diversity (float): Current diversity measure.</span>
+<span class="sd">        integrale_PID (float): Accumulated integral term from previous generation.</span>
+<span class="sd">        prev_error (float): Forecast of the expected error (from previous generation).</span>
+<span class="sd">        Kp (float): Proportional gain.</span>
+<span class="sd">        Ki (float): Integral gain.</span>
+<span class="sd">        Kd (float): Derivative gain.</span>
+<span class="sd">        u_min (float): Minimum allowable control signal.</span>
+<span class="sd">        u_max (float): Maximum allowable control signal.</span>
+<span class="sd">        anti_windup (float): Saturation limit for integral term to prevent windup.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple containing :</span>
+<span class="sd">            -Updated integral term (float).</span>
+<span class="sd">            -Multiplicative mutation adjustment factor (1 + boost) (float).</span>
+<span class="sd">            -Updated error value (float).</span>
+<span class="sd">    </span>
+<span class="sd">    Note:</span>
+<span class="sd">        A stagnation factor scales the correction intensity.</span>
+<span class="sd">        Anti-windup prevents excessive integral accumulation.</span>
+<span class="sd">        The mutation factor dynamically balances exploration and exploitation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">stagnation_factor</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span><span class="n">stagnation</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="p">(</span><span class="n">diversity_threshold</span> <span class="o">-</span> <span class="n">diversity</span><span class="p">)</span><span class="o">/</span><span class="n">diversity_threshold</span>
+    <span class="n">integrale_PID</span><span class="o">=</span><span class="n">integrale_PID</span><span class="o">+</span><span class="n">error</span>
+    <span class="c1">#On ajoute un windup de 10 pour empêcher le terme intégral d&#39;exploser</span>
+    <span class="k">if</span> <span class="n">integrale_PID</span> <span class="o">&gt;</span> <span class="n">anti_windup</span><span class="p">:</span>
+        <span class="n">integrale_PID</span> <span class="o">=</span> <span class="n">anti_windup</span>
+    <span class="k">elif</span> <span class="n">integrale_PID</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">anti_windup</span><span class="p">:</span>
+        <span class="n">integrale_PID</span> <span class="o">=</span> <span class="o">-</span><span class="n">anti_windup</span>
+    
+    <span class="n">derivative</span> <span class="o">=</span> <span class="n">error</span> <span class="o">-</span> <span class="n">prev_error</span>
+    <span class="n">boost</span> <span class="o">=</span> <span class="p">(</span><span class="n">Kp</span><span class="o">*</span><span class="n">error</span> <span class="o">+</span> <span class="n">Ki</span><span class="o">*</span><span class="n">integrale_PID</span> <span class="o">+</span> <span class="n">Kd</span><span class="o">*</span><span class="n">derivative</span><span class="p">)</span><span class="o">*</span><span class="n">stagnation_factor</span>
+    <span class="k">if</span> <span class="n">boost</span> <span class="o">&gt;</span> <span class="n">u_max</span><span class="p">:</span>
+        <span class="n">boost</span> <span class="o">=</span> <span class="n">u_max</span>
+    <span class="k">elif</span> <span class="n">boost</span> <span class="o">&lt;</span> <span class="n">u_min</span><span class="p">:</span>
+        <span class="n">boost</span> <span class="o">=</span> <span class="n">u_min</span>
+    <span class="n">mutation_factor</span> <span class="o">=</span> <span class="mi">1</span><span class="o">+</span><span class="n">boost</span>
+    <span class="n">prev_error</span><span class="o">=</span><span class="n">error</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">integrale_PID</span><span class="p">,</span><span class="n">mutation_factor</span><span class="p">,</span><span class="n">prev_error</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="NON_JIT_mutation_contraintes_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.NON_JIT_mutation_contraintes_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">NON_JIT_mutation_contraintes_pro</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">random_factors</span><span class="p">,</span> <span class="n">choices</span><span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span> <span class="p">,</span><span class="n">grid_parameters</span> <span class="p">,</span><span class="n">extra_parameters</span> <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply mutation operators to an individual (non-JIT).</span>
+<span class="sd">        </span>
+<span class="sd">        This function probabilistically applies a set of mutation operators</span>
+<span class="sd">        affecting individual&#39;s genotype&#39;</span>
+<span class="sd">        </span>
+<span class="sd">        Mutation probabilities are defined in the operator hyperparameter matrix.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            c (Individual_pro): Individual to mutate.</span>
+<span class="sd">            random_factors (ndarray): Random values used to decide operator activation.</span>
+<span class="sd">            choices (list): Additional stochastic parameters for storage operators.</span>
+<span class="sd">            n_bits (int): Length of timeseries.</span>
+<span class="sd">            Bounds_prod (ndarray): Production bounds.</span>
+<span class="sd">            groups (list): Production exclusivity groups.</span>
+<span class="sd">            Non_movable_load (ndarray): Non-flexible load timeseries.</span>
+<span class="sd">            constraint_num (any): Constraint identifiers.</span>
+<span class="sd">            constraint_level (any): Constraint severity levels.</span>
+<span class="sd">            prods_U (ndarray): Unit production capacities.</span>
+<span class="sd">            prod_C (ndarray): Fixed production component.</span>
+<span class="sd">            n_store (int): Number of storage units.</span>
+<span class="sd">            n_contracts (int): Number of energy contracts.</span>
+<span class="sd">            time_resolution (float): Time resolution.</span>
+<span class="sd">            storage_characteristics (any): Storage technology parameters.</span>
+<span class="sd">            Volums_prod (any): Production volumes (context-specific).</span>
+<span class="sd">            D_DSM_indexes (any): DSM indexing structure.</span>
+<span class="sd">            hyperparameters_operators_num_pro (ndarray): Matrix of operator activation probabilities and intensities.</span>
+<span class="sd">            Defined_items (list): Parameters fixed by the user and therefore excluded from mutation.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple containing :</span>
+<span class="sd">                - Mutated individual (Individual pro).</span>
+<span class="sd">                - indicator of the application of operators (Binary vector).</span>
+<span class="sd">        </span>
+<span class="sd">        Note:</span>
+<span class="sd">            Each operator is independently triggered based on predefined probabilities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>      
+        <span class="n">usage_ope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">17</span><span class="p">)</span>
+        
+        <span class="c1">#CONTRACT MUTATION</span>
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_CONTRACT</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_CONTRACT</span><span class="p">])</span> <span class="ow">and</span> <span class="n">global_parameters</span><span class="o">.</span><span class="n">Connection</span><span class="o">==</span><span class="n">GRID_ON</span><span class="p">)</span> <span class="p">:</span>  
+              <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">switch_contract_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">n_contracts</span><span class="p">)</span>
+              <span class="n">usage_ope</span><span class="p">[</span><span class="n">switch_contract</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                   
+        <span class="c1">#PRODUCTION MUTATION           </span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_PRODUCTION_MAIN</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_PRODUCTION</span><span class="p">])</span> <span class="p">:</span>            
+             <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_production_capacity_operator_pro</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_production</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_size</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>         
+             <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_production_capacity_operator</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_PRODUCTION_SWAP</span><span class="p">]</span><span class="o">&lt;</span><span class="p">(</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_PRODUCTION</span><span class="p">]</span><span class="o">/</span><span class="mi">10</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_size</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">)</span> <span class="p">:</span>            
+             <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Switch_intragroup_productor_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_production</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_size</span><span class="p">)</span>         
+             <span class="n">usage_ope</span><span class="p">[</span><span class="n">Switch_intragroup_productor</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>             
+             
+        <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_PRODUCTION_TRANSFER</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_PRODUCTION</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="p">:</span>
+                  <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Transfer_production_capacity_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">capacities</span><span class="p">)</span>
+                  <span class="n">usage_ope</span><span class="p">[</span><span class="n">Transfer_production_capacity_operator</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                  
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STRATEGY</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STRATEGY</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_GENSET</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">)</span> <span class="p">):</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Switch_dispatching_strategy_operator</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Switch_dispatching_strategy</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_ORDER</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_DISCHARGE_ORDER</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_STORAGE</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Switch_storages_order_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_EFFECT_START</span><span class="p">:(</span><span class="n">RF_STORAGE_EFFECT_START</span><span class="o">+</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">n_store</span><span class="p">)])</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Switch_storages_order</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+            
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_ENERGY_COEFF</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_ENERGY_COEFF</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_STORAGE</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_DSM_storage_distribution_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_DSM_storage_distribution</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_OVERLAP</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_OVERLAP</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_STORAGE</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_EMS_Overlap_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_OVERLAP_EFFECT_START</span> <span class="p">:</span> <span class="n">RF_OVERLAP_EFFECT_START</span><span class="o">+</span><span class="mi">4</span><span class="p">],</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_EMS_Overlap</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_DDSM</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_DSM_LEVELS</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_DSM</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_DDSM_levels_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_DDSM_levels</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_YDSM</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_DSM_LEVELS</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_DSM</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_YDSM_levels_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_YDSM_levels</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+        
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_DG_RUNTIME</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_DG_CONTROL</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_GENSET</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_DG_min_runtime_operator</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_DG_min_runtime</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="p">((</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_DG_PRODUCTION</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_DG_CONTROL</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">DEFINED_GENSET</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">defined_items</span><span class="p">))</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_DG_min_production_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">)</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_DG_min_production</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+        
+        <span class="k">if</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">CONTINUOUS_MODEL</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_CAPACITY</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STORAGE_CAPACITIES</span><span class="p">])</span> <span class="p">:</span>         
+                    <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_storages_capacity_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">,</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_storages_capacity</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                    
+            <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_INPOWER</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STORAGE_POWERS</span><span class="p">])</span> <span class="p">:</span>         
+                    <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_storages_inpower_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">,</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_storages_inpower</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                    
+            <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_OUTPOWER</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STORAGE_POWERS</span><span class="p">])</span> <span class="p">:</span>         
+                    <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_storages_outpower_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">,</span><span class="n">choices</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+                    <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_storages_outpower</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                    
+            <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_POWERS</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STORAGE_POWERS</span><span class="p">])</span> <span class="p">:</span>         
+                    <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Update_storage_powers_pro</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">storage_TS</span><span class="p">,</span><span class="n">choices</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+                    <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_storages_powers</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>      
+
+        <span class="k">elif</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">DISCRETE_MODEL</span> <span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_STORAGE_CAPACITY</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_STORAGE_CAPACITIES</span><span class="p">])</span> <span class="p">:</span>         
+                    <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_storages_units_operator_pro</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_bounds</span><span class="p">,</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">,</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">choices</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+                    <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_storages_capacity</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">if</span> <span class="p">(</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_INIT_SOC</span><span class="p">]</span><span class="o">&lt;</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">hyperparameters_operators</span><span class="p">[</span><span class="n">PRO_OPER_PROBABILITY</span><span class="p">,</span><span class="n">PRO_INITIAL_SOC</span><span class="p">])</span> <span class="p">:</span>         
+                <span class="n">c</span><span class="o">=</span><span class="n">Eop</span><span class="o">.</span><span class="n">Mutate_initSOC_operator</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">random_factors</span><span class="p">[</span><span class="n">RF_INIT_SOC_EFFECT</span><span class="p">],</span><span class="n">choices</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+                <span class="n">usage_ope</span><span class="p">[</span><span class="n">Mutate_initSOC_operator</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+                
+        <span class="k">return</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="n">usage_ope</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="crossover_reduit_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions_pro.crossover_reduit_pro">[docs]</a>
+<span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">crossover_reduit_pro</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span> <span class="n">r_cross</span><span class="p">,</span><span class="n">RENSystems_parameters</span> <span class="p">,</span> <span class="n">extra_parameters</span><span class="p">):</span>    
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">   Performs crossover between two pro individuals using a hybrid evolutionary operator.</span>
+
+<span class="sd">   This operator combines:</span>
+<span class="sd">       - Group-based crossover for production units (respecting exclusivity),</span>
+<span class="sd">       - Binary swap for discrete strategy variables,</span>
+<span class="sd">       - Convex combination for continuous parameters,</span>
+<span class="sd">       - Partial crossover for storage-related configurations.</span>
+
+<span class="sd">   Args:</span>
+<span class="sd">       p1 (Individual_pro): First parent individual.</span>
+<span class="sd">       p2 (Individual_pro): Second parent individual.</span>
+<span class="sd">       r_cross (float): Probability of applying crossover.</span>
+<span class="sd">       RENSystems_parameters (object): System-level parameters (must include `n_store`).</span>
+<span class="sd">       extra_parameters (object): Additional parameters including:</span>
+<span class="sd">           - groups_size (ndarray): Sizes of production groups.</span>
+<span class="sd">           - groups_production (ndarray): Indices of production units per group.</span>
+
+<span class="sd">   Returns:</span>
+<span class="sd">       Tuple[Individual_pro, Individual_pro, int64]:</span>
+<span class="sd">           - First offspring.</span>
+<span class="sd">           - Second offspring.</span>
+<span class="sd">           - Indicator (1 if crossover occurred, 0 otherwise).</span>
+
+<span class="sd">   Notes:</span>
+<span class="sd">       - Production crossover preserves group exclusivity constraints.</span>
+<span class="sd">       - Continuous variables are recombined using convex combinations.</span>
+<span class="sd">       - If crossover is not applied, offspring are clones of parents.</span>
+<span class="sd">       - This function is optimized for Numba `nopython` mode.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+ 
+    <span class="c1"># children are copies of parents by default</span>
+
+    <span class="n">c1</span> <span class="o">=</span> <span class="n">Individual_pro</span><span class="p">(</span><span class="n">p1</span><span class="o">.</span><span class="n">production_set</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">contract</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">discharge_order</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">overlaps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p1</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">p1</span><span class="o">.</span><span class="n">storage_discrete_set</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="n">c2</span> <span class="o">=</span> <span class="n">Individual_pro</span><span class="p">(</span><span class="n">p2</span><span class="o">.</span><span class="n">production_set</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">contract</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">discharge_order</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">overlaps</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="n">p2</span><span class="o">.</span><span class="n">fitness</span><span class="p">,</span><span class="n">p2</span><span class="o">.</span><span class="n">storage_discrete_set</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+    <span class="n">cross_rand</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span>
+ <span class="c1"># check for recombination</span>
+    <span class="k">if</span> <span class="n">cross_rand</span> <span class="o">&lt;</span> <span class="n">r_cross</span><span class="p">:</span>
+    <span class="c1"># select random weights</span>
+
+        <span class="n">n_weights_base</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">n_weights_base</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_size</span><span class="p">))</span>
+ <span class="c1"># perform crossover        </span>
+        <span class="n">mask_prod</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">n_weights_base</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)]</span><span class="o">&lt;</span><span class="mf">0.5</span>
+        <span class="n">cross_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">production_set</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mask_prod</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">mask_prod</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span>
+                <span class="n">int_idx</span><span class="o">=</span><span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_production</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="p">:</span> <span class="n">extra_parameters</span><span class="o">.</span><span class="n">groups_size</span><span class="p">[</span><span class="n">k</span><span class="p">]]</span>
+                <span class="n">cross_indexes</span><span class="p">[</span><span class="n">int_idx</span><span class="p">]</span> <span class="o">=</span><span class="n">int_idx</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">capacities</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">cross_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">c1</span><span class="o">.</span><span class="n">production_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">p2</span><span class="o">.</span><span class="n">production_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1">#Loops often more efficient than np.where (Numba)</span>
+                <span class="n">c2</span><span class="o">.</span><span class="n">production_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">production_set</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">c1</span><span class="o">.</span><span class="n">contract</span><span class="o">=</span><span class="n">p1</span><span class="o">.</span><span class="n">contract</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.5</span> <span class="k">else</span> <span class="n">p2</span><span class="o">.</span><span class="n">contract</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">contract</span><span class="o">=</span><span class="n">p1</span><span class="o">.</span><span class="n">contract</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.5</span> <span class="k">else</span> <span class="n">p2</span><span class="o">.</span><span class="n">contract</span>
+        
+        <span class="n">c1</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.5</span> <span class="k">else</span> <span class="n">p2</span><span class="o">.</span><span class="n">DG_strategy</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">p2</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="k">if</span> <span class="n">weights</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">&lt;</span><span class="mf">0.5</span> <span class="k">else</span> <span class="n">p1</span><span class="o">.</span><span class="n">DG_strategy</span>
+    
+
+  <span class="c1">#          c1.discharge_order = np.unique(np.concatenate((p1.discharge_order[0:break_point],p2.discharge_order)))</span>
+  <span class="c1">#          c2.discharge_order = np.unique(np.concatenate((p2.discharge_order[0:break_point],p1.discharge_order)))</span>
+            
+        <span class="n">c1</span><span class="o">.</span><span class="n">energy_use_coefficient</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">energy_use_coefficient</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">energy_use_coefficient</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">energy_use_coefficient</span>
+        
+        <span class="n">c1</span><span class="o">.</span><span class="n">overlaps</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">overlaps</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">overlaps</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">overlaps</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">overlaps</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">overlaps</span>
+            
+        <span class="n">c1</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">7</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span>
+        
+        <span class="n">c1</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">8</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span>
+        
+        <span class="n">c1</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="c1">#Substitution for round (Numba constraint)</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="c1">#Substitution for round (Numba constraint)</span>
+        
+        <span class="n">c1</span><span class="o">.</span><span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_production</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_production</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">DG_min_production</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">DG_min_production</span>
+        
+        <span class="k">if</span> <span class="n">RENSystems_parameters</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">==</span> <span class="n">CONTINUOUS_MODEL</span> <span class="p">:</span>
+        
+            <span class="n">c1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_VOLUME</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span>
+            <span class="n">c2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_VOLUME</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">0</span><span class="p">,:]</span>
+            
+            <span class="n">c1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_CHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>
+            <span class="n">c2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_CHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">12</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">12</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">1</span><span class="p">,:]</span>
+            
+            <span class="n">c1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_DISCHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">13</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span>
+            <span class="n">c2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_DISCHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">13</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">13</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">2</span><span class="p">,:]</span>            
+            
+        <span class="k">else</span> <span class="p">:</span> 
+            
+            <span class="n">c1</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storage_discrete_set</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            <span class="n">c2</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storage_discrete_set</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">11</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storage_discrete_set</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+            
+        <span class="n">c1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_SOC_INIT</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span>
+        <span class="n">c2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="n">INDIV_PRO_SOC_INIT</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="mi">14</span><span class="p">]</span><span class="o">*</span><span class="n">p2</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span><span class="o">+</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">weights</span><span class="p">[</span><span class="mi">14</span><span class="p">])</span><span class="o">*</span><span class="n">p1</span><span class="o">.</span><span class="n">storages</span><span class="p">[</span><span class="mi">3</span><span class="p">,:]</span>                       
+    
+    <span class="k">return</span> <span class="p">(</span> <span class="n">c1</span><span class="p">,</span><span class="n">c2</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">cross_rand</span><span class="o">&lt;</span><span class="n">r_cross</span><span class="p">))</span></div>
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

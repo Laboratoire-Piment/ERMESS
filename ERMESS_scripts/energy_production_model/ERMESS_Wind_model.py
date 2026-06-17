@@ -2,9 +2,10 @@
 '''
 :Created: 2025-07-17 10:09:17
 :Author: Mathieu Lafitte and JoPHOBEA
-:Description: Tool to simulate the behavior of a single wind turbine.
 
-This script is an adaptation of the ModelChain example of windpowerlib for ERMESS. Model is available here :
+This script simulates the production of a single wind turbine.
+
+It is an adaptation of the ModelChain example of windpowerlib for ERMESS. Model is available here :
 https://windpowerlib.readthedocs.io/en/stable/getting_started.html#examples-and-basic-usage
 '''
 #---------------------

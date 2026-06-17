@@ -3,6 +3,9 @@
 Created on Tue Sep  2 10:51:13 2025
 
 @author: JoPHOBEA
+
+This module loads the meteorological data for ERMESS.
+This data can be either specified by the user, or load from ERA5
 """
 
 import cdsapi

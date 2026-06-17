@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.data.data_builder &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.data.data_builder</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Fri Mar 20 11:53:44 2026</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="k">class</span> <span class="nc">_OptimBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Optimization problem definition.</span>
+<span class="sd">    </span>
+<span class="sd">    Defines the optimization objective, constraints, and global</span>
+<span class="sd">    problem configuration.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        constraint_num (int):</span>
+<span class="sd">            Encoded type of constraint (e.g., self-sufficiency, self-consumption, REN fraction).</span>
+<span class="sd">    </span>
+<span class="sd">        constraint_level (float):</span>
+<span class="sd">            Target level for the constraint.</span>
+<span class="sd">    </span>
+<span class="sd">        criterion_num (int):</span>
+<span class="sd">            Encoded optimization objective.</span>
+<span class="sd">            </span>
+<span class="sd">        connection (str):</span>
+<span class="sd">            Type of grid integration (On-grid , Off-grid).</span>
+<span class="sd">            </span>
+<span class="sd">        type_optim (str):</span>
+<span class="sd">            Type of optimization (pro , research).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;constraint_num&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;constraint_level&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;criterion_num&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;connection&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type_optim&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraint_num</span><span class="p">,</span> <span class="n">constraint_level</span><span class="p">,</span> <span class="n">criterion_num</span><span class="p">,</span> <span class="n">connection</span><span class="p">,</span> <span class="n">type_optim</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">constraint_num</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_level</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">constraint_level</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">criterion_num</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">=</span> <span class="n">type_optim</span>
+        
+<span class="k">class</span> <span class="nc">_HyperparametersBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Genetic algorithm hyperparameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Stores configuration parameters controlling evolutionary behavior</span>
+<span class="sd">    of the optimization algorithm.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        r_cross (float):</span>
+<span class="sd">            Crossover rate.</span>
+<span class="sd">    </span>
+<span class="sd">        n_iter (int):</span>
+<span class="sd">            Number of iterations (generations).</span>
+<span class="sd">            </span>
+<span class="sd">        n_pop (int):</span>
+<span class="sd">            Number of individuals in the population.</span>
+<span class="sd">    </span>
+<span class="sd">        operators_parameters (np.ndarray):</span>
+<span class="sd">            Array of operator weights or probabilities.</span>
+<span class="sd">                        </span>
+<span class="sd">        cost_constraint (float):</span>
+<span class="sd">            Penalty or cost associated with constraint violation.</span>
+<span class="sd">            </span>
+<span class="sd">        elitism_probability (float):</span>
+<span class="sd">            Probability of the best individual to stay in the population.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;r_cross&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_iter&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_pop&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;operators_parameters&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cost_constraint&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;elitism_probability&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r_cross</span><span class="p">,</span> <span class="n">n_iter</span><span class="p">,</span><span class="n">n_pop</span><span class="p">,</span> <span class="n">operators_parameters</span><span class="p">,</span><span class="n">cost_constraint</span><span class="p">,</span><span class="n">elitism_probability</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r_cross</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">r_cross</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_iter</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_iter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_pop</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_pop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operators_parameters</span> <span class="o">=</span> <span class="n">operators_parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_constraint</span> <span class="o">=</span> <span class="n">cost_constraint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elitism_probability</span> <span class="o">=</span> <span class="n">elitism_probability</span>
+        
+<span class="k">class</span> <span class="nc">_DispatchingBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Global system configuration.</span>
+<span class="sd">    </span>
+<span class="sd">    Defines high-level system settings such as connectivity type</span>
+<span class="sd">    and activated features.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        </span>
+<span class="sd">        defined_items (np.ndarray):</span>
+<span class="sd">            List of non-controllable dispatching features.</span>
+<span class="sd">            </span>
+<span class="sd">        energy_use_coefficient (float):</span>
+<span class="sd">            Utilization of the produced energy.</span>
+<span class="sd">            </span>
+<span class="sd">        Y_DSM_minimum_levels (np.ndarray):</span>
+<span class="sd">            Minimum amount of yearly dispatchable energy that is used per month.</span>
+<span class="sd">            </span>
+<span class="sd">        D_DSM_minimum_levels (np.ndarray):</span>
+<span class="sd">            Minimum amount of daily dispatchable energy that is used per hour.</span>
+<span class="sd">            </span>
+<span class="sd">        DG_strategy (str):</span>
+<span class="sd">            Control strategy of the genset unit.</span>
+<span class="sd">            </span>
+<span class="sd">        DG_min_runtime (int):</span>
+<span class="sd">            Minimum runtime of the genset unit.</span>
+<span class="sd">            </span>
+<span class="sd">        DG_min_production (float):</span>
+<span class="sd">            Minimum production level of the genset unit.</span>
+<span class="sd">            </span>
+<span class="sd">        discharge_order (np.ndarray):</span>
+<span class="sd">            Discharge order of the different storage units.</span>
+<span class="sd">            </span>
+<span class="sd">        overlaps (np.ndarray):</span>
+<span class="sd">            Overlaps levels between the different storage units, and between the storage units and the grid or the genset unit.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;defined_items&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;energy_use_coefficient&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Y_DSM_minimum_levels&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;D_DSM_minimum_levels&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DG_strategy&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DG_min_runtime&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;DG_min_production&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;discharge_order&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;overlaps&quot;</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">defined_items</span><span class="p">,</span><span class="n">energy_use_coefficient</span><span class="p">,</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span><span class="n">DG_strategy</span><span class="p">,</span><span class="n">DG_min_runtime</span><span class="p">,</span><span class="n">DG_min_production</span><span class="p">,</span><span class="n">discharge_order</span><span class="p">,</span><span class="n">overlaps</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defined_items</span> <span class="o">=</span> <span class="n">defined_items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy_use_coefficient</span> <span class="o">=</span> <span class="n">energy_use_coefficient</span> <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">Y_DSM_minimum_levels</span> <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span> <span class="o">=</span> <span class="n">D_DSM_minimum_levels</span> <span class="k">if</span> <span class="s1">&#39;DSM&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_strategy</span> <span class="o">=</span> <span class="n">DG_strategy</span> <span class="k">if</span> <span class="s1">&#39;Genset control&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_runtime</span> <span class="o">=</span> <span class="n">DG_min_runtime</span> <span class="k">if</span> <span class="s1">&#39;Genset control&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">DG_min_production</span> <span class="o">=</span> <span class="n">DG_min_production</span> <span class="k">if</span> <span class="s1">&#39;Genset control&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discharge_order</span> <span class="o">=</span> <span class="n">discharge_order</span> <span class="k">if</span> <span class="s1">&#39;Storages management&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overlaps</span> <span class="o">=</span> <span class="n">overlaps</span> <span class="k">if</span> <span class="s1">&#39;Storages management&#39;</span> <span class="ow">in</span> <span class="n">defined_items</span> <span class="k">else</span> <span class="kc">None</span> 
+
+<span class="k">class</span> <span class="nc">_TimeParametersBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Temporal configuration of the simulation environment.</span>
+<span class="sd">    </span>
+<span class="sd">    Defines the time resolution and global simulation duration used</span>
+<span class="sd">    for demand, production, and optimization time series.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        time_resolution (float):</span>
+<span class="sd">            Number of time steps per hour.</span>
+<span class="sd">    </span>
+<span class="sd">        duration_years (float):</span>
+<span class="sd">            Total simulation duration in years.</span>
+<span class="sd">    </span>
+<span class="sd">        n_bits (int):</span>
+<span class="sd">            Total number of simulation time steps.</span>
+<span class="sd">            </span>
+<span class="sd">        n_days(int):</span>
+<span class="sd">            Total number of days in the simulation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;time_resolution&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;duration_years&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_bits&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_days&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">,</span> <span class="n">duration_years</span><span class="p">,</span> <span class="n">n_bits</span><span class="p">,</span> <span class="n">n_days</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_resolution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">time_resolution</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration_years</span> <span class="o">=</span> <span class="n">duration_years</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_bits</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_days</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">n_days</span><span class="p">)</span>
+        
+<span class="k">class</span> <span class="nc">_ProductionBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Production assets and generation profiles.</span>
+<span class="sd">    </span>
+<span class="sd">    Contains all information related to renewable and conventional</span>
+<span class="sd">    production units, including technical characteristics and</span>
+<span class="sd">    time-series production profiles.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        specs_num (np.ndarray):</span>
+<span class="sd">            Numerical characteristics of production units, incluing grouping structure, Total production volumes and capacity bounds.</span>
+<span class="sd">    </span>
+<span class="sd">        Ids (np.ndarray):</span>
+<span class="sd">            Identification strings of the producers</span>
+<span class="sd">            </span>
+<span class="sd">        capacities (np.ndarray):</span>
+<span class="sd">            Capacities of on-site installation of each production asset.</span>
+<span class="sd">    </span>
+<span class="sd">        groups (np.ndarray):</span>
+<span class="sd">            Grouping structure of production assets.</span>
+<span class="sd">    </span>
+<span class="sd">        current_prod (np.ndarray):</span>
+<span class="sd">            Production cost coefficients.</span>
+<span class="sd">    </span>
+<span class="sd">        unit_prods (np.ndarray):</span>
+<span class="sd">            Unit production time series for each asset.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;specs_num&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Ids&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;capacities&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;groups&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;current_prod&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;unit_prods&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;n_units&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">specs_num</span><span class="p">,</span> <span class="n">Ids</span><span class="p">,</span> <span class="n">capacities</span><span class="p">,</span> <span class="n">groups</span><span class="p">,</span> <span class="n">current_prod</span><span class="p">,</span> <span class="n">unit_prods</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specs_num</span> <span class="o">=</span> <span class="n">specs_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Ids</span> <span class="o">=</span> <span class="n">Ids</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacities</span> <span class="o">=</span> <span class="n">capacities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span> <span class="o">=</span> <span class="n">groups</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_prod</span> <span class="o">=</span> <span class="n">current_prod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_prods</span> <span class="o">=</span> <span class="n">unit_prods</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_units</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">specs_num</span><span class="p">))</span>
+              
+<span class="k">class</span> <span class="nc">_LoadBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load characteristics and profiles.</span>
+<span class="sd">    </span>
+<span class="sd">    Aggregates all demand-related signals including non-controllable</span>
+<span class="sd">    loads and DSM (Demand Side Management) components.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        non_movable (np.ndarray):</span>
+<span class="sd">            Non-controllable electrical load time series.</span>
+<span class="sd">            </span>
+<span class="sd">        Y_movable (np.array):</span>
+<span class="sd">            Yearly dispatchable electrical load time series.</span>
+<span class="sd">        </span>
+<span class="sd">        D_movable (np.array):</span>
+<span class="sd">            Daily dispatchable electrical load time series.</span>
+<span class="sd">    </span>
+<span class="sd">        time_resolution (float):</span>
+<span class="sd">            Temporal resolution of the simulation (in timesteps per hour).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;non_movable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Y_movable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;D_movable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;D_DSM_indexes&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;total_Y_movable&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;total_D_movable&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">non_movable</span><span class="p">,</span> <span class="n">Y_movable</span><span class="p">,</span> <span class="n">D_movable</span><span class="p">,</span> <span class="n">time_resolution</span><span class="p">):</span>
+
+        <span class="n">HOURS_PER_DAY</span> <span class="o">=</span> <span class="mi">24</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">non_movable</span> <span class="o">=</span> <span class="n">non_movable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_movable</span> <span class="o">=</span> <span class="n">D_movable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Y_movable</span> <span class="o">=</span> <span class="n">Y_movable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_Y_movable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Y_movable</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_D_movable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">D_movable</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">i</span> <span class="o">*</span> <span class="n">time_resolution</span> <span class="o">*</span> <span class="n">HOURS_PER_DAY</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">time_resolution</span> <span class="o">*</span> <span class="n">HOURS_PER_DAY</span><span class="p">))])</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span> <span class="mi">0</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">D_movable</span><span class="p">)</span> <span class="o">/</span> <span class="n">time_resolution</span> <span class="o">/</span> <span class="n">HOURS_PER_DAY</span><span class="p">))],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_D_movable</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>       
+
+<span class="k">class</span> <span class="nc">_StorageBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Storage system description for the optimization environment.</span>
+<span class="sd">    </span>
+<span class="sd">     This block contains all data related to storage technologies,</span>
+<span class="sd">     including their numerical characteristics and identifiers.</span>
+<span class="sd">    </span>
+<span class="sd">     Attributes:</span>
+<span class="sd">         characteristics (np.ndarray):</span>
+<span class="sd">             Numerical matrix describing storage parameters (costs, capacities, efficiencies, etc.). </span>
+<span class="sd">         n_store (int):</span>
+<span class="sd">             Number of storage technologies in the system.</span>
+<span class="sd">         technologies (np.ndarray):</span>
+<span class="sd">             Names of the available storage technologies.</span>
+<span class="sd">         bounds (np.ndarray):</span>
+<span class="sd">             capacity of installation for each storage type.         </span>
+<span class="sd">     &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="s2">&quot;characteristics&quot;</span><span class="p">,</span><span class="s2">&quot;n_store&quot;</span><span class="p">,</span><span class="s2">&quot;technologies&quot;</span><span class="p">,</span><span class="s2">&quot;bounds&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">characteristics</span><span class="p">,</span><span class="n">n_store</span><span class="p">,</span><span class="n">technologies</span><span class="p">,</span><span class="n">bounds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">characteristics</span> <span class="o">=</span> <span class="n">characteristics</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_store</span> <span class="o">=</span> <span class="n">n_store</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">technologies</span> <span class="o">=</span> <span class="n">technologies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>        
+        
+<span class="k">def</span> <span class="nf">_convert_characteristic_arrays</span><span class="p">(</span><span class="n">discrete_characteristics</span><span class="p">,</span><span class="n">n_store</span><span class="p">):</span>
+    <span class="n">n_specs</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">continuous_characteristics</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n_specs</span> <span class="p">,</span> <span class="n">n_store</span><span class="p">))</span>
+        
+    <span class="n">energy_cost</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_CAPEX_COST</span><span class="p">]</span><span class="o">/</span><span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_ENERGY</span><span class="p">]</span>
+    <span class="n">normalisation_power</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">((</span><span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_CHARGE_POWER</span><span class="p">],</span><span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_DISCHARGE_POWER</span><span class="p">]),</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">pcs_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_store</span><span class="p">)</span>
+    <span class="n">bop_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_store</span><span class="p">)</span>
+    <span class="n">om_cost</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_OPEX_COST</span><span class="p">]</span><span class="o">/</span><span class="n">normalisation_power</span>
+    <span class="n">round_trip_efficiency</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_ROUND_TRIP_EFF</span><span class="p">]</span>
+    <span class="n">depth_of_discharge</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_DEPTH_OF_DISCHARGE</span><span class="p">]</span>
+    <span class="n">emissions</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_EMISSIONS</span><span class="p">]</span><span class="o">/</span><span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_ENERGY</span><span class="p">]</span>
+    <span class="n">lifetime</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_LIFETIME</span><span class="p">]</span>
+    <span class="n">cycle_life</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_CYCLE_LIFE</span><span class="p">]</span>
+    <span class="n">installation_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_store</span><span class="p">)</span>
+    <span class="n">esoei</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_ESOEI</span><span class="p">]</span>
+    <span class="n">power_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_store</span><span class="p">)</span>
+ 
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_ENERGY_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">energy_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_PCS_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">pcs_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_BOP_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">bop_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_OM_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">om_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_ROUND_TRIP_EFF</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">round_trip_efficiency</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_DEPTH_OF_DISCHARGE</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">depth_of_discharge</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_EMISSIONS</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">emissions</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_LIFETIME</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">lifetime</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_CYCLE_LIFE</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">cycle_life</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_INSTALLATION_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">installation_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_ESOEI</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">esoei</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_POWER_COST</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">power_cost</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_UNIFIED_ENERGY</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_ENERGY</span><span class="p">]</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_UNIFIED_CHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_CHARGE_POWER</span><span class="p">]</span>
+    <span class="n">continuous_characteristics</span><span class="p">[</span><span class="n">STOR_UNIFIED_DISCHARGE_POWER</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">discrete_characteristics</span><span class="p">[:,</span><span class="n">STOR_UNIT_DISCHARGE_POWER</span><span class="p">]</span>
+    <span class="k">return</span><span class="p">(</span><span class="n">continuous_characteristics</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">_GridBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Electrical grid connection and pricing model.</span>
+<span class="sd">    </span>
+<span class="sd">     This block contains all information related to grid interaction,</span>
+<span class="sd">     including electricity pricing, emissions factors, and contractual</span>
+<span class="sd">     parameters. It is used in on-grid and hybrid system configurations.</span>
+<span class="sd">    </span>
+<span class="sd">     Attributes:</span>
+<span class="sd">             </span>
+<span class="sd">         C02eqemissions (float):</span>
+<span class="sd">             Grid-specific CO₂ emissions factor (e.g., gCO₂/kWh).</span>
+<span class="sd">    </span>
+<span class="sd">         fossil_fuel_ratio (float):</span>
+<span class="sd">             Share of fossil energy in the main grid mix.</span>
+<span class="sd">    </span>
+<span class="sd">         pof_ratio (float):</span>
+<span class="sd">             Ratio between primary and final energy in the grid system. </span>
+<span class="sd">             </span>
+<span class="sd">         prices (np.ndarray):</span>
+<span class="sd">             Time-dependent electricity prices (buying from grid).</span>
+<span class="sd">    </span>
+<span class="sd">         fixed_premium (np.ndarray):</span>
+<span class="sd">             Fixed tariff components or subsidies applied to grid pricing.</span>
+<span class="sd">    </span>
+<span class="sd">         overrun (np.ndarray):</span>
+<span class="sd">             Penalty or cost associated with exceeding contracted power.</span>
+<span class="sd">    </span>
+<span class="sd">         selling_price (np.ndarray):</span>
+<span class="sd">             Electricity selling price back to the grid.</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;C02eqemissions&quot;</span><span class="p">,</span><span class="s2">&quot;fossil_fuel_ratio&quot;</span><span class="p">,</span><span class="s2">&quot;pof_ratio&quot;</span><span class="p">,</span><span class="s2">&quot;prices&quot;</span><span class="p">,</span><span class="s2">&quot;fixed_premium&quot;</span><span class="p">,</span><span class="s2">&quot;overrun&quot;</span><span class="p">,</span><span class="s2">&quot;selling_price&quot;</span><span class="p">,</span><span class="s2">&quot;n_contract&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">C02eqemissions</span><span class="p">,</span> <span class="n">fossil_fuel_ratio</span><span class="p">,</span> <span class="n">pof_ratio</span><span class="p">,</span><span class="n">prices</span><span class="p">,</span> <span class="n">fixed_premium</span><span class="p">,</span> <span class="n">overrun</span><span class="p">,</span> <span class="n">selling_price</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contracts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">overrun</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">C02eqemissions</span> <span class="o">=</span> <span class="n">C02eqemissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fossil_fuel_ratio</span> <span class="o">=</span> <span class="n">fossil_fuel_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pof_ratio</span> <span class="o">=</span> <span class="n">pof_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_premium</span> <span class="o">=</span> <span class="n">fixed_premium</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overrun</span> <span class="o">=</span> <span class="n">overrun</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">selling_price</span> <span class="o">=</span> <span class="n">selling_price</span>
+
+<span class="k">class</span> <span class="nc">_GensetBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Diesel generator (DG) system characteristics.</span>
+<span class="sd">    </span>
+<span class="sd">     This block contains all technical and economic parameters related to</span>
+<span class="sd">     diesel generator operation, including cost structure, efficiency,</span>
+<span class="sd">     fuel consumption, and emissions.</span>
+<span class="sd">    </span>
+<span class="sd">     It is used in off-grid configuration where backup</span>
+<span class="sd">     generation is required.</span>
+<span class="sd">    </span>
+<span class="sd">     Attributes:</span>
+<span class="sd">         fuel_cost (float):</span>
+<span class="sd">             Cost of fuel per unit of energy.</span>
+<span class="sd">    </span>
+<span class="sd">         lifetime (float):</span>
+<span class="sd">             Operational lifetime of the generator (years or equivalent cycles).</span>
+<span class="sd">    </span>
+<span class="sd">         unit_cost (float):</span>
+<span class="sd">             Investment cost.</span>
+<span class="sd">    </span>
+<span class="sd">         maintenance_cost (float):</span>
+<span class="sd">             Annual maintenance cost.</span>
+<span class="sd">    </span>
+<span class="sd">         fuel_consumption (np.ndarray):</span>
+<span class="sd">             Fuel consumption curve as a function of load or operating point.</span>
+<span class="sd">    </span>
+<span class="sd">         eroi (float):</span>
+<span class="sd">             Energy Return on Investment of the generator.</span>
+<span class="sd">    </span>
+<span class="sd">         C02eqemissions (float):</span>
+<span class="sd">             CO₂-equivalent emissions factor (e.g., gCO₂/kWh).</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;fuel_cost&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lifetime&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;unit_cost&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;maintenance_cost&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fuel_consumption&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;eroi&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;emissions&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fuel_cost</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">unit_cost</span><span class="p">,</span>
+                 <span class="n">maintenance_cost</span><span class="p">,</span> <span class="n">fuel_consumption</span><span class="p">,</span> <span class="n">eroi</span><span class="p">,</span> <span class="n">C02eqemissions</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_cost</span> <span class="o">=</span> <span class="n">fuel_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">lifetime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_cost</span> <span class="o">=</span> <span class="n">unit_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintenance_cost</span> <span class="o">=</span> <span class="n">maintenance_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_consumption</span> <span class="o">=</span> <span class="n">fuel_consumption</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eroi</span> <span class="o">=</span> <span class="n">eroi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">C02eqemissions</span> <span class="o">=</span> <span class="n">C02eqemissions</span>
+        
+<span class="k">class</span> <span class="nc">_TrackingOpeBlock</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Operator tracking and diagnostics.</span>
+<span class="sd">    </span>
+<span class="sd">    Stores optional monitoring data for analyzing the behavior</span>
+<span class="sd">    of genetic operators during optimization.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        tracking_operators (integer):</span>
+<span class="sd">            Defines the need for operators tracking.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;tracking_operators&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tracking_operators</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracking_operators</span> <span class="o">=</span> <span class="n">tracking_operators</span>
+
+
+<span class="k">class</span> <span class="nc">_Environment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">     Core optimization environment used by the genetic algorithm.</span>
+<span class="sd">    </span>
+<span class="sd">     This class aggregates all structured data blocks required for the</span>
+<span class="sd">     execution of the optimization process. It acts as the central</span>
+<span class="sd">     container passed to the JIT-compiled genetic algorithm.</span>
+<span class="sd">    </span>
+<span class="sd">     The environment is intentionally designed to be:</span>
+<span class="sd">     - Lightweight (no dynamic attributes)</span>
+<span class="sd">     - Numba-friendly (static structure via __slots__)</span>
+<span class="sd">     - Modular (separation into independent blocks)</span>
+<span class="sd">     - Immutable in practice during optimization</span>
+<span class="sd">    </span>
+<span class="sd">     Attributes:</span>
+<span class="sd">         optimization (OptimBlock):</span>
+<span class="sd">             Definition of the optimization problem (objective, constraints).</span>
+<span class="sd">    </span>
+<span class="sd">         hyperparameters (HyperparametersBlock):</span>
+<span class="sd">             Genetic algorithm configuration parameters (ERMESS RESEARCH).</span>
+<span class="sd">             </span>
+<span class="sd">         hyperparameters_pro (HyperparametersBlock):</span>
+<span class="sd">             Genetic algorithm configuration parameters (ERMESS PRO).        </span>
+<span class="sd">    </span>
+<span class="sd">         config (ConfigurationBlock):</span>
+<span class="sd">             Global system configuration (e.g., connectivity type).</span>
+<span class="sd">    </span>
+<span class="sd">         time (TimeParametersBlock):</span>
+<span class="sd">             Temporal structure of the simulation.</span>
+<span class="sd">    </span>
+<span class="sd">         production (ProductionBlock):</span>
+<span class="sd">             Production assets and generation profiles.</span>
+<span class="sd">    </span>
+<span class="sd">         loads (LoadBlock):</span>
+<span class="sd">             Electrical demand profiles (including DSM components).</span>
+<span class="sd">    </span>
+<span class="sd">         storage (StorageBlock):</span>
+<span class="sd">             Storage system characteristics.</span>
+<span class="sd">    </span>
+<span class="sd">         grid (GridBlock or None):</span>
+<span class="sd">             Grid interaction data (None for off-grid systems).</span>
+<span class="sd">    </span>
+<span class="sd">         genset (GensetBlock or None):</span>
+<span class="sd">             Diesel generator system data (None for on-grid systems).</span>
+<span class="sd">             </span>
+<span class="sd">         postprocess_config(postProcessConfig):</span>
+<span class="sd">             Algorithm post-processing parameters.              </span>
+<span class="sd">    </span>
+<span class="sd">         tracking (TrackingOpeBlock):</span>
+<span class="sd">             Optional diagnostics and operator tracking data.</span>
+<span class="sd">    </span>
+<span class="sd">     Notes:</span>
+<span class="sd">         This class is a pure data container with no business logic.</span>
+<span class="sd">         It is designed to be passed directly into the optimization engine.</span>
+<span class="sd">     &quot;&quot;&quot;</span>
+    
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;storage&quot;</span><span class="p">,</span><span class="s2">&quot;time&quot;</span><span class="p">,</span><span class="s2">&quot;production&quot;</span><span class="p">,</span><span class="s2">&quot;loads&quot;</span><span class="p">,</span><span class="s2">&quot;grid&quot;</span><span class="p">,</span> <span class="s2">&quot;genset&quot;</span><span class="p">,</span> <span class="s2">&quot;optimization&quot;</span><span class="p">,</span><span class="s2">&quot;hyperparameters&quot;</span><span class="p">,</span><span class="s2">&quot;hyperparameters_pro&quot;</span><span class="p">,</span><span class="s2">&quot;config&quot;</span><span class="p">,</span><span class="s2">&quot;postprocess_config&quot;</span><span class="p">,</span><span class="s2">&quot;tracking&quot;</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">optimization</span><span class="p">,</span><span class="n">hyperparameters</span><span class="p">,</span> <span class="n">hyperparameters_pro</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span><span class="n">time</span><span class="p">,</span><span class="n">production</span><span class="p">,</span> <span class="n">loads</span><span class="p">,</span><span class="n">storage</span><span class="p">,</span><span class="n">grid</span><span class="p">,</span> <span class="n">genset</span><span class="p">,</span><span class="n">postprocess_config</span><span class="p">,</span><span class="n">tracking</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimization</span> <span class="o">=</span> <span class="n">optimization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">hyperparameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hyperparameters_pro</span> <span class="o">=</span> <span class="n">hyperparameters_pro</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">production</span> <span class="o">=</span> <span class="n">production</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loads</span> <span class="o">=</span> <span class="n">loads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage</span> <span class="o">=</span> <span class="n">storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genset</span> <span class="o">=</span> <span class="n">genset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_config</span> <span class="o">=</span> <span class="n">postprocess_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tracking</span> <span class="o">=</span> <span class="n">tracking</span>     
+
+
+<div class="viewcode-block" id="build_environment">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.data.html#ERMESS_scripts.data.data_builder.build_environment">[docs]</a>
+<span class="k">def</span> <span class="nf">build_environment</span><span class="p">(</span><span class="n">structured_data</span><span class="p">):</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a Numba-compatible optimization environment from structured input data.</span>
+<span class="sd">    </span>
+<span class="sd">    This function transforms high-level structured input data into a</span>
+<span class="sd">    fully-formed `Environment` object composed of modular blocks.</span>
+<span class="sd">    It acts as the compilation layer between preprocessing and the</span>
+<span class="sd">    optimization engine.</span>
+<span class="sd">    </span>
+<span class="sd">    The function performs the following steps:</span>
+<span class="sd">        1. Extract and build storage system block.</span>
+<span class="sd">        2. Construct temporal configuration.</span>
+<span class="sd">        3. Build production assets and time-series.</span>
+<span class="sd">        4. Build load profiles (including DSM aggregation).</span>
+<span class="sd">        5. Define optimization problem parameters.</span>
+<span class="sd">        6. Select hyperparameter set depending on optimization mode.</span>
+<span class="sd">        7. Configure system connectivity (grid or genset).</span>
+<span class="sd">        8. Attach optional tracking data.</span>
+<span class="sd">        9. Assemble final Environment object.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        structured_data (object):</span>
+<span class="sd">            Fully parsed input structure containing all required fields:</span>
+<span class="sd">            - storage</span>
+<span class="sd">            - time</span>
+<span class="sd">            - production</span>
+<span class="sd">            - load</span>
+<span class="sd">            - optimization</span>
+<span class="sd">            - hyperparameters / hyperparameterspro</span>
+<span class="sd">            - grid (optional)</span>
+<span class="sd">            - genset (optional)</span>
+<span class="sd">            -post-processing</span>
+<span class="sd">            - tracking</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Environment:</span>
+<span class="sd">            Fully constructed environment ready to be passed into the</span>
+<span class="sd">            genetic algorithm or JIT-compiled optimization engine.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        AttributeError:</span>
+<span class="sd">            If required fields are missing in structured_data.</span>
+<span class="sd">    </span>
+<span class="sd">        ValueError:</span>
+<span class="sd">            If optimization type is not recognized.</span>
+<span class="sd">    </span>
+<span class="sd">    Notes:</span>
+<span class="sd">        This function is the single entry point for converting high-level</span>
+<span class="sd">        inputs into a computationally optimized environment. It should be</span>
+<span class="sd">        called once before launching the optimization process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">_StorageBlock</span><span class="p">(</span>
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span><span class="o">.</span><span class="n">characteristics</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span><span class="o">.</span><span class="n">techs</span><span class="p">,</span> 
+            <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">structured_data</span><span class="o">.</span><span class="n">continu_storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span> 
+    <span class="k">elif</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="p">:</span>
+        <span class="n">adapted_characteristics</span> <span class="o">=</span> <span class="n">_convert_characteristic_arrays</span><span class="p">(</span><span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">characteristics</span><span class="p">,</span><span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">)</span>
+        <span class="n">storage</span> <span class="o">=</span> <span class="n">_StorageBlock</span><span class="p">(</span>
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> 
+            <span class="n">adapted_characteristics</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">techs</span><span class="p">,</span> 
+            <span class="n">structured_data</span><span class="o">.</span><span class="n">discrete_storage</span><span class="o">.</span><span class="n">capacity</span>
+            <span class="p">)</span> 
+
+    <span class="n">time</span> <span class="o">=</span> <span class="n">_TimeParametersBlock</span><span class="p">(</span><span class="n">structured_data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">structured_data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">duration_years</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">structured_data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">datetime</span><span class="p">),</span><span class="n">structured_data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">n_days</span><span class="p">)</span>
+
+    <span class="n">production</span> <span class="o">=</span> <span class="n">_ProductionBlock</span><span class="p">(</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">characteristics_num</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">ids</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">current_prod</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">unit_prods</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">loads</span> <span class="o">=</span> <span class="n">_LoadBlock</span><span class="p">(</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">non_movable</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">yearly_movable</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">load</span><span class="o">.</span><span class="n">daily_movable</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">time_resolution</span>
+    <span class="p">)</span>
+
+    <span class="n">optimization</span> <span class="o">=</span> <span class="n">_OptimBlock</span><span class="p">(</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">constraint_num</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">constraint_level</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">criterion_num</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span><span class="o">==</span><span class="s1">&#39;research&#39;</span> <span class="p">:</span> 
+        <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">_HyperparametersBlock</span><span class="p">(</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">r_cross</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">n_iter</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">n_pop</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">operators_num</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">cost_constraint</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">elitism_probability</span><span class="p">,)</span>
+    <span class="k">else</span> <span class="p">:</span> <span class="n">hyperparameters</span> <span class="o">=</span> <span class="kc">None</span>
+        
+    
+    <span class="n">hyperparameters_pro</span> <span class="o">=</span> <span class="n">_HyperparametersBlock</span><span class="p">(</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">r_cross</span><span class="p">,</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">n_iter</span><span class="p">,</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">n_pop</span><span class="p">,</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">operators_num</span><span class="p">,</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">cost_constraint</span><span class="p">,</span>
+    <span class="n">structured_data</span><span class="o">.</span><span class="n">hyperparameterspro</span><span class="o">.</span><span class="n">elitism_probability</span><span class="p">,)</span>
+
+    <span class="n">dispatching</span> <span class="o">=</span> <span class="n">_DispatchingBlock</span><span class="p">(</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">Defined_items</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">energy_use_coefficient</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">Y_DSM_minimum_levels</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">D_DSM_minimum_levels</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">DG_strategy</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">DG_min_runtime</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">DG_min_production</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">Discharge_order</span><span class="p">,</span>
+        <span class="n">structured_data</span><span class="o">.</span><span class="n">dispatching</span><span class="o">.</span><span class="n">Overlaps</span><span class="p">)</span>
+
+    <span class="n">tracking</span> <span class="o">=</span> <span class="n">_TrackingOpeBlock</span><span class="p">(</span><span class="n">structured_data</span><span class="o">.</span><span class="n">tracking</span><span class="p">)</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">grid</span> <span class="k">if</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">grid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">genset</span> <span class="o">=</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">genset</span> <span class="k">if</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">genset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">postprocess_config</span> <span class="o">=</span> <span class="n">structured_data</span><span class="o">.</span><span class="n">postProcessConfig</span>
+
+    <span class="k">return</span> <span class="n">_Environment</span><span class="p">(</span>
+        <span class="n">optimization</span><span class="p">,</span>
+        <span class="n">hyperparameters</span><span class="p">,</span>
+        <span class="n">hyperparameters_pro</span><span class="p">,</span>
+        <span class="n">dispatching</span><span class="p">,</span>
+        <span class="n">time</span><span class="p">,</span>
+        <span class="n">production</span><span class="p">,</span>
+        <span class="n">loads</span><span class="p">,</span>
+        <span class="n">storage</span><span class="p">,</span>        
+        <span class="n">grid</span><span class="p">,</span>
+        <span class="n">genset</span><span class="p">,</span>
+        <span class="n">postprocess_config</span><span class="p">,</span>
+        <span class="n">tracking</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -444,23 +444,25 @@ def compute_KPI(solution,Context,datetime):
     - economic evaluation
     - environmental impact assessment
 
-    Parameters :
+    Args :
         solution : object
             Candidate solution of the optimization problem. Contains decision
             variables such as:
-                - production_set
-                - storage_TS
-                - D_DSM / Y_DSM
-                - trades
+                
+            - production_set
+            - storage_TS
+            - D_DSM / Y_DSM
+            - trades
 
         Context : 
             object
                 Simulation environment containing:
-                    - production assets and time series
-                    - storage characteristics
-                    - load profiles (DSM and non-DSM)
-                    - grid/genset configuration
-                    - optimization mode (research or pro)
+                    
+                - production assets and time series
+                - storage characteristics
+                - load profiles (DSM and non-DSM)
+                - grid/genset configuration
+                - optimization mode (research or pro)
 
         datetime : array-like
             Time index of the simulation period.

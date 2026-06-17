@@ -2,7 +2,8 @@
 '''
 :Created: 2025-06-19 16:47:59
 :Author: Mathieu Lafitte and JoPHOBEA
-:Description: Tool to simulate the behavior of a PV system with a single array and a single inverter
+
+This script simulates the behavior of a PV system with a single array and a single inverter
 
 '''
 #---------------------

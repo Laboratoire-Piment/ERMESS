@@ -3,9 +3,7 @@
 Created on Thu Jun  4 11:50:01 2026
 
 @author: JoPHOBEA
-"""
 
-"""
 Stochastic bottom-up occupant-driven microgrid load model combining occupancy simulation,
  activity-based end-use modelling, diversity effects and simplified thermal dynamics.
 
@@ -58,7 +56,7 @@ The models are inspired by :
 import numpy as np
 import pandas as pd
 
-from ERMESS_scripts.load_model.src.config_profiles import PROFILES
+from ERMESS_scripts.load_model.config_profiles import PROFILES
 
 
 def is_holiday(ts, holidays):

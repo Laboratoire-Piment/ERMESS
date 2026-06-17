@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ERMESS_scripts.evolutionnary_core.ERMESS_functions &#8212; ERMESS 1.0.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ERMESS_scripts.evolutionnary_core.ERMESS_functions</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Tue Mar  3 15:32:46 2026</span>
+
+<span class="sd">@author: JoPHOBEA</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numba.experimental</span> <span class="kn">import</span> <span class="n">jitclass</span>
+<span class="kn">from</span> <span class="nn">numba</span> <span class="kn">import</span> <span class="n">float64</span><span class="p">,</span> <span class="n">int64</span>
+
+
+<span class="kn">from</span> <span class="nn">.ERMESS_functions_research</span> <span class="kn">import</span> <span class="n">jitting_pop_res</span> 
+<span class="kn">from</span> <span class="nn">.ERMESS_functions_pro</span> <span class="kn">import</span> <span class="n">jitting_pop_pro</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.cost</span> <span class="kn">import</span> <span class="n">ERMESS_cost_functions</span> <span class="k">as</span> <span class="n">Cfc</span>
+<span class="kn">from</span> <span class="nn">ERMESS_scripts.data.indices</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<span class="n">pro_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;total_D_Movable_load&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;total_Y_Movable_load&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">]</span>
+
+<div class="viewcode-block" id="ProParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.ProParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">pro_params</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ProParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for movable load preprocessing parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">total_D_Movable_load</span><span class="p">,</span><span class="n">total_Y_Movable_load</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize production-related parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            total_D_Movable_load (np.ndarray): Total energy of daily movable load.</span>
+<span class="sd">            total_Y_Movable_load (np.ndarray): Total energy of yearly movable load.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_D_Movable_load</span> <span class="o">=</span> <span class="n">total_D_Movable_load</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_Y_Movable_load</span> <span class="o">=</span> <span class="n">total_Y_Movable_load</span></div>
+
+
+
+<span class="n">global_params</span> <span class="o">=</span> <span class="p">[</span> 
+    <span class="p">(</span><span class="s1">&#39;n_bits&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;time_resolution&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;duration_years&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;constraint_num&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;constraint_level&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;cost_constraint&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;Connection&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;Non_movable_load&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="GlobalParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GlobalParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">global_params</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GlobalParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for global optimization parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_bits</span><span class="p">,</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">duration_years</span><span class="p">,</span><span class="n">constraint_num</span><span class="p">,</span><span class="n">constraint_level</span><span class="p">,</span><span class="n">cost_constraint</span><span class="p">,</span><span class="n">Connection</span><span class="p">,</span><span class="n">Non_movable_load</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize global simulation parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_bits (int): Number of timesteps.</span>
+<span class="sd">            time_resolution (float): Simulation time resolution.</span>
+<span class="sd">            duration_years (float): Project duration in years.</span>
+<span class="sd">            constraint_num (int): Constraint identifier.</span>
+<span class="sd">            constraint_level (float): Constraint threshold value.</span>
+<span class="sd">            cost_constraint (float): Cost constraint factor.</span>
+<span class="sd">            Connection (int): Grid connection mode.</span>
+<span class="sd">            Non_movable_load (np.ndarray): Non-movable load profile.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_bits</span> <span class="o">=</span> <span class="n">n_bits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_resolution</span> <span class="o">=</span> <span class="n">time_resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">duration_years</span> <span class="o">=</span> <span class="n">duration_years</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_num</span> <span class="o">=</span> <span class="n">constraint_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_level</span> <span class="o">=</span> <span class="n">constraint_level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cost_constraint</span> <span class="o">=</span> <span class="n">cost_constraint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Connection</span> <span class="o">=</span> <span class="n">Connection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Non_movable_load</span> <span class="o">=</span> <span class="n">Non_movable_load</span></div>
+
+
+<span class="n">specs_grid</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;prices&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;fixed_premium&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;Overrun&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;Selling_price&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;eqCO2emissions&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;fossil_fuel_ratio&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="GridParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">specs_grid</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GridParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for grid-related parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prices</span><span class="p">,</span> <span class="n">fixed_premium</span><span class="p">,</span> <span class="n">Overrun</span><span class="p">,</span> <span class="n">Selling_price</span><span class="p">,</span> <span class="n">eqCO2emissions</span><span class="p">,</span> <span class="n">fossil_fuel_ratio</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize grid parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            prices (np.ndarray): Electricity purchase prices.</span>
+<span class="sd">            fixed_premium (np.ndarray): Fixed subscription premiums.</span>
+<span class="sd">            Overrun (np.ndarray): Grid overrun penalties.</span>
+<span class="sd">            Selling_price (np.ndarray): Electricity selling price.</span>
+<span class="sd">            eqCO2emissions (float): Grid CO2 equivalent emissions factor.</span>
+<span class="sd">            fossil_fuel_ratio (float): Fossil fuel share of grid electricity.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="n">prices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_premium</span> <span class="o">=</span> <span class="n">fixed_premium</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Overrun</span> <span class="o">=</span> <span class="n">Overrun</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Selling_price</span> <span class="o">=</span> <span class="n">Selling_price</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eqCO2emissions</span> <span class="o">=</span> <span class="n">eqCO2emissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fossil_fuel_ratio</span> <span class="o">=</span> <span class="n">fossil_fuel_ratio</span></div>
+
+        
+<div class="viewcode-block" id="GridParamsDummy">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GridParamsDummy">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">specs_grid</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GridParamsDummy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fallback empty grid parameters container.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fixed_premium</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Overrun</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Selling_price</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eqCO2emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fossil_fuel_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+        
+<span class="n">REN_specs_systems</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;current_production&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;unit_productions&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;specs_prod&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;capacities&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;specs_storage&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;n_store&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;storage_model&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;storage_bounds&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="RENSystemsParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.RENSystemsParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">REN_specs_systems</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">RENSystemsParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for renewable energy systems parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_production</span><span class="p">,</span> <span class="n">unit_productions</span><span class="p">,</span> <span class="n">specs_prod</span><span class="p">,</span> <span class="n">capacities</span><span class="p">,</span> <span class="n">specs_storage</span><span class="p">,</span> <span class="n">n_store</span><span class="p">,</span> <span class="n">storage_model</span><span class="p">,</span> <span class="n">storage_bounds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize renewable systems parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            current_production (np.ndarray): Existing production profile.</span>
+<span class="sd">            unit_productions (np.ndarray): Unit production profiles.</span>
+<span class="sd">            specs_prod (np.ndarray): Production system characteristics.</span>
+<span class="sd">            capacities (np.ndarray): Installed capacities.</span>
+<span class="sd">            specs_storage (np.ndarray): Storage system characteristics.</span>
+<span class="sd">            n_store (int): Number of storage systems.</span>
+<span class="sd">            storage_model (int) : type of storage model.</span>
+<span class="sd">            storage_bounds (np.ndarray) : limits if installed storage units.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_production</span> <span class="o">=</span> <span class="n">current_production</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_productions</span> <span class="o">=</span> <span class="n">unit_productions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specs_prod</span> <span class="o">=</span> <span class="n">specs_prod</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacities</span> <span class="o">=</span> <span class="n">capacities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specs_storage</span> <span class="o">=</span> <span class="n">specs_storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_store</span> <span class="o">=</span> <span class="n">n_store</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_model</span> <span class="o">=</span> <span class="n">storage_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage_bounds</span> <span class="o">=</span> <span class="n">storage_bounds</span></div>
+
+        
+<span class="n">mutation_extra_params</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;groups_production&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:,:]</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;groups_size&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]</span> <span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;unit_production_volumes&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;D_DSM_indexes&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;hyperparameters_operators&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:,:]),</span>
+    <span class="p">(</span><span class="s1">&#39;defined_items&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;n_contracts&#39;</span><span class="p">,</span> <span class="n">int64</span><span class="p">),</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="MutationParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.MutationParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">mutation_extra_params</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MutationParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for mutation operator parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groups_production</span><span class="p">,</span><span class="n">groups_size</span><span class="p">,</span> <span class="n">unit_production_volumes</span><span class="p">,</span><span class="n">D_DSM_indexes</span><span class="p">,</span> <span class="n">hyperparameters_operators</span><span class="p">,</span> <span class="n">defined_items</span><span class="p">,</span> <span class="n">n_contracts</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups_production</span> <span class="o">=</span> <span class="n">groups_production</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups_size</span> <span class="o">=</span> <span class="n">groups_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_production_volumes</span> <span class="o">=</span> <span class="n">unit_production_volumes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D_DSM_indexes</span> <span class="o">=</span> <span class="n">D_DSM_indexes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hyperparameters_operators</span> <span class="o">=</span> <span class="n">hyperparameters_operators</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defined_items</span> <span class="o">=</span> <span class="n">defined_items</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_contracts</span> <span class="o">=</span> <span class="n">n_contracts</span></div>
+
+
+<span class="n">spec_genset</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s1">&#39;fuel_cost&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;lifetime&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;unit_cost&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;maintenance_cost&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;fuel_consumption&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">[:]),</span>
+    <span class="p">(</span><span class="s1">&#39;fuel_CO2eq_emissions&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;EROI&#39;</span><span class="p">,</span> <span class="n">float64</span><span class="p">),</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="GensetParams">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParams">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">spec_genset</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GensetParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for genset-related parameters.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fuel_cost</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">unit_cost</span><span class="p">,</span>
+                 <span class="n">maintenance_cost</span><span class="p">,</span> <span class="n">fuel_consumption</span><span class="p">,</span> <span class="n">fuel_CO2eq_emissions</span><span class="p">,</span> <span class="n">EROI</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize genset parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fuel_cost (float): Fuel price.</span>
+<span class="sd">            lifetime (float): Equipment lifetime.</span>
+<span class="sd">            unit_cost (float): Investment cost.</span>
+<span class="sd">            maintenance_cost (float): Maintenance cost.</span>
+<span class="sd">            fuel_consumption (np.ndarray): Fuel consumption curve.</span>
+<span class="sd">            fuel_CO2eq_emissions (float): CO2 equivalent emissions factor.</span>
+<span class="sd">            EROI (float): Energy return on investment.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_cost</span> <span class="o">=</span> <span class="n">fuel_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">lifetime</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_cost</span> <span class="o">=</span> <span class="n">unit_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintenance_cost</span> <span class="o">=</span> <span class="n">maintenance_cost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_consumption</span> <span class="o">=</span> <span class="n">fuel_consumption</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_CO2eq_emissions</span> <span class="o">=</span> <span class="n">fuel_CO2eq_emissions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EROI</span> <span class="o">=</span> <span class="n">EROI</span></div>
+
+        
+<div class="viewcode-block" id="GensetParamsDummy">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.GensetParamsDummy">[docs]</a>
+<span class="nd">@jitclass</span><span class="p">(</span><span class="n">spec_genset</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">GensetParamsDummy</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fallback empty genset parameters container.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lifetime</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maintenance_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_consumption</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuel_CO2eq_emissions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EROI</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+        
+
+<span class="k">def</span> <span class="nf">_build_groups_matrix</span><span class="p">(</span><span class="n">groups_raw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert variable-length groups into a padded NumPy matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        groups_raw (list[list[int]]): List of production groups.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        np.ndarray: Padded 2D matrix of group indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">max_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">groups_raw</span><span class="p">)</span>
+
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">groups_raw</span><span class="p">),</span> <span class="n">max_len</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">groups_raw</span><span class="p">):</span>
+        <span class="n">groups</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)]</span> <span class="o">=</span> <span class="n">g</span>
+
+    <span class="k">return</span> <span class="n">groups</span>
+
+<div class="viewcode-block" id="build_numba_params">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.build_numba_params">[docs]</a>
+<span class="k">def</span> <span class="nf">build_numba_params</span><span class="p">(</span><span class="n">Context</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build all Numba-compatible parameter containers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        Context: Global ERMESS context object.</span>
+<span class="sd">        type_optim (str): Optimization mode.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: Tuple containing all initialized parameter containers.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the optimization or connection type is unknown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">pro_parameters</span> <span class="o">=</span> <span class="n">ProParams</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">total_D_movable</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">total_Y_movable</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">connection</span> <span class="o">==</span> <span class="s1">&#39;On-grid&#39;</span><span class="p">:</span>
+        <span class="n">connection_num</span> <span class="o">=</span> <span class="n">GRID_ON</span>
+    <span class="k">elif</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">connection</span> <span class="o">==</span> <span class="s1">&#39;Off-grid&#39;</span><span class="p">:</span>
+        <span class="n">connection_num</span> <span class="o">=</span> <span class="n">GRID_OFF</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown connection type&quot;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;pro&#39;</span><span class="p">:</span>
+        <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters_pro</span>
+    <span class="k">elif</span> <span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;research&#39;</span><span class="p">:</span>
+        <span class="n">hyperparameters</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">hyperparameters</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown optim type&quot;</span><span class="p">)</span>
+    
+    <span class="n">global_parameters</span> <span class="o">=</span> <span class="n">GlobalParams</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">n_bits</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">time_resolution</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">duration_years</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">constraint_num</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">constraint_level</span><span class="p">,</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">cost_constraint</span><span class="p">,</span><span class="n">connection_num</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">non_movable</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">grid</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">grid_parameters</span> <span class="o">=</span> <span class="n">GridParams</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">prices</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">fixed_premium</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">overrun</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">selling_price</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">eqCO2emissions</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">fossil_fuel_ratio</span><span class="p">)</span>      
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">grid_parameters</span> <span class="o">=</span> <span class="n">GridParamsDummy</span><span class="p">()</span>
+        
+        
+    <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s1">&#39;continuous&#39;</span><span class="p">:</span>
+        <span class="n">storage_model</span> <span class="o">=</span> <span class="n">CONTINUOUS_MODEL</span>
+    <span class="k">elif</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">model</span> <span class="o">==</span> <span class="s1">&#39;discrete&#39;</span><span class="p">:</span>
+        <span class="n">storage_model</span> <span class="o">=</span> <span class="n">DISCRETE_MODEL</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unknown storage model&quot;</span><span class="p">)</span>
+
+    <span class="n">RENSystems_parameters</span> <span class="o">=</span> <span class="n">RENSystemsParams</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">current_prod</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">unit_prods</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">specs_num</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">capacities</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">characteristics</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">n_store</span><span class="p">,</span> <span class="n">storage_model</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">bounds</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">genset</span> <span class="o">==</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="n">Genset_parameters</span> <span class="o">=</span> <span class="n">GensetParams</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">fuel_cost</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">lifetime</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">unit_cost</span><span class="p">,</span><span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">maintenance_cost</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">fuel_consumption</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">fuel_CO2eq_emissions</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">genset</span><span class="o">.</span><span class="n">EROI</span><span class="p">)</span>
+    <span class="k">else</span> <span class="p">:</span>
+        <span class="n">Genset_parameters</span> <span class="o">=</span> <span class="n">GensetParamsDummy</span><span class="p">()</span>
+    
+    <span class="n">groups</span> <span class="o">=</span> <span class="n">_build_groups_matrix</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+    <span class="n">groups_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">groups</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="n">n_contracts</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">n_contracts</span> <span class="k">if</span> <span class="n">Context</span><span class="o">.</span><span class="n">grid</span><span class="o">!=</span><span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">mutation_parameters</span> <span class="o">=</span> <span class="n">MutationParams</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">groups_size</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">production</span><span class="o">.</span><span class="n">specs_num</span><span class="p">[:,</span><span class="n">ProdCharIdx</span><span class="o">.</span><span class="n">Volume</span><span class="p">],</span> <span class="n">Context</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">D_DSM_indexes</span><span class="p">,</span><span class="n">hyperparameters</span><span class="o">.</span><span class="n">operators_parameters</span><span class="p">,</span> <span class="n">Context</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">defined_items</span><span class="p">,</span> <span class="n">n_contracts</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">,</span> <span class="n">mutation_parameters</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_function_pro</span><span class="p">(</span><span class="n">index_criterion</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the production evaluation function for a criterion.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            index_criterion (int): Criterion identifier.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            callable: Associated production evaluation function.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the criterion is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">PRO</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">CRIT_LCOE</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">LCOE_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Annual_net_benefits</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Annual_net_benefits_pro</span><span class="p">,</span>
+                <span class="n">CRIT_NPV</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">NPV_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Self_sufficiency</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Self_sufficiency_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Self_consumption</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Self_consumption_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Autonomy</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Autonomy_pro</span><span class="p">,</span>
+                <span class="n">CRIT_EqCO2emissions</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">eqCO2_emissions_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Fossil_fuel_consumption</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Fossil_fuel_consumption_pro</span><span class="p">,</span>
+                <span class="n">CRIT_EROI</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">EROI_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Energy_losses</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Losses_pro</span><span class="p">,</span>
+                <span class="n">CRIT_Max_power_from_grid</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Max_import_power_pro</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">index_criterion</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PRO</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown criterion: </span><span class="si">{</span><span class="n">index_criterion</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">PRO</span><span class="p">[</span><span class="n">index_criterion</span><span class="p">]</span>
+        
+<span class="k">def</span> <span class="nf">_get_function_research</span><span class="p">(</span><span class="n">index_criterion</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the research evaluation function for a criterion.</span>
+<span class="sd">    </span>
+<span class="sd">        Args:</span>
+<span class="sd">            index_criterion (int): Criterion identifier.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            callable: Associated research evaluation function.</span>
+<span class="sd">        </span>
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the criterion is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">RESEARCH</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">CRIT_LCOE</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">LCOE_research</span><span class="p">,</span>
+                <span class="n">CRIT_Annual_net_benefits</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Annual_net_benefits_research</span><span class="p">,</span>
+                <span class="n">CRIT_NPV</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">NPV_research</span><span class="p">,</span>
+                <span class="n">CRIT_Self_sufficiency</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Self_sufficiency_research</span><span class="p">,</span>
+                <span class="n">CRIT_Self_consumption</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Self_consumption_research</span><span class="p">,</span>
+                <span class="n">CRIT_Autonomy</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Autonomy_research</span><span class="p">,</span>
+                <span class="n">CRIT_EqCO2emissions</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">eqCO2_emissions_research</span><span class="p">,</span>
+                <span class="n">CRIT_Fossil_fuel_consumption</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Fossil_fuel_consumption_research</span><span class="p">,</span>
+                <span class="n">CRIT_EROI</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">EROI_research</span><span class="p">,</span>
+                <span class="n">CRIT_Energy_losses</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Losses_research</span><span class="p">,</span>
+                <span class="n">CRIT_Max_power_from_grid</span><span class="p">:</span> <span class="n">Cfc</span><span class="o">.</span><span class="n">Max_import_power_research</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">index_criterion</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESEARCH</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown criterion: </span><span class="si">{</span><span class="n">index_criterion</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">RESEARCH</span><span class="p">[</span><span class="n">index_criterion</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="find_cost_function_research">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_research">[docs]</a>
+<span class="k">def</span> <span class="nf">find_cost_function_research</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the right loss function to apply to the optimization problem (RESEARCH).</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        Context: Description of the constraints of the problem.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: ID of the appropriate cost function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">base_function</span> <span class="o">=</span> <span class="n">_get_function_research</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">criterion_num</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No proper optimisation criterion found!&quot;</span><span class="p">)</span>
+                
+    <span class="k">def</span> <span class="nf">cost_function</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">base_function</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span><span class="n">Genset_parameters</span><span class="p">,</span><span class="n">grid_parameters</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">cost_function</span> <span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="find_cost_function_pro">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.find_cost_function_pro">[docs]</a>
+<span class="k">def</span> <span class="nf">find_cost_function_pro</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">,</span> <span class="n">global_parameters</span><span class="p">,</span> <span class="n">grid_parameters</span><span class="p">,</span> <span class="n">RENSystems_parameters</span><span class="p">,</span> <span class="n">Genset_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the right loss function to apply to the optimization problem (PRO).</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        Context: Description of the constraints of the problem.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        int: ID of the appropriate cost function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">base_function</span> <span class="o">=</span> <span class="n">_get_function_pro</span><span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">optimization</span><span class="o">.</span><span class="n">criterion_num</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No proper optimisation criterion found!&quot;</span><span class="p">)</span>
+                
+    <span class="k">def</span> <span class="nf">cost_function</span><span class="p">(</span><span class="n">ind</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">base_function</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span><span class="n">RENSystems_parameters</span><span class="p">,</span><span class="n">global_parameters</span><span class="p">,</span><span class="n">Genset_parameters</span><span class="p">,</span><span class="n">grid_parameters</span><span class="p">,</span><span class="n">pro_parameters</span><span class="p">)</span>
+
+    <span class="k">return</span><span class="p">(</span><span class="n">cost_function</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="fitness_list">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.fitness_list">[docs]</a>
+<span class="k">def</span> <span class="nf">fitness_list</span><span class="p">(</span><span class="n">inputs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Updates the fitness values of a population.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        inputs (population): Population of individuals.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        jitted_pop (List of individuals objects): Population with updated fitness values.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="p">(</span><span class="n">population</span><span class="p">,</span><span class="n">Context</span><span class="p">)</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;research&#39;</span> <span class="p">):</span>   
+        <span class="n">jitted_pop</span> <span class="o">=</span> <span class="n">jitting_pop_res</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">Context</span><span class="o">.</span><span class="n">type_optim</span> <span class="o">==</span> <span class="s1">&#39;pro&#39;</span> <span class="p">):</span>
+        <span class="n">jitted_pop</span> <span class="o">=</span> <span class="n">jitting_pop_pro</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
+                    
+    <span class="n">fitness_function</span><span class="o">=</span><span class="n">find_cost_functions_research</span><span class="p">(</span><span class="n">Context</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">jitted_pop</span><span class="p">)):</span>
+        <span class="n">jitted_pop</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">=</span><span class="p">(</span><span class="n">fitness_function</span><span class="p">(</span><span class="n">jitted_pop</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span>
+       
+    <span class="k">return</span><span class="p">(</span><span class="n">jitted_pop</span><span class="p">)</span>  </div>
+
+
+<span class="c1"># tournament selection</span>
+<div class="viewcode-block" id="selection_tournament">
+<a class="viewcode-back" href="../../../api/ERMESS_scripts.evolutionnary_core.html#ERMESS_scripts.evolutionnary_core.ERMESS_functions.selection_tournament">[docs]</a>
+<span class="k">def</span> <span class="nf">selection_tournament</span><span class="p">(</span><span class="n">pop</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Select an individual from a sub-population using a random tournament.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        pop (list): Population of individuals with a .fitness attribute.</span>
+<span class="sd">        k (int): Tournament size (number of individuals randomly selected), default is 3.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        The winning individual from the tournament.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+ <span class="c1"># first random selection</span>
+    <span class="n">selection_ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pop</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop</span><span class="p">),</span> <span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+ <span class="c1"># check if better (e.g. perform a tournament)</span>
+        <span class="k">if</span> <span class="n">pop</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span><span class="o">.</span><span class="n">fitness</span> <span class="o">&lt;</span> <span class="n">pop</span><span class="p">[</span><span class="n">selection_ix</span><span class="p">]</span><span class="o">.</span><span class="n">fitness</span><span class="p">:</span>
+            <span class="n">selection_ix</span> <span class="o">=</span> <span class="n">ix</span>
+    <span class="k">return</span> <span class="n">pop</span><span class="p">[</span><span class="n">selection_ix</span><span class="p">]</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ERMESS</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">ERMESS_scripts</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Josselin LE GAL LA SALLE.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -342,10 +342,10 @@ def Initialize_ERMESS_research(Context , structured_data,node_id):
     - A multi-resolution "In-Depth" initialization (low + high resolution)
     
     Args:
-    Context : object
-        Full optimization context.
-    structured_data : object
-        Contains hyperparameters and execution settings.
+        Context : object
+            Full optimization context.
+        structured_data : object
+            Contains hyperparameters and execution settings.
     
     Returns:
         None

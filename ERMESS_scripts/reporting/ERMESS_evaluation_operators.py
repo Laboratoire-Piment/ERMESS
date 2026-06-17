@@ -9,7 +9,7 @@ import sys
 import pickle
 import numpy as np
 import pandas as pd
-from ERMESS_scripts.utils.helpers import set_column_width 
+from ERMESS_scripts.reporting.post_processing import _set_column_width 
 import openpyxl
 
 
@@ -87,7 +87,7 @@ if __name__=="__main__":
         #Output Charts
     wb = openpyxl.load_workbook(file_name_out)
         
-    set_column_width(wb['Operators overview'])
+    _set_column_width(wb['Operators overview'])
         
     ws = wb['Operators overview']
     
@@ -253,6 +253,6 @@ if __name__=="__main__":
     ws.add_chart(c2_2, "A10")   
        
      
-    set_column_width(ws)
+    _set_column_width(ws)
         
     wb.save(file_name_out)
