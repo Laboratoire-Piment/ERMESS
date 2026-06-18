@@ -41,3 +41,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'furo'
 html_static_path = ['_static']
 html_logo = "_static/ERMESS_logo.png"
+
+
+import ERMESS_scripts.data.data_parsers as dp
+
+print("========== ERMESS DEBUG ==========")
+print(dp.__file__)
+print(hasattr(dp, "compute_grid_prices"))
+print(dir(dp)[:20])
+print("==================================")
