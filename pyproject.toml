@@ -18,6 +18,7 @@ docs = [
     "sphinx",
     "furo",
     "sphinx-rtd-theme",
+    "timezonefinder",
 ]
 
 [build-system]
