@@ -9,6 +9,11 @@ This repository contains the source of ERMESS, a Python optimization tool derive
 
 Main contributor: Josselin Le Gal La Salle
 
+## Documentation
+
+Complete documentation available here :
+
+[![Documentation](https://readthedocs.org/projects/ermess/badge/?version=latest)](https://ermess.readthedocs.io/en/latest/)
 
 ## Scripts
 

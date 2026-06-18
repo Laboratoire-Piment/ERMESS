@@ -31,3 +31,7 @@ exclude = [
     "ERMESS_scripts.legacy*",
 "tests*"
 ]
+
+[project.urls]
+Documentation = "https://ermess.readthedocs.io/"
+Repository = "https://github.com/Laboratoire-Piment/ERMESS"
