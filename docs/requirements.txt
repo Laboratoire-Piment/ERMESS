@@ -1,0 +1,11 @@
+numpy
+pandas
+sphinx
+furo
+timezonefinder
+cdsapi
+xarray
+openpyxl
+pvlib
+windpowerlib
+pytz
