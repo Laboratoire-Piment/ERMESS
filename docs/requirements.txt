@@ -9,3 +9,4 @@ openpyxl
 pvlib
 windpowerlib
 pytz
+numba
