@@ -40,6 +40,7 @@ ERMESS\_scripts.data.data\_parsers module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
 
 ERMESS\_scripts.data.data\_reader module
 ----------------------------------------

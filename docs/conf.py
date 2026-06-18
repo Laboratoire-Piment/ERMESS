@@ -28,6 +28,7 @@ extensions = [    "sphinx.ext.autodoc",
 
 autosummary_generate = True
 napoleon_google_docstring = True
+autosummary_imported_members = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
