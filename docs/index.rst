@@ -3,7 +3,7 @@ ERMESS
 
 Energy system modeling and evolutionary optimization framework
 
-.. image:: _static/ermess_logo.png
+.. image:: _static/ERMESS_logo.png
    :width: 200px
 
 Overview
