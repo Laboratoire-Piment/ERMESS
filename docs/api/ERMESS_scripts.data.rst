@@ -37,7 +37,7 @@ ERMESS\_scripts.data.data\_parsers module
 -----------------------------------------
 
 .. automodule:: ERMESS_scripts.data.data_parsers
-   :members:
+   :members: compute_grid_prices
    :undoc-members:
    :show-inheritance:
    :special-members:
