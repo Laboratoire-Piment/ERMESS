@@ -55,7 +55,7 @@ If applicable : Main grid emissions, Main grid fossil fuel ratio, Main grid rati
 
 #OUTPUT : 
 
-Excel file named "output_GEMS_end.xlsx". 
+Excel file named "output_ERMESS_end.xlsx". 
 
 ## Related articles
 

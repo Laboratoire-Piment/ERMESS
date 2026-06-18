@@ -39,4 +39,4 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'furo'
 html_static_path = ['_static']
-html_logo = "_static/ermess_logo.png"
+html_logo = "_static/ERMESS_logo.png"
