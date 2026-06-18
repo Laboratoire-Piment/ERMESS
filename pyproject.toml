@@ -19,6 +19,7 @@ docs = [
     "furo",
     "sphinx-rtd-theme",
     "timezonefinder",
+"cdsapi",
 ]
 
 [build-system]
