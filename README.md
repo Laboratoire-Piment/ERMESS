@@ -15,6 +15,10 @@ Complete documentation available here :
 
 [![Documentation](https://readthedocs.org/projects/ermess/badge/?version=latest)](https://ermess.readthedocs.io/en/latest/)
 
+## DeepWiki Documentation
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Laboratoire-Piment/ERMESS)
+
 ## Scripts
 
 ERMESS_GA.py : contains the core evolutionnary algorithm used for evolution
