@@ -19,6 +19,10 @@ Complete documentation available here :
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Laboratoire-Piment/ERMESS)
 
+## DOI
+
+10.5281/zenodo.21947535
+
 ## Scripts
 
 ERMESS_GA.py : contains the core evolutionnary algorithm used for evolution
@@ -66,6 +70,7 @@ Excel file named "output_ERMESS_end.xlsx".
 https://www.techniques-ingenieur.fr/base-documentaire/innovation-th10/innovations-en-energie-et-environnement-42503210/concevoir-et-dimensionner-des-microreseaux-autonomes-l-exemple-de-twinsolar-in199/
 
 DOI : https://doi.org/10.51257/a-v1-in199
+
 
 ![poster ERMESS-1](https://github.com/user-attachments/assets/aa768874-d14e-48b4-abfc-4864b5e56f90)
 
