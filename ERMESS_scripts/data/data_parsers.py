@@ -413,7 +413,7 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
             series_datetime,
             data["TimeSeries"]["Daily movable load (kW)"])
     else : 
-        from ERMESS_scripts.load_model.src import ERMESS_Load_model as Elo
+        from ERMESS_scripts.load_model import ERMESS_Load_model as Elo
         building_list = data["Automatic load specs"]
         load_flexibility = data["Load flexibility"]
         meteoData.columns = meteoData.columns.get_level_values(0)
