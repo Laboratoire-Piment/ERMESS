@@ -4,11 +4,15 @@ message: "If you use this software, please cite the associated article and softw
 type: software
 
 authors:
-    names: "JoPHOBEA"
+  - family-names: "Le Gal La Salle"
+    given-names: "Josselin"
+    orcid: "https://orcid.org/0000-0003-0126-3796"
 
-version: 1.0.0
+version: 1.0.2
 date-released: 2026-08-15
 
 repository-code: "https://github.com/Laboratoire-Piment/ERMESS"
+
+doi: "10.5281/zenodo.21947535"
 
 license: AGPL v3.0
