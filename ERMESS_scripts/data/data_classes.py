@@ -65,6 +65,13 @@ class LoadData:
     yearly_movable: np.ndarray
     
 @dataclass
+class forecastGeneratorData:
+    training_length: int
+    AR_order: int
+    I_order: int
+    MA_order: int
+    
+@dataclass
 class GridData:
     n_contracts: int
     fossil_fuel_ratio: float
@@ -121,6 +128,7 @@ class HyperparametersProData:
 @dataclass
 class DispatchingData:
     Defined_items : np.ndarray
+    predictive_dispatch : bool
     Discharge_order : Optional[np.ndarray]
     Overlaps : Optional[np.ndarray]
     energy_use_coefficient : Optional[float ]

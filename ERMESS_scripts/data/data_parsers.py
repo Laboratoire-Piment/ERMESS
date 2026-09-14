@@ -412,6 +412,9 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
             datetime_model,
             series_datetime,
             data["TimeSeries"]["Daily movable load (kW)"])
+        
+        load = pd.DataFrame(np.column_stack((non_movable,daily,yearly)),
+        columns=["non_movable", "daily_movable", "yearly_movable"], index = series_datetime)
     else : 
         from ERMESS_scripts.load_model import ERMESS_Load_model as Elo
         building_list = data["Automatic load specs"]
@@ -422,6 +425,29 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
         load = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
 
     return Dcl.LoadData(non_movable=load["non_movable"],yearly_movable=load["yearly_movable"],daily_movable=load["daily_movable"])
+
+def _parse_forecasts(data,dispatching_data,time_resolution):
+    """
+    
+    Parse forecast generator characteristics.
+    
+    Args:
+        data (dict[str, pandas.DataFrame]): Raw input data containing
+            the 'forecasts' sheet.
+    
+    Returns:
+        forecastsData: Dataclass containing forecasts generator parameters.
+
+    """
+    
+    HOURS_PER_DAY = 24
+
+    training_length = data["forecasts"]["Training length (days)"]*time_resolution*HOURS_PER_DAY
+    AR_order = data["forecasts"]["AR_order"]
+    I_order = data["forecasts"]["I_order"]
+    MA_order = data["forecasts"]["MA_order"]
+    
+    return Dcl.forecastsData(trainig_length=training_length,AR_order=AR_order,I_order=I_order,MA_order=MA_order)
 
 def _parse_genset(data):
     """
@@ -692,6 +718,7 @@ def _parse_dispatching(data):
     """
     
     defined_items = np.where(data['Dispatching']['User-Defined']=='Yes')[0]
+    predictive_dispatch = data['Dispatching']['Predictive dispatch']=='Yes'
     
     if 'Storages management' in defined_items :
         Discharge_order = (np.array(data['Dispatching']['Discharge order'],dtype=np.int64)[~pd.isnull(np.array(data['Dispatching']['Storages']))])-1 
@@ -720,7 +747,7 @@ def _parse_dispatching(data):
         DG_min_runtime = None
         DG_min_production = None
    
-    return Dcl.DispatchingData(defined_items, Discharge_order, Overlaps, energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production)
+    return Dcl.DispatchingData(defined_items,predictive_dispatch, Discharge_order, Overlaps, energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production)
 
 def _parse_ERMESSInputs(data,node_id=None):
     """
@@ -759,6 +786,7 @@ def _parse_ERMESSInputs(data,node_id=None):
     if optimizationData.type_optim=='pro':
         hyperparametersProData = _parse_hyperparametersPro(data)
         dispatchingData = _parse_dispatching(data)
+        forecasts = _parse_forecasts(data,dispatchingData, TimeData.time_resolution)
         hyperparametersData = None
     else :
         hyperparametersProData = _parse_hyperparametersPro(data)

@@ -265,6 +265,50 @@ class _LoadBlock:
         self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * HOURS_PER_DAY),np.int32((i + 1) * time_resolution * HOURS_PER_DAY))])
             for i in range( 0,np.int32(len(D_movable) / time_resolution / HOURS_PER_DAY))], dtype=np.float64)
         self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
+        
+class _forecastsBlock:
+    """
+    forecast profiles generator.
+    
+    Aggregates all demand-related signals including non-controllable
+    loads and DSM (Demand Side Management) components.
+    
+    Attributes:
+        non_movable (np.ndarray):
+            Non-controllable electrical load time series.
+            
+        Y_movable (np.array):
+            Yearly dispatchable electrical load time series.
+        
+        D_movable (np.array):
+            Daily dispatchable electrical load time series.
+    
+        time_resolution (float):
+            Temporal resolution of the simulation (in timesteps per hour).
+    """
+    __slots__ = (
+        "non_movable",
+        "Y_movable",
+        "D_movable",
+        "D_DSM_indexes",
+        "total_Y_movable",
+        "total_D_movable",)
+    
+    def __init__(self, non_movable, Y_movable, D_movable, time_resolution):
+
+        HOURS_PER_DAY = 24
+        self.non_movable = non_movable
+        self.D_movable = D_movable
+        self.Y_movable = Y_movable
+        self.total_Y_movable = np.sum(Y_movable)
+        self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * HOURS_PER_DAY),np.int32((i + 1) * time_resolution * HOURS_PER_DAY))])
+            for i in range( 0,np.int32(len(D_movable) / time_resolution / HOURS_PER_DAY))], dtype=np.float64)
+        self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
+  
+    from statsmodels.tsa.arima.model import ARIMA    
+    
+    train_starts = np.random.randint(productionData.unit_prods.shape[1] - ,len(productionData.unit_prods))
+    train = ts.iloc[:split_index]
 
 class _StorageBlock:
     """
@@ -602,6 +646,8 @@ def build_environment(structured_data):
         structured_data.load.daily_movable,
         structured_data.time.time_resolution
     )
+    
+    forecasts = _ForecastBlock(loads,production)
 
     optimization = _OptimBlock(
         structured_data.optimization.constraint_num,
