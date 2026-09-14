@@ -419,9 +419,9 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
         meteoData.columns = meteoData.columns.get_level_values(0)
         holidays,vacation_starts,vacation_ends = data["Holidays"]["holidays dates"],data["Holidays"]["vacation start dates"],data["Holidays"]["vacation end dates"]
         vacations = pd.DataFrame((vacation_starts,vacation_ends)).T.dropna(how='all')
-        non_movable,daily,yearly,total = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
+        load = Elo.generate_microgrid_load(building_list,load_flexibility,meteoData,holidays,vacations, time_resolution)
 
-    return Dcl.LoadData(non_movable=non_movable,yearly_movable=yearly,daily_movable=daily)
+    return Dcl.LoadData(non_movable=load["non_movable"],yearly_movable=load["yearly_movable"],daily_movable=load["daily_movable"])
 
 def _parse_genset(data):
     """
