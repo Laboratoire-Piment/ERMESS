@@ -539,10 +539,6 @@ def NON_JIT_mutation_contraintes_pro(c, random_factors, choices,global_parameter
             if (random_factors[RF_STORAGE_OUTPOWER]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
                     c=Eop.Mutate_storages_outpower_operator(c,extra_parameters.hyperparameters_operators,choices[2])
                     usage_ope[Mutate_storages_outpower]=1
-                    
-            if (random_factors[RF_STORAGE_POWERS]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_POWERS]) :         
-                    c=Eop.Update_storage_powers_pro(c,RENSystems_parameters,storage_TS,choices[3])
-                    usage_ope[Mutate_storages_powers]=1      
 
         elif RENSystems_parameters.storage_model == DISCRETE_MODEL :
             if (random_factors[RF_STORAGE_CAPACITY]<extra_parameters.hyperparameters_operators[PRO_OPER_PROBABILITY,PRO_STORAGE_CAPACITIES]) :         

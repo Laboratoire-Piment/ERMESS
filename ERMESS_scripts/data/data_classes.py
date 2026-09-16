@@ -127,6 +127,7 @@ class HyperparametersProData:
     
 @dataclass
 class DispatchingData:
+    predictive_dispatch : bool
     Defined_items : np.ndarray
     predictive_dispatch : bool
     Discharge_order : Optional[np.ndarray]
@@ -148,6 +149,7 @@ class ERMESSInputs:
     grid: Optional[GridData]
     genset: Optional[GensetData]
     optimization: OptimizationData
+    forecastGenerator: forecastGeneratorData
     hyperparameters: Optional[HyperparametersData]
     hyperparameterspro: HyperparametersProData
     dispatching: DispatchingData

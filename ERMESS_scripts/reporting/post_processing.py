@@ -187,20 +187,23 @@ def _build_timeseries(outputs_solution, solution, Context, datetime):
 
     # --- Storages ---
     power_storages = pd.DataFrame(TS["storage_TS (kW)"],index=[f"{tech} power (kW)" for tech in Context.storage.technologies],).T
+    power_storages = power_storages.set_index(load.index)
     losses = pd.DataFrame(TS["losses (kW)"],index=[f"{tech} losses (kW)" for tech in Context.storage.technologies],).T
-    socs = pd.DataFrame(TS["SOC (%)"],index=[f"{tech} SOC (%)" for tech in Context.storage.technologies],).T
+    losses = losses.set_index(load.index)
+    socs = pd.DataFrame(TS["SOC (%)"],index=[f"{tech} SOC (%)" for tech in Context.storage.technologies]).T
+    socs = socs.set_index(load.index)
     power_storage_total = power_storages.sum(axis=1)
 
     # --- Grid price ---
     grid_price = Context.grid.prices[solution.contract] if Context.optimization.connection=="On-grid" else None
 
     # --- Imbalance ---
-    imbalance = (production+ power_storage_total+ grid- load- curtailment+ dg)
+    imbalance = (production+ power_storage_total.values+ grid- load.values- curtailment+ dg)
 
     # --- Merging dataframe ---
-    df = pd.concat([pd.DataFrame({"Datetime": datetime_index,"Load (kW)": load,"Power production (kW)": production,}),power_storages,losses,
+    df = pd.concat([pd.DataFrame({"Datetime": datetime_index,"Load (kW)": load,"Power production (kW)": production}),power_storages,losses,
                     pd.DataFrame({"Grid power (kW)": grid,"Grid price (€/kWh)": grid_price,"Diesel production (kW)": dg,
-                    "Curtailment (kW)": curtailment,"Imbalance (kW)": imbalance,}),socs,],axis=1)
+                    "Curtailment (kW)": curtailment,"Imbalance (kW)": np.asarray(imbalance)},index=load.index),socs,],axis=1)
     return df
 
 def _build_flows(outputs_solution, output_baseline, Context):

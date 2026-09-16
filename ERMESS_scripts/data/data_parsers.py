@@ -442,12 +442,12 @@ def _parse_forecasts(data,dispatching_data,time_resolution):
     
     HOURS_PER_DAY = 24
 
-    training_length = data["forecasts"]["Training length (days)"]*time_resolution*HOURS_PER_DAY
-    AR_order = data["forecasts"]["AR_order"]
-    I_order = data["forecasts"]["I_order"]
-    MA_order = data["forecasts"]["MA_order"]
+    training_length = int(data["ARIMA_forecasts"]["Training length (days)"]*time_resolution*HOURS_PER_DAY)
+    AR_order = data["ARIMA_forecasts"]["AR order"]
+    I_order = data["ARIMA_forecasts"]["I order"]
+    MA_order = data["ARIMA_forecasts"]["MA order"]
     
-    return Dcl.forecastsData(trainig_length=training_length,AR_order=AR_order,I_order=I_order,MA_order=MA_order)
+    return Dcl.forecastGeneratorData(training_length=training_length,AR_order=AR_order,I_order=I_order,MA_order=MA_order)
 
 def _parse_genset(data):
     """
@@ -697,7 +697,8 @@ def _parse_hyperparametersPro(data):
     """
 
     r_cross_pro,elitism_probability = np.float64(data['Hyperparameters_pro']['Evolution values'][0:2])
-    n_iter_pro,n_pop_pro,cost_constraint_pro = np.int64(data['Hyperparameters_pro']['Evolution values'][2:5])
+    n_iter_pro,n_pop_pro = np.int64(data['Hyperparameters_pro']['Evolution values'][2:4])
+    cost_constraint_pro = np.float64(data['Hyperparameters_pro']['Evolution values'][4])
     
     hyperparameters_operators_num_pro = np.float64(data['Hyperparameters_pro'][['Contract','Production','Strategy','Discharge order','Energy use','Overlap','DSM minimum levels','DG control','storages capacity','storages power','Initial SOC']])
 
@@ -718,7 +719,11 @@ def _parse_dispatching(data):
     """
     
     defined_items = np.where(data['Dispatching']['User-Defined']=='Yes')[0]
-    predictive_dispatch = data['Dispatching']['Predictive dispatch']=='Yes'
+    
+    if 'Predictive dispatch' in data['Dispatching'].columns:
+        predictive_dispatch = data['Dispatching']['Predictive dispatch'][0]=='Yes'
+    else:
+        predictive_dispatch=False
     
     if 'Storages management' in defined_items :
         Discharge_order = (np.array(data['Dispatching']['Discharge order'],dtype=np.int64)[~pd.isnull(np.array(data['Dispatching']['Storages']))])-1 
@@ -747,7 +752,7 @@ def _parse_dispatching(data):
         DG_min_runtime = None
         DG_min_production = None
    
-    return Dcl.DispatchingData(defined_items,predictive_dispatch, Discharge_order, Overlaps, energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production)
+    return Dcl.DispatchingData(predictive_dispatch,defined_items, Discharge_order, Overlaps, energy_use_repartition_DSM, D_DSM_minimum_levels, Y_DSM_minimum_levels, DG_strategy, DG_min_runtime, DG_min_production)
 
 def _parse_ERMESSInputs(data,node_id=None):
     """
@@ -786,11 +791,14 @@ def _parse_ERMESSInputs(data,node_id=None):
     if optimizationData.type_optim=='pro':
         hyperparametersProData = _parse_hyperparametersPro(data)
         dispatchingData = _parse_dispatching(data)
-        forecasts = _parse_forecasts(data,dispatchingData, TimeData.time_resolution)
+        if dispatchingData.predictive_dispatch:
+            forecastGeneratorData = _parse_forecasts(data,dispatchingData, TimeData.time_resolution)
+        else: forecastGeneratorData = None
         hyperparametersData = None
     else :
         hyperparametersProData = _parse_hyperparametersPro(data)
         dispatchingData = _parse_dispatching(data)
+        forecastGeneratorData = None
         hyperparametersData = _parse_hyperparameters(data)
 
     connection = data["Environment"]["Connection"][0]
@@ -816,6 +824,7 @@ def _parse_ERMESSInputs(data,node_id=None):
         grid= gridData,
         genset= gensetData,
         optimization= optimizationData,
+        forecastGenerator = forecastGeneratorData,
         hyperparameters= hyperparametersData,
         hyperparameterspro= hyperparametersProData,
         dispatching= dispatchingData,

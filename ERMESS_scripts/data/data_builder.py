@@ -98,6 +98,9 @@ class _DispatchingBlock:
     
     Attributes:
         
+        predictive_dispatch (bool):
+            utilization of forecasts and predictive dispatch
+            
         defined_items (np.ndarray):
             List of non-controllable dispatching features.
             
@@ -126,6 +129,7 @@ class _DispatchingBlock:
             Overlaps levels between the different storage units, and between the storage units and the grid or the genset unit.
     """
     __slots__ = (
+        "predictive_dispatch",
         "defined_items",
         "energy_use_coefficient",
         "Y_DSM_minimum_levels",
@@ -137,7 +141,8 @@ class _DispatchingBlock:
         "overlaps"
     )
 
-    def __init__(self, defined_items,energy_use_coefficient,Y_DSM_minimum_levels,D_DSM_minimum_levels,DG_strategy,DG_min_runtime,DG_min_production,discharge_order,overlaps):
+    def __init__(self, predictive_dispatch,defined_items,energy_use_coefficient,Y_DSM_minimum_levels,D_DSM_minimum_levels,DG_strategy,DG_min_runtime,DG_min_production,discharge_order,overlaps):
+        self.predictive_dispatch = predictive_dispatch
         self.defined_items = defined_items
         self.energy_use_coefficient = energy_use_coefficient if 'DSM' in defined_items else None
         self.Y_DSM_minimum_levels = Y_DSM_minimum_levels if 'DSM' in defined_items else None
@@ -270,45 +275,46 @@ class _forecastsBlock:
     """
     forecast profiles generator.
     
-    Aggregates all demand-related signals including non-controllable
-    loads and DSM (Demand Side Management) components.
+    Create ARIMA forecasts using statsmodel.
     
     Attributes:
-        non_movable (np.ndarray):
-            Non-controllable electrical load time series.
-            
-        Y_movable (np.array):
-            Yearly dispatchable electrical load time series.
-        
-        D_movable (np.array):
-            Daily dispatchable electrical load time series.
-    
-        time_resolution (float):
-            Temporal resolution of the simulation (in timesteps per hour).
+        forecastGenerator: object containing parameters used to generate the forecasts
     """
     __slots__ = (
-        "non_movable",
-        "Y_movable",
-        "D_movable",
-        "D_DSM_indexes",
-        "total_Y_movable",
-        "total_D_movable",)
+        "forecastGenerator",
+        "productionData",
+        "loadsData",)
     
-    def __init__(self, non_movable, Y_movable, D_movable, time_resolution):
-
-        HOURS_PER_DAY = 24
-        self.non_movable = non_movable
-        self.D_movable = D_movable
-        self.Y_movable = Y_movable
-        self.total_Y_movable = np.sum(Y_movable)
-        self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * HOURS_PER_DAY),np.int32((i + 1) * time_resolution * HOURS_PER_DAY))])
-            for i in range( 0,np.int32(len(D_movable) / time_resolution / HOURS_PER_DAY))], dtype=np.float64)
-        self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
+    def __init__(self, forecastGenerator, productionData, loadsData): 
   
-    from statsmodels.tsa.arima.model import ARIMA    
+        from statsmodels.tsa.arima.model import ARIMA    
     
-    train_starts = np.random.randint(productionData.unit_prods.shape[1] - ,len(productionData.unit_prods))
-    train = ts.iloc[:split_index]
+        train_starts = np.random.randint(low=0,high=productionData.unit_prods.shape[1] - forecastGenerator.training_length,size=1)[0]
+        all_series = np.row_stack((loadsData.non_movable,loadsData.D_movable,loadsData.Y_movable,productionData.unit_prods))
+        train = all_series[:,train_starts:(train_starts+forecastGenerator.training_length)]
+        models = list()
+        prediction = np.empty(all_series.shape)
+        start_forecast = max(forecastGenerator.AR_order[0],forecastGenerator.MA_order[0])
+
+        for j in range(len(train)) : 
+            arima=ARIMA(train[j], order=(forecastGenerator.AR_order, 0, forecastGenerator.MA_order))
+            model = arima.fit()
+            constant = model.params[model.param_names.index("const")]
+            AR = model.arparams.copy()
+            MA = model.maparams.copy()
+            residuals = np.zeros(len(MA))
+                
+            prediction[j,:start_forecast] = all_series[j,0:start_forecast]
+            for t in range(start_forecast,all_series.shape[1]):
+                AR_estim = sum([ AR[i]*all_series[j,t-1-i] for i in range(len(AR))])
+                MA_estim = sum([ MA[i]*residuals[i] for i in range(len(MA))])
+                prediction[j,t] = (constant + AR_estim + MA_estim)
+                y_new = all_series[j,t]
+                print(residuals,prediction[j,t],all_series[j,t])
+                epsilon_new = y_new - prediction[j,t]
+                residuals[1:] = residuals[:-1]
+                residuals[0]=epsilon_new
+
 
 class _StorageBlock:
     """
@@ -520,7 +526,10 @@ class _Environment:
     
          loads (LoadBlock):
              Electrical demand profiles (including DSM components).
-    
+             
+         forecasts(ForecastBlock):
+             ARIMA forecast profiles for load and REN generation.
+             
          storage (StorageBlock):
              Storage system characteristics.
     
@@ -541,9 +550,9 @@ class _Environment:
          It is designed to be passed directly into the optimization engine.
      """
     
-    __slots__ = ("storage","time","production","loads","grid", "genset", "optimization","hyperparameters","hyperparameters_pro","config","postprocess_config","tracking",)
+    __slots__ = ("storage","time","production","loads","forecasts","grid", "genset", "optimization","hyperparameters","hyperparameters_pro","config","postprocess_config","tracking",)
 
-    def __init__(self, optimization,hyperparameters, hyperparameters_pro, config,time,production, loads,storage,grid, genset,postprocess_config,tracking):
+    def __init__(self, optimization,hyperparameters, hyperparameters_pro, config,time,production, loads,forecasts,storage,grid, genset,postprocess_config,tracking):
 
         self.optimization = optimization
         self.hyperparameters = hyperparameters
@@ -552,6 +561,7 @@ class _Environment:
         self.time = time
         self.production = production
         self.loads = loads
+        self.forecasts = forecasts
         self.storage = storage
         self.grid = grid
         self.genset = genset
@@ -587,6 +597,7 @@ def build_environment(structured_data):
             - time
             - production
             - load
+            - forecasts
             - optimization
             - hyperparameters / hyperparameterspro
             - grid (optional)
@@ -647,8 +658,6 @@ def build_environment(structured_data):
         structured_data.time.time_resolution
     )
     
-    forecasts = _ForecastBlock(loads,production)
-
     optimization = _OptimBlock(
         structured_data.optimization.constraint_num,
         structured_data.optimization.constraint_level,
@@ -677,6 +686,7 @@ def build_environment(structured_data):
     structured_data.hyperparameterspro.elitism_probability,)
 
     dispatching = _DispatchingBlock(
+        structured_data.dispatching.predictive_dispatch,
         structured_data.dispatching.Defined_items,
         structured_data.dispatching.energy_use_coefficient,
         structured_data.dispatching.Y_DSM_minimum_levels,
@@ -686,6 +696,11 @@ def build_environment(structured_data):
         structured_data.dispatching.DG_min_production,
         structured_data.dispatching.Discharge_order,
         structured_data.dispatching.Overlaps)
+    
+    if dispatching.predictive_dispatch:
+        Forecasts = _forecastsBlock(structured_data.forecastGenerator,production,loads)
+    else:
+        Forecasts = None
 
     tracking = _TrackingOpeBlock(structured_data.tracking)
 
@@ -701,6 +716,7 @@ def build_environment(structured_data):
         time,
         production,
         loads,
+        Forecasts,
         storage,        
         grid,
         genset,

@@ -267,7 +267,7 @@ def build_numba_params(Context):
     else:
         raise ValueError("Unknown optim type")
     
-    global_parameters = GlobalParams(Context.time.n_bits,Context.time.time_resolution,Context.time.duration_years,Context.optimization.constraint_num,Context.optimization.constraint_level,hyperparameters.cost_constraint,connection_num,Context.loads.non_movable)
+    global_parameters = GlobalParams(Context.time.n_bits,Context.time.time_resolution,Context.time.duration_years,Context.optimization.constraint_num,Context.optimization.constraint_level,hyperparameters.cost_constraint,connection_num,np.asarray(Context.loads.non_movable))
     if not (Context.grid == None):
         grid_parameters = GridParams(Context.grid.prices, Context.grid.fixed_premium, Context.grid.overrun, Context.grid.selling_price, Context.grid.eqCO2emissions, Context.grid.fossil_fuel_ratio)      
     else :
