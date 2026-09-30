@@ -25,32 +25,29 @@ Complete documentation available here :
 
 ## Scripts
 
-ERMESS_GA.py : contains the core evolutionnary algorithm used for evolution
+ERMESS_Pro.py : runs the PRO optimization mode (Basic Usage/Examples/Experiments).
 
-ERMESS_classes.py : defines the classes used in ERMESS
+ERMESS_Research.py : runs the RESEARCH optimization mode (Large-scale Experiments).
 
-ERMESS_cost_functions.py : proposes some objective functions for common microgrids performance indicators
+## Package
 
-ERMESS_evaluation.py : post-processing of the final solution
+cost : Cost model and objective functions
 
-ERMESS_evaluation_operators.py : functions for developers - functions for the assessment of the influence of algorithm hyperparameters
+energy_management_model : dispatching simulation package
 
-ERMESS_frontal_evolution.py : Retrieve populations of solutions and run an era of evolution
+energy_production_model : package for computation of REN production systems
 
-ERMESS_frontal_initialisation.py : Run pre-optimization and creates an initial population
+evolutionnary_core : optimization model based on genetic algorithm
 
-ERMESS_functions.py : functions used in the GA algorithm
+load_model : package for computation of loads
 
-ERMESS_functions_2.py : functions used in pre-processing and post-processing scripts
-
-ERMESS_parallel_processing.py : manage the parallelisation of the algorithm
-
+reporting : functions used for output, reporting and display
 
 ##  files
 
 #INPUTS : 
 
-Excel file named "inputs_GEMS_frontal.xlsx". 
+Excel file named "inputs_ERMESS_Pro.xlsx". 
 
 Data needed in this file : 
 
@@ -59,6 +56,8 @@ Constraint, Constraint level, Optimisation criterion, installable production uni
 Timeseries : Current production (if applicable), Critic load, Daily movable load, Yearly movable load, production unit
 
 If applicable : Main grid emissions, Main grid fossil fuel ratio, Main grid ratio primary over final energy, available trading contracts with detailed prices
+
+Please follow the example file given in GitHub
 
 
 #OUTPUT : 
