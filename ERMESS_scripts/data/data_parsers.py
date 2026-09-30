@@ -18,6 +18,26 @@ from ERMESS_scripts.energy_production_model import ERMESS_PV_model as EPV
 from ERMESS_scripts.energy_production_model import ERMESS_Wind_model as EWi
 from ERMESS_scripts.reporting import ERMESS_KPI_functions as EKPI
 
+def estimate_reference_serie(serie, time_resolution, window_days=15):
+    """
+    Estimate clear-sky irradiance through a moving maximum over identical hours.
+        
+    Parameters:
+    - serie: serie to be referenced.
+    - time_resolution: time resolution of the serie (steps/hour).
+    - window_days: Size of the moving window (in days).
+    """
+    HOURS_PER_DAY=24
+    n_days = int(len(serie)/(time_resolution * HOURS_PER_DAY))
+    pivot = serie.reshape((n_days,int(time_resolution * HOURS_PER_DAY))).T
+        
+    extended_pivot = [np.pad(pivot[i],window_days//2,mode='edge') for i in range(len(pivot))]
+    clear_sky_pivot = np.array([np.max(np.lib.stride_tricks.sliding_window_view(extended_pivot[i],n_days),axis=0) for i in range(len(pivot))])
+        
+    result = (clear_sky_pivot.T).reshape(len(serie))
+   
+    return result
+
 def compute_grid_prices(datetime_data,grid_price):
     """
     Generate detailed grid price series for each contract and hour type.
@@ -56,14 +76,14 @@ def compute_grid_prices(datetime_data,grid_price):
         prices[i].loc[(prices[i]['Datetime'].apply(lambda x: x.dayofweek).isin([0,1,2,3,4])) & (prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Workday off-peak hours'].split(' '))),'Hour type']='W off'
     
         prices[i].loc[prices[i]['Hour type']=='Peak' ,'Price']=grid_price.iloc[i]['Peak (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Summer months'].split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
-        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(grid_price.iloc[i]['Winter months'].split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Summer months']).split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Summer months']).split(' '))) ,'Price']=grid_price.iloc[i]['Summer full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Summer months']).split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Summer months']).split(' '))) ,'Price']=grid_price.iloc[i]['Summer off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Winter months']).split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W full') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Winter months']).split(' '))) ,'Price']=grid_price.iloc[i]['Winter full hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='WE off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Winter months']).split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
+        prices[i].loc[(prices[i]['Hour type']=='W off') & (prices[i]['Datetime'].apply(lambda x: str(x.month)).isin(str(grid_price.iloc[i]['Winter months']).split(' '))) ,'Price']=grid_price.iloc[i]['Winter off-peak hours (c€/kWh)']
 
         prices[i]['Price']=prices[i]['Price']*(1+grid_price.iloc[i]['TVA load'])
         prices[i]['Price']+=grid_price.iloc[i]['CSPE (c€/kWh)']
@@ -74,7 +94,7 @@ def compute_grid_prices(datetime_data,grid_price):
         fixed_premium.append( grid_price.iloc[i]['Fixed premium (€/kW)'])
         Overrun.append( grid_price.iloc[i]['Power overrun (€/kW)'])
         Selling_price.append(np.repeat(grid_price.iloc[i]['Selling base price (c€/kWh)'],len(datetime_data)))
-        Selling_price[i][(prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(grid_price.iloc[i]['Selling peak hours'].split(' ')))]=grid_price.iloc[i]['Selling peak price (c€/kWh)']
+        Selling_price[i][(prices[i]['Datetime'].apply(lambda x: str(x.hour)).isin(str(grid_price.iloc[i]['Selling peak hours']).split(' ')))]=grid_price.iloc[i]['Selling peak price (c€/kWh)']
         Selling_price[i]=Selling_price[i]/100
         
         #Converting into Numpy
@@ -426,7 +446,7 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
 
     return Dcl.LoadData(non_movable=load["non_movable"],yearly_movable=load["yearly_movable"],daily_movable=load["daily_movable"])
 
-def _parse_forecasts(data,dispatching_data,time_resolution):
+def _parse_forecasts(data, loadsData, productionData, TimeData):
     """
     
     Parse forecast generator characteristics.
@@ -434,20 +454,38 @@ def _parse_forecasts(data,dispatching_data,time_resolution):
     Args:
         data (dict[str, pandas.DataFrame]): Raw input data containing
             the 'forecasts' sheet.
+        
     
     Returns:
-        forecastsData: Dataclass containing forecasts generator parameters.
+        forecastGeneratorData: Dataclass containing forecasts generator parameters.
 
     """
-    
-    HOURS_PER_DAY = 24
 
-    training_length = int(data["ARIMA_forecasts"]["Training length (days)"]*time_resolution*HOURS_PER_DAY)
-    AR_order = data["ARIMA_forecasts"]["AR order"]
-    I_order = data["ARIMA_forecasts"]["I order"]
-    MA_order = data["ARIMA_forecasts"]["MA order"]
+    Sliding_window_days = int(data["forecasts_generation"]["Sliding window (days)"][0])
+    AR_order = int(data["forecasts_generation"]["AR order"][0])
+    AR_coefficients = data["forecasts_generation"]["AR coefficients"][0:AR_order]
+    error_bias = data["forecasts_generation"]["error bias (%)"][0]/100
+    magnitude_error = data["forecasts_generation"]["magnitude of errors (%)"][0]/100
+    maximum_error_coefficient = min(1.0,data["forecasts_generation"]["maximum error coefficient (%)"][0]/100)
+    time_horizon = int(data["forecasts_generation"]["time horizon (min.)"][0]*TimeData.time_resolution/60)
     
-    return Dcl.forecastGeneratorData(training_length=training_length,AR_order=AR_order,I_order=I_order,MA_order=MA_order)
+    
+    all_series = np.row_stack((loadsData.non_movable,loadsData.daily_movable,loadsData.yearly_movable,productionData.unit_prods))
+    all_series_prediction = np.zeros(all_series.shape)
+    for k in range(len(all_series)):
+        serie = all_series[k]
+        reference = estimate_reference_serie(serie,TimeData.time_resolution,Sliding_window_days)
+        epsilon = np.random.normal(error_bias,magnitude_error,len(serie))
+        errors = np.zeros(len(serie))
+        AR_coefficients = AR_coefficients
+        AR_order = AR_order
+        for t in range(AR_order,len(serie)):
+            errors[t] = sum([ AR_coefficients[i]*errors[t-1-i] for i in range(AR_order)])+epsilon[t]
+        all_series_prediction[k] = reference * (1+errors)
+        all_series_prediction[k] = np.clip(all_series_prediction[k],0.0,maximum_error_coefficient*max(serie))
+    all_series_prediction = all_series_prediction
+    
+    return Dcl.forecastData(forecast_series=all_series_prediction, time_horizon = time_horizon)
 
 def _parse_genset(data):
     """
@@ -490,7 +528,7 @@ def _parse_grid(data, datetime_model):
 
     grid_price = data["Grid_prices"]
     Contract_Ids = grid_price['Contract_Id']
-    (Grid_Fossil_fuel_ratio,grid_emissions,grid_ratio) = (np.float64(data['Environment']['Main grid fossil fuel ratio'][0]),np.float64(data['Environment']['Main grid emissions (gCO2/kWh)'][0]),np.float64(data['Environment']['Main grid ratio primary over final energy'][0]))
+    (Grid_Fossil_fuel_ratio,eqCO2emissions,grid_ratio) = (np.float64(data['Environment']['Main grid fossil fuel ratio'][0]),np.float64(data['Environment']['Main grid emissions (gCO2/kWh)'][0]),np.float64(data['Environment']['Main grid ratio primary over final energy'][0]))
 
     (prices_hour_type,prices_num,fixed_premium,overrun,selling_price) = compute_grid_prices(datetime_model, grid_price)
     n_contracts = len(Contract_Ids)
@@ -498,12 +536,12 @@ def _parse_grid(data, datetime_model):
     return Dcl.GridData(n_contracts = n_contracts,
                         fossil_fuel_ratio=Grid_Fossil_fuel_ratio,
                         energy_ratio=grid_ratio,
-                        CO2eq_emissions=grid_emissions,
+                        eqCO2emissions=eqCO2emissions,
                         price_hour_type=prices_hour_type,
                         prices=prices_num,
                         fixed_premium= fixed_premium,
-                        Overrun= overrun,
-                        Selling_price= selling_price,
+                        overrun= overrun,
+                        selling_price= selling_price,
                         Contract_Ids= Contract_Ids)
 
 def _parse_meteo(data, siteData, datetime_model):
@@ -792,13 +830,13 @@ def _parse_ERMESSInputs(data,node_id=None):
         hyperparametersProData = _parse_hyperparametersPro(data)
         dispatchingData = _parse_dispatching(data)
         if dispatchingData.predictive_dispatch:
-            forecastGeneratorData = _parse_forecasts(data,dispatchingData, TimeData.time_resolution)
-        else: forecastGeneratorData = None
+            forecastData = _parse_forecasts(data,loadsData, productionData, TimeData)
+        else: forecastData = None
         hyperparametersData = None
     else :
         hyperparametersProData = _parse_hyperparametersPro(data)
         dispatchingData = _parse_dispatching(data)
-        forecastGeneratorData = None
+        forecastData = None
         hyperparametersData = _parse_hyperparameters(data)
 
     connection = data["Environment"]["Connection"][0]
@@ -824,7 +862,7 @@ def _parse_ERMESSInputs(data,node_id=None):
         grid= gridData,
         genset= gensetData,
         optimization= optimizationData,
-        forecastGenerator = forecastGeneratorData,
+        forecasts = forecastData,
         hyperparameters= hyperparametersData,
         hyperparameterspro= hyperparametersProData,
         dispatching= dispatchingData,

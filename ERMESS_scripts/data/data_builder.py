@@ -270,51 +270,25 @@ class _LoadBlock:
         self.total_D_movable = np.array([np.sum(D_movable[np.arange(np.int32(i * time_resolution * HOURS_PER_DAY),np.int32((i + 1) * time_resolution * HOURS_PER_DAY))])
             for i in range( 0,np.int32(len(D_movable) / time_resolution / HOURS_PER_DAY))], dtype=np.float64)
         self.D_DSM_indexes = np.where(self.total_D_movable != 0)[0]       
-        
+
 class _forecastsBlock:
     """
     forecast profiles generator.
     
-    Create ARIMA forecasts using statsmodel.
+    Contain forecasts and associated informations.
     
     Attributes:
-        forecastGenerator: object containing parameters used to generate the forecasts
+        forecast_series: series of synthetic forecasts
     """
     __slots__ = (
-        "forecastGenerator",
-        "productionData",
-        "loadsData",)
+        "forecast_series",
+        "time_horizon",)
     
-    def __init__(self, forecastGenerator, productionData, loadsData): 
-  
-        from statsmodels.tsa.arima.model import ARIMA    
-    
-        train_starts = np.random.randint(low=0,high=productionData.unit_prods.shape[1] - forecastGenerator.training_length,size=1)[0]
-        all_series = np.row_stack((loadsData.non_movable,loadsData.D_movable,loadsData.Y_movable,productionData.unit_prods))
-        train = all_series[:,train_starts:(train_starts+forecastGenerator.training_length)]
-        models = list()
-        prediction = np.empty(all_series.shape)
-        start_forecast = max(forecastGenerator.AR_order[0],forecastGenerator.MA_order[0])
+    def __init__(self, forecast_series,time_horizon): 
 
-        for j in range(len(train)) : 
-            arima=ARIMA(train[j], order=(forecastGenerator.AR_order, 0, forecastGenerator.MA_order))
-            model = arima.fit()
-            constant = model.params[model.param_names.index("const")]
-            AR = model.arparams.copy()
-            MA = model.maparams.copy()
-            residuals = np.zeros(len(MA))
-                
-            prediction[j,:start_forecast] = all_series[j,0:start_forecast]
-            for t in range(start_forecast,all_series.shape[1]):
-                AR_estim = sum([ AR[i]*all_series[j,t-1-i] for i in range(len(AR))])
-                MA_estim = sum([ MA[i]*residuals[i] for i in range(len(MA))])
-                prediction[j,t] = (constant + AR_estim + MA_estim)
-                y_new = all_series[j,t]
-                print(residuals,prediction[j,t],all_series[j,t])
-                epsilon_new = y_new - prediction[j,t]
-                residuals[1:] = residuals[:-1]
-                residuals[0]=epsilon_new
-
+        self.forecast_series = forecast_series
+        self.time_horizon = time_horizon
+        
 
 class _StorageBlock:
     """
@@ -528,7 +502,7 @@ class _Environment:
              Electrical demand profiles (including DSM components).
              
          forecasts(ForecastBlock):
-             ARIMA forecast profiles for load and REN generation.
+             synthetic forecast profiles for load and REN generation.
              
          storage (StorageBlock):
              Storage system characteristics.
@@ -698,7 +672,7 @@ def build_environment(structured_data):
         structured_data.dispatching.Overlaps)
     
     if dispatching.predictive_dispatch:
-        Forecasts = _forecastsBlock(structured_data.forecastGenerator,production,loads)
+        Forecasts = _forecastsBlock(structured_data.forecasts.forecast_series,structured_data.forecasts.time_horizon)
     else:
         Forecasts = None
 

@@ -30,6 +30,48 @@ class PIDConfig:
         assert self.Kd >= 0, "Kd must be >= 0"
         assert self.u_min < self.u_max, "u_min must be < u_max"
         assert 0 <= self.beta <= 1, "beta must be in [0,1]"
+        
+class Control_node:
+    def __init(self,type_node,value=None,left=None,right=None):
+        self.type_node = type_node
+        self.value = value
+        self.left = left
+        self.right = right
+        
+def evaluate_node(node,x):
+    if node.type_node == CONSTANT:
+        return node.value
+    if node.type_node==PV:
+        return x["PV"]
+    if node.type_node==WIND:
+        return x["wind"]
+    if node.type_node==NON_MOVABLE:
+        return x["non_movable"]
+    if node.type_node==DAILY_MOVABLE:
+        return x["daily_movable"]
+    if node.type_node==YEARLY_MOVABLE:
+        return x["yearly_movable"]
+    if node.type_node==SOC:
+        return x["SOC"]
+    if node.type_node==PRICE:
+        return x["price"]
+    if node.type_node==CONSTANT:
+        return x["constant"]
+
+    if node.type_node == '+':
+        return evaluate_node (node.left,x) + evaluate_node (node.right,x)
+    if node.type_node == '-':
+        return evaluate_node (node.left,x) - evaluate_node (node.right,x)
+    if node.type_node == '*':
+        return evaluate_node (node.left,x) * evaluate_node (node.right,x)
+    if node.type_node == '**':
+        return evaluate_node (node.left,x) ** evaluate_node (node.right,x)
+    if node.type_node == '/':
+        a = evaluate_node (node.left,x)
+        b = evaluate_node (node.right,x)
+        if (abs(b)) < 1e-8 :
+            return(1e10)
+        return (a/b)
 
 @jitclass([
            ('production_set', int64[:]),
@@ -89,6 +131,37 @@ class Individual_pro(object):
             A JIT Individual PRO object
         """
         return Individual_pro(self.production_set.copy(),self.contract,self.DG_strategy,self.discharge_order.copy(),self.energy_use_coefficient,self.overlaps.copy(),self.D_DSM_minimum_levels.copy(),self.Y_DSM_minimum_levels.copy(),self.DG_min_runtime,self.DG_min_production,self.storages.copy(),self.fitness,self.storage_discrete_set.copy())
+
+class Individual_pro_prog(object):
+    """
+    Class representing an individual result in the optimization process (Production side).
+    Targeted for Numba JIT compilation.
+    
+    Attributes:
+        production_set (numpy.ndarray): Set of production units.
+        contract (int): Contract ID.
+        predictive_control (numpy.series) : sequence describing the predictive control strategy.
+        storages (numpy.ndarray): Storage units.
+        fitness (float): Fitness score of the individual.
+    """
+    def __init__(self,production_set,contract,DG_strategy,discharge_order,energy_use_coefficient,overlaps,D_DSM_minimum_levels,Y_DSM_minimum_levels,DG_min_runtime,DG_min_production,storages,fitness,storage_discrete_set):
+        self.production_set = production_set
+        self.contract = contract
+        self.predictive_control = predictive_control    
+        self.storages = storages
+        self.fitness = fitness
+        self.storage_discrete_set = storage_discrete_set
+    
+    def copy(self):
+        """
+        Creates a copy of an object of class Individual_pro (JIT type)
+        
+        Returns:
+            A JIT Individual PRO object
+        """
+        return Individual_pro(self.production_set.copy(),self.contract,self.predictive_controlon,self.storages.copy(),self.fitness,self.storage_discrete_set.copy())
+
+
 
 @jit(nopython=True)
 def convert_storage_configuration(gene,RENSystems_parameters):
@@ -363,6 +436,114 @@ def initial_population_pro(Context):
             DG_min_production = max(Context.loads.non_movable)*0.2*Random_DG_min_production[j]
 
         Init_pop_j=Individual_pro(production_set=np.array(Initial_prod[j],dtype=np.int64),contract=Initial_contracts[j],DG_strategy=DG_strategy,discharge_order=discharge_order,energy_use_coefficient=energy_use_coefficient,overlaps=overlaps,D_DSM_minimum_levels=D_DSM_minimum_levels,Y_DSM_minimum_levels=Y_DSM_minimum_levels,DG_min_runtime=DG_min_runtime,DG_min_production=DG_min_production,storages=storages_param,fitness=np.nan,storage_discrete_set=storage_discrete_set)
+        Initial_population.append(Init_pop_j)
+       
+    return(Initial_population)   
+
+def initial_population_pro_programming(Context):
+
+    """
+    Generate the initial population for the pro ERMESS mode.
+    
+    This function creates a population of individuals representing candidate
+    microgrid configurations. Each individual includes:
+        
+        - Production unit sizing (group-constrained),
+        - Energy contract selection,
+        - predictive control strategies
+        - Storage sizing (capacity, charge/discharge powers, initial SOC).
+        
+    The initialization combines structured seeding (first individuals scaled
+    deterministically) and stochastic sampling to ensure both feasibility
+    and diversity in the search space. Depending on the configuration stored in ``Context.config.defined_items``,
+    some decision variables may be fixed from user-defined values instead of
+    being randomly initialized.
+    
+    Args:
+        Context (OptimizationContext):
+            Optimization context containing all data required for population
+            generation, including:
+
+            - Hyperparameters (population size),
+            - Production technologies and grouping constraints,
+            - Load profiles,
+            - Grid contract information,
+            - Storage model and characteristics,
+            - User-defined operational constraints and strategies.
+
+    
+    Returns:
+        list[Individual_pro]:
+            List of initialized individuals.
+
+    Raises:
+        ValueError:
+            If ``Context.storage.model`` is not one of
+            ``{"continuous", "discrete"}``.
+    
+   Notes:
+        Production units belonging to the same production group are treated
+        as mutually exclusive. For each group, a single technology is selected
+        and all others are set to zero.
+
+        For continuous storage models, total storage capacity and charge/
+        discharge powers are randomly generated and distributed among storage
+        technologies using normalized random proportions.
+
+        For discrete storage models, storage capacities are sampled directly
+        from their respective integer bounds.
+
+        If the grid is unavailable (``Context.grid is None``), all individuals
+        receive a contract value of ``-1``.
+    """  
+
+    n_pop = Context.hyperparameters_pro.n_pop
+    Initial_prod_index = np.random.rand(n_pop,Context.production.n_units)
+    Initial_prod = np.array([[np.random.randint(0,Bound,1)[0] for Bound in Context.production.capacities] for j in range(n_pop)])
+    Initial_prod[0:min(n_pop,20)]=[((i+11)*Context.production.capacities/30).astype(int) for i in range(min(n_pop,20))]
+    
+    type_node = np.random.randint(0,2,n_pop*20)
+    predictive_operators = np.random.choice(BINARY_OPS,sum(type_node==0))
+    predictive_termials = np.random.choice(TERMINALS,sum(type_node==1))
+    
+    predictive_constants = np.random.normal (0,10,sum(predictive_termials==CONSTANT))
+
+
+    if Context.grid == None : 
+        Initial_contracts = np.repeat(-1,n_pop)
+    else:
+        Initial_contracts = np.random.randint(0, Context.grid.n_contracts, n_pop)
+           
+    Random_storages_init_SOCs = np.random.rand(Context.storage.n_store,n_pop)
+    Initial_population = list()
+    
+    for j in range(n_pop):
+        ones_prod=[Context.production.groups[i][np.argmax(Initial_prod_index[j][Context.production.groups[i]])] for i in range(len(Context.production.groups))]
+        Initial_prod[j][np.array([i not in ones_prod for i in range(Context.production.n_units)])]=0
+        prod = np.dot(Initial_prod[j],Context.production.unit_prods)/1000+Context.production.current_prod/1000
+        
+        if Context.storage.model == "continuous" :
+            storage_total_capacity=np.random.uniform(0,max(abs(np.cumsum(prod-Context.loads.non_movable))))
+            storage_total_discharge_power=np.random.uniform(0,max(Context.loads.non_movable))
+            storage_total_charge_power=np.random.uniform(0,max(prod))
+            distributions = np.random.rand(Context.storage.n_store,3)
+            distributions = distributions/np.sum(distributions,axis=0)
+            storages_discharge_powers = storage_total_discharge_power*distributions[:,0]
+            storages_charge_powers = storage_total_charge_power*distributions[:,1]
+            storages_volumes = storage_total_capacity*distributions[:,2]
+            storages_SOCs_Init = Random_storages_init_SOCs[:,j]
+            storages_param = np.concatenate((storages_volumes,storages_charge_powers,storages_discharge_powers,storages_SOCs_Init)).reshape(4,Context.storage.n_store)
+            storage_discrete_set = np.empty(0, dtype=np.int64)
+        elif Context.storage.model == "discrete" :
+            storage_discrete_set = np.array([np.random.randint(0,Bound,1)[0] for Bound in Context.storage.bounds],dtype=np.int64)
+            storages_param = np.vstack((np.zeros((Context.storage.n_store, 3), dtype=np.float64)-1,Random_storages_init_SOCs[:,j]))
+        else :
+            raise ValueError("Unknown storage model")
+        
+        operator_nodes = np.random.choice(BINARY_OPS,nb_predictive_nodes)
+        terminal_nodes = np.random.choice(TERMINALS,nb_predictive_nodes)
+
+        Init_pop_j=Individual_pro_prog(production_set=np.array(Initial_prod[j],dtype=np.int64),contract=Initial_contracts[j],predictive_control=predictive_control,storages=storages_param,fitness=np.nan,storage_discrete_set=storage_discrete_set)
         Initial_population.append(Init_pop_j)
        
     return(Initial_population)   

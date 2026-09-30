@@ -270,6 +270,38 @@ INDIV_PRO_DISCHARGE_POWER = int(Indiv_Pro_StoreCharIdx.Discharge_power)
 INDIV_PRO_SOC_INIT = int(Indiv_Pro_StoreCharIdx.SOC_init)
 
 # =========================================================
+# PREDICTIVE CONTROL BINARY OPS
+# =========================================================
+
+PLUS = 0
+MINUS = 1
+TIMES = 2
+DIVIDED = 3
+POWER = 4
+BINARY_OPS = [PLUS,MINUS,TIMES,DIVIDED,POWER]
+
+# =========================================================
+# PREDICTIVE CONTROL TERMINALS
+# =========================================================
+
+FORECAST_PV = 0
+FORECAST_WIND = 1
+FORECAST_NON_MOVABLE = 2
+FORECAST_DAILY_MOVABLE = 3
+FORECAST_YEARLY_MOVABLE = 4
+SOC = 5
+PRICE = 6
+CONSTANT = 7
+TERMINALS = FORECAST_PV,FORECAST_WIND,FORECAST_NON_MOVABLE,FORECAST_DAILY_MOVABLE,FORECAST_YEARLY_MOVABLE,SOC,PRICE,CONSTANT
+
+# =========================================================
+# PREDICTIVE CONTROL SIDES
+# =========================================================
+
+LEFT = 0
+RIGHT = 1
+
+# =========================================================
 # CRITERION
 # =========================================================
 

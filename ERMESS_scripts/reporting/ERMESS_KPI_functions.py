@@ -39,7 +39,7 @@ def _compute_balancing_core(Context,dispatching_timeseries,KPI_net_load):
     importation = np.where(trades > 0, trades, 0)
     exportation = np.where(trades < 0, -trades, 0)
 
-    return {"importation": importation,"exportation": exportation,"total_storage_power": total_storage_power}
+    return {"importation": importation,"exportation": exportation,"total_storage_power": total_storage_power, "grid_trading": trades}
 
 def _compute_EMS_kpis(solution, Context):
     genset_min_runtime = solution.DG_min_runtime / Context.time.time_resolution
@@ -57,7 +57,7 @@ def _compute_energy_flows(Context,KPI_net_load,KPI_core):
     if Context.optimization.connection == "On-grid":
         grid_importation = KPI_core["importation"]
         grid_exportation = KPI_core["exportation"]
-        grid_trading = KPI_core["trades (kW)"]
+        grid_trading = KPI_core["grid_trading"]
 
         genset_production = np.zeros(n_bits)
         curtailment = np.zeros(n_bits)
@@ -154,7 +154,7 @@ def _compute_genset_kpis(Context, KPI_core, dispatching_timeseries):
     elif (Context.optimization.connection=='On-grid'):     
         
         DG_nominal_power = 0.
-        DG_production=np.zeros(Context.time.n_bitsn_bits)
+        DG_production=np.zeros(Context.time.n_bits)
         closest_levels = 0
         DG_lifetime_years = np.nan
         annual_fuel_consumption_DG = 0.
@@ -176,7 +176,7 @@ def _compute_environmental_kpis(Context, solution, dispatching_timeseries, KPI_f
 
     annual_CO2eq_prod = sum(sum(np.multiply(np.array([solution.production_set[i]*Context.production.unit_prods[i,:] for i in range(len(solution.production_set))]).T/KILOS_CONVERSION_FACTOR,np.array(Context.production.specs_num[:,PROD_EMISSIONS]))))/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years
     annual_CO2eq_storage = annualize(np.inner(np.array([sum(np.where(dispatching_timeseries["storage_TS"][i]>0,dispatching_timeseries["storage_TS"][i],0)) for i in range(Context.storage.n_store)]),Context.storage.characteristics[STOR_EMISSIONS,:])/TONS_CONVERSION_FACTOR,Context)
-    annual_CO2eq_importation = sum(KPI_flows["timeseries"]["grid importation (kW)"])*Context.grid.C02eqemissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.optimization.connection=='On-grid') else 0
+    annual_CO2eq_importation = sum(KPI_flows["timeseries"]["grid importation (kW)"])*Context.grid.eqCO2emissions/TONS_CONVERSION_FACTOR/Context.time.time_resolution/Context.time.duration_years if (Context.optimization.connection=='On-grid') else 0
        
     #fossil fuel consumption                                
     annual_fossil_fuel_consumption_importation =  annualize(Context.grid.fossil_fuel_ratio*sum(KPI_flows["timeseries"]["grid importation (kW)"]),Context) if (Context.optimization.connection=='On-grid') else 0
@@ -262,8 +262,8 @@ def _compute_economic_kpis (Context, solution, KPI_storage, KPI_genset, KPI_flow
     elif (Context.optimization.connection=='On-grid'):   
         annual_gain_exportation = annualize(np.multiply(KPI_flows["timeseries"]["grid exportation (kW)"],Context.grid.selling_price[solution.contract,:]).sum(),Context)
         annual_cost_importation = annualize(np.multiply(KPI_flows["timeseries"]["grid importation (kW)"],Context.grid.prices[solution.contract,:]).sum(),Context)
-        annual_cost_overrun = max(0,(max(KPI_flows["timeseries"]["grid exportation (kW)"])-KPI_grid["contract_power"])*Context.grid.overrun[solution.contract])
-        annual_cost_contract_power = Context.grid.fixed_premium[solution.contract]*KPI_grid["contract_power"]
+        annual_cost_overrun = max(0,(max(KPI_flows["timeseries"]["grid importation (kW)"])-KPI_grid["Contract power (kW)"])*Context.grid.overrun[solution.contract])
+        annual_cost_contract_power = Context.grid.fixed_premium[solution.contract]*KPI_grid["Contract power (kW)"]
         annual_cost_genset_CAPEX = 0
         annual_cost_genset_OPEX = 0
         annual_total_fuel_cost = 0.

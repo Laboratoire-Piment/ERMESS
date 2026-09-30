@@ -270,7 +270,22 @@ def _pro_size_storage_power(gene,RENSystems_parameters):
     size_power=np.array([max(powers_in[i],powers_out[i]) for i in range(RENSystems_parameters.n_store)])
     return(size_power)
 
-
+@jit(nopython=True)
+def _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS):
+    """
+    Update storage power capacities based on operation.
+    
+    This function updates charging and discharging power values in the
+    gene structure using observed storage time series.
+    
+    Notes:
+        - Charging power is stored as a positive value.
+        - Discharging power is the maximum positive output.
+    """
+    for i in range(len(storage_TS)):
+        gene.storages[INDIV_PRO_CHARGE_POWER][i]=max(gene.storages[INDIV_PRO_CHARGE_POWER][i],max(-(storage_TS[i])))   
+        gene.storages[INDIV_PRO_DISCHARGE_POWER][i]=max(gene.storages[INDIV_PRO_CHARGE_POWER][i],max(storage_TS[i]))  
+    return(gene.storages)
 
 @jit(nopython=True)
 def _pro_indicators_storage(gene,RENSystems_parameters,global_parameters,storage_TS,losses):
@@ -544,7 +559,7 @@ def LCOE_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
     annual_cost_production = _pro_annual_cost_production(gene,RENSystems_parameters)
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
 
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
     
     importation=np.where(trades>0,trades,0)    
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
@@ -595,7 +610,7 @@ def Self_consumption_pro(gene,RENSystems_parameters,global_parameters,Genset_par
         - The function assumes `n_store` matches the dimensions of `storage_characteristics`.
     """     
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
     importation=np.where(trades>0,trades,0)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     
@@ -634,7 +649,7 @@ def Self_sufficiency_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     """
      
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)                                                           
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)                                                           
     importation=np.where(trades>0,trades,0)
     Grid_importation = importation if (Connection=='On-grid') else np.repeat(0.,n_bits)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
@@ -671,7 +686,7 @@ def Max_import_power_pro(gene,RENSystems_parameters,global_parameters,Genset_par
     """
 
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)                                                              
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)                                                              
     importation=np.where(trades>0,trades,0)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     
@@ -706,7 +721,7 @@ def Losses_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,gr
     """
      
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)                                                               
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)                                                               
     importation=np.where(trades>0,trades,0)  
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     
@@ -738,7 +753,7 @@ def Annual_net_benefits_pro(gene,RENSystems_parameters,global_parameters,Genset_
     """
     annual_cost_production = _pro_annual_cost_production(gene,RENSystems_parameters)
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
     importation=np.where(trades>0,trades,0)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     
@@ -789,7 +804,7 @@ def NPV_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid_
     annual_cost_production = _pro_annual_cost_production(gene,RENSystems_parameters)
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
     
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
       
                                                         
     importation=np.where(trades>0,trades,0)
@@ -844,7 +859,7 @@ def Autonomy_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,
     """ 
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
     
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
   
         
     importation=np.where(trades>0,trades,0)
@@ -884,7 +899,7 @@ def eqCO2_emissions_pro(gene,RENSystems_parameters,global_parameters,Genset_para
     KILOS_CONVERSION_FACTOR = 1000
     TONS_CONVERSION_FACTOR = 1000000
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)   
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)           
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)           
         
     importation=np.where(trades>0,trades,0)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
@@ -934,7 +949,7 @@ def Fossil_fuel_consumption_pro(gene,RENSystems_parameters,global_parameters,Gen
     """  
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
     
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)        
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)        
   
         
     importation=np.where(trades>0,trades,0)
@@ -989,7 +1004,7 @@ def EROI_pro(gene,RENSystems_parameters,global_parameters,Genset_parameters,grid
         - Divisions by zero may occur if `sum(Optimized_Load) == 0`. Ensure non-zero total load.
     """ 
     (production, Optimized_Load,trades,storage_TS,D_DSM,Y_DSM,SOCs_eff,losses,P_diff) = _pro_cost_base_indicators(gene,RENSystems_parameters,global_parameters,pro_parameters)
-#    gene.storages = _pro_update_storage_power(gene,RENSystems_parameters,storage_TS)          
+    gene.storages = _pro_update_storage_powers(gene,RENSystems_parameters,storage_TS)          
     importation=np.where(trades>0,trades,0)
     den_Optimized_load = max(1e-15,sum(Optimized_Load))
     obtained_constraint_level = _get_constraint_level(global_parameters,importation,den_Optimized_load,trades,production)

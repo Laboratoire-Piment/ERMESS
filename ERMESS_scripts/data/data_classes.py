@@ -65,23 +65,21 @@ class LoadData:
     yearly_movable: np.ndarray
     
 @dataclass
-class forecastGeneratorData:
-    training_length: int
-    AR_order: int
-    I_order: int
-    MA_order: int
+class forecastData:
+    forecast_series: np.ndarray
+    time_horizon: int
     
 @dataclass
 class GridData:
     n_contracts: int
     fossil_fuel_ratio: float
     energy_ratio: float
-    CO2eq_emissions: float
-    prices_hour_type: np.ndarray
+    eqCO2emissions: float
+    price_hour_type: np.ndarray
     prices: np.ndarray
     fixed_premium: np.ndarray
-    Overrun: np.ndarray
-    Selling_price: np.ndarray
+    overrun: np.ndarray
+    selling_price: np.ndarray
     Contract_Ids: np.ndarray
     
 @dataclass
@@ -149,7 +147,7 @@ class ERMESSInputs:
     grid: Optional[GridData]
     genset: Optional[GensetData]
     optimization: OptimizationData
-    forecastGenerator: forecastGeneratorData
+    forecasts: forecastData
     hyperparameters: Optional[HyperparametersData]
     hyperparameterspro: HyperparametersProData
     dispatching: DispatchingData

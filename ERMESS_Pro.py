@@ -78,5 +78,8 @@ def ERMESS_pro(input_file_path=None) :
         Epp.post_traitement(solution=best, Context=Context, datetime=structured_data.time.datetime)    
         
 if __name__ == '__main__':
-    ERMESS_pro(sys.argv[1])
+    if len(sys.argv) > 1:
+        ERMESS_pro(sys.argv[1])
+    else:
+        ERMESS_pro()
         
