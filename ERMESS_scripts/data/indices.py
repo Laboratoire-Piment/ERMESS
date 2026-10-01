@@ -2,8 +2,6 @@
 """
 Created on Tue Mar 24 12:30:54 2026
 
-
-
 Numba-safe indices for ERMESS project.
 
 This module provides integer constants derived from IntEnum definitions
