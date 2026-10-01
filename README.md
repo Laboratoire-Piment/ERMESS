@@ -23,6 +23,16 @@ Complete documentation available here :
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21947535.svg)](https://doi.org/10.5281/zenodo.21947535)
 
+##How to use ERMESS ?
+
+No need to install anything !
+
+###Windows
+1. Go to "Releases"
+2. Download ERMESS_Pro.exe
+3. Open the file and click on the ERMESS.exe file
+4. Follow the instructions
+
 ## Scripts
 
 ERMESS_Pro.py : runs the PRO optimization mode (Basic Usage/Examples/Experiments).
