@@ -23,11 +23,11 @@ Complete documentation available here :
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21947535.svg)](https://doi.org/10.5281/zenodo.21947535)
 
-##How to use ERMESS ?
+## How to use ERMESS ?
 
 No need to install anything !
 
-###Windows
+### Windows
 1. Go to "Releases"
 2. Download ERMESS_Pro.exe
 3. Open the file and click on the ERMESS.exe file
@@ -55,7 +55,7 @@ reporting : functions used for output, reporting and display
 
 ##  files
 
-###INPUTS : 
+### INPUTS : 
 
 Excel file named "inputs_ERMESS_Pro.xlsx". 
 
@@ -70,7 +70,7 @@ If applicable : Main grid emissions, Main grid fossil fuel ratio, Main grid rati
 Please follow the example file given in this folder
 
 
-###OUTPUT : 
+### OUTPUT : 
 
 Excel file named "output_ERMESS_end.xlsx". 
 
