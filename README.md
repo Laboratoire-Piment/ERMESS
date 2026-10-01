@@ -45,7 +45,7 @@ reporting : functions used for output, reporting and display
 
 ##  files
 
-#INPUTS : 
+###INPUTS : 
 
 Excel file named "inputs_ERMESS_Pro.xlsx". 
 
@@ -57,10 +57,10 @@ Timeseries : Current production (if applicable), Critic load, Daily movable load
 
 If applicable : Main grid emissions, Main grid fossil fuel ratio, Main grid ratio primary over final energy, available trading contracts with detailed prices
 
-Please follow the example file given in GitHub
+Please follow the example file given in this folder
 
 
-#OUTPUT : 
+###OUTPUT : 
 
 Excel file named "output_ERMESS_end.xlsx". 
 

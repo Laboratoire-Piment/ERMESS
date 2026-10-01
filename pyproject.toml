@@ -1,6 +1,6 @@
 [project]
 name = "ermess"
-version = "1.0.0"
+version = "1.0.1"
 description = "Energy system modeling and evolutionary optimization framework"
 authors = [
     { name = "Josselin Le Gal La Salle" }
