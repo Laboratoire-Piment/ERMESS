@@ -20,7 +20,7 @@ from ERMESS_scripts.reporting import ERMESS_KPI_functions as EKPI
 
 def estimate_reference_serie(serie, time_resolution, window_days=15):
     """
-    Estimate clear-sky irradiance through a moving maximum over identical hours.
+    Estimate clear-sky irradiance (or climatological unperturbed serie) through a moving maximum over identical hours.
         
     Parameters:
     - serie: serie to be referenced.
@@ -150,6 +150,7 @@ def _build_production_characteristics(data):
 
     PV_specs = data["PV_production_specs"][cols].to_numpy(dtype=float)
     WT_specs = data["WT_production_specs"][cols].to_numpy(dtype=float)
+    types = np.concatenate((np.repeat("Solar",len(PV_specs)),np.repeat("Wind",len(WT_specs))))
 
     characteristics_num = np.row_stack((PV_specs, WT_specs))
     
@@ -159,7 +160,7 @@ def _build_production_characteristics(data):
 
     ids = np.concatenate((data["PV_production_specs"]["Id"].to_numpy(dtype='U'),data["WT_production_specs"]["Id"].to_numpy(dtype='U')))
 
-    return characteristics_num, ids, capacities, groups
+    return characteristics_num, ids, capacities, groups, types
 
 def _compute_current_production(data, datetime_model, timezone):
     
@@ -446,6 +447,52 @@ def _parse_loads(data, datetime_model, timezone, meteoData, time_resolution):
 
     return Dcl.LoadData(non_movable=load["non_movable"],yearly_movable=load["yearly_movable"],daily_movable=load["daily_movable"])
 
+def generate_forecast_errors(n_series,n_timesteps,error_bias,magnitude_error,AR_order,AR_coefficients):
+    """
+    
+    Generate synthetic forecast errors using AR approach.
+    
+    Args:
+        n_series (int): number of series.
+        n_timesteps (int): length of the series.
+        error_bias (float): mean bias of the errors.
+        magnitude_error (float): Average error.
+        AR_order (int): order of the autoregressive process of the error generation.
+        AR_coefficients (np.ndarray): Autoregressive coefficients of the process of error generation.
+        
+    Returns:
+        errors: np.ndarray containing the synthetic errors.
+
+    """
+
+    AR_coefficients = np.asarray(AR_coefficients)
+    epsilon = np.random.normal(error_bias,magnitude_error,(n_series, n_timesteps))
+    errors = np.zeros((n_series, n_timesteps))
+    for t in range(AR_order,n_timesteps):
+        errors[:,t] = np.sum( AR_coefficients[:AR_order]*errors[:,t-AR_order:t][:,::-1],axis=1)+epsilon[:,t]
+    return(errors)  
+
+def create_forecast(serie,time_resolution,Sliding_window_days,errors,maximum_error_coefficient):
+    """
+    
+    Generate synthetic forecast using errors and real timeserie.
+    
+    Args:
+        serie (np.ndarray): real timeSerie.
+        time_resolution (float): time resolution of the data.
+        Sliding_window_days (int): Size of the window to estimate climatological reference serie.
+        errors (np.ndarray): synthetic errors of the forecast.
+        maximum_error_coefficient (np.ndarray): maximum admissible error (relative to the max. of the serie).
+
+    Returns:
+        serie_prediction: np.ndarray containing the synthetic forecast.
+
+    """
+    reference = estimate_reference_serie(serie,time_resolution,Sliding_window_days)
+    serie_prediction = reference * (1+errors)
+    serie_prediction = np.clip(serie_prediction,0.0,maximum_error_coefficient*max(serie)) 
+    return(serie_prediction)
+
 def _parse_forecasts(data, loadsData, productionData, TimeData):
     """
     
@@ -468,24 +515,24 @@ def _parse_forecasts(data, loadsData, productionData, TimeData):
     magnitude_error = data["forecasts_generation"]["magnitude of errors (%)"][0]/100
     maximum_error_coefficient = min(1.0,data["forecasts_generation"]["maximum error coefficient (%)"][0]/100)
     time_horizon = int(data["forecasts_generation"]["time horizon (min.)"][0]*TimeData.time_resolution/60)
+    time_resolution = TimeData.time_resolution
     
+    types_idx = np.unique(productionData.types)
+
+    n_types = 3+len(types_idx)
+    n_timesteps = TimeData.n_bits
     
-    all_series = np.row_stack((loadsData.non_movable,loadsData.daily_movable,loadsData.yearly_movable,productionData.unit_prods))
-    all_series_prediction = np.zeros(all_series.shape)
-    for k in range(len(all_series)):
-        serie = all_series[k]
-        reference = estimate_reference_serie(serie,TimeData.time_resolution,Sliding_window_days)
-        epsilon = np.random.normal(error_bias,magnitude_error,len(serie))
-        errors = np.zeros(len(serie))
-        AR_coefficients = AR_coefficients
-        AR_order = AR_order
-        for t in range(AR_order,len(serie)):
-            errors[t] = sum([ AR_coefficients[i]*errors[t-1-i] for i in range(AR_order)])+epsilon[t]
-        all_series_prediction[k] = reference * (1+errors)
-        all_series_prediction[k] = np.clip(all_series_prediction[k],0.0,maximum_error_coefficient*max(serie))
-    all_series_prediction = all_series_prediction
+    forecast_production = np.zeros((len(productionData.unit_prods),n_timesteps))
+    errors_series=generate_forecast_errors(n_types,n_timesteps,error_bias,magnitude_error,AR_order,AR_coefficients)
     
-    return Dcl.forecastData(forecast_series=all_series_prediction, time_horizon = time_horizon)
+    forecast_non_movable = create_forecast(loadsData.non_movable.values,time_resolution,Sliding_window_days,errors_series[0],maximum_error_coefficient)
+    forecast_daily_movable = create_forecast(loadsData.daily_movable.values,time_resolution,Sliding_window_days,errors_series[1],maximum_error_coefficient)
+    forecast_yearly_movable = create_forecast(loadsData.yearly_movable.values,time_resolution,Sliding_window_days,errors_series[2],maximum_error_coefficient)
+    for k,real_prod_serie in enumerate(productionData.unit_prods):
+        type_prod_idx = np.where(types_idx==productionData.types[k])[0][0]
+        forecast_production[k]=create_forecast(real_prod_serie,time_resolution,Sliding_window_days,errors_series[3+type_prod_idx],maximum_error_coefficient)
+    
+    return Dcl.forecastData(non_movable_load=forecast_non_movable,daily_movable_load=forecast_daily_movable,yearly_movable_load=forecast_yearly_movable,production=forecast_production, time_horizon = time_horizon)
 
 def _parse_genset(data):
     """
@@ -610,7 +657,7 @@ def _parse_production(data, site, datetime_model, MeteoData):
     # 2. CHARACTERISTICS
     # =========================
 
-    characteristics_num, ids, capacities, groups = _build_production_characteristics(data)
+    characteristics_num, ids, capacities, groups, types = _build_production_characteristics(data)
 
     # =========================
     # 3. CURRENT PRODUCTION
@@ -627,7 +674,7 @@ def _parse_production(data, site, datetime_model, MeteoData):
 
     numbers = len(characteristics_num)
 
-    return Dcl.ProductionData(ids=ids,characteristics_num=characteristics_num,capacities=capacities,groups=groups,current_prod=current_prod,unit_prods=unit_prods,numbers=numbers)
+    return Dcl.ProductionData(ids=ids,characteristics_num=characteristics_num,capacities=capacities,groups=groups,current_prod=current_prod,unit_prods=unit_prods,numbers=numbers,types=types)
 
 def _parse_constraint(value) :
     """

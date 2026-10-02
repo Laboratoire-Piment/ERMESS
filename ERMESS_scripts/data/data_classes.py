@@ -42,6 +42,7 @@ class ProductionData:
     current_prod: np.ndarray
     unit_prods: np.ndarray
     numbers: int
+    types: np.ndarray
     
 @dataclass
 class ContinuousStorageData:
@@ -66,7 +67,10 @@ class LoadData:
     
 @dataclass
 class forecastData:
-    forecast_series: np.ndarray
+    non_movable_load: np.ndarray
+    daily_movable_load: np.ndarray
+    yearly_movable_load: np.ndarray
+    production: np.ndarray
     time_horizon: int
     
 @dataclass

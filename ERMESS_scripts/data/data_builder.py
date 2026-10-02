@@ -273,23 +273,32 @@ class _LoadBlock:
 
 class _forecastsBlock:
     """
-    forecast profiles generator.
+    forecast profiles.
     
     Contain forecasts and associated informations.
     
     Attributes:
-        forecast_series: series of synthetic forecasts
+        forecast_non_movable: synthetic forecast of the non movable load.
+        forecast_daily_movable: synthetic forecast of the daily movable load.
+        forecast_yearly_movable: synthetic forecast of the yearly movable load.
+        forecast_production: synthetic forecast production profiles.
+        time_horizon: time horizon of the forecast.
     """
     __slots__ = (
-        "forecast_series",
+        "forecast_non_movable",
+        "forecast_daily_movable",
+        "forecast_yearly_movable",
+        "forecast_production",
         "time_horizon",)
     
-    def __init__(self, forecast_series,time_horizon): 
+    def __init__(self, forecast_non_movable,forecast_daily_movable,forecast_yearly_movable,forecast_production,time_horizon): 
 
-        self.forecast_series = forecast_series
+        self.forecast_non_movable = forecast_non_movable
+        self.forecast_daily_movable = forecast_daily_movable
+        self.forecast_yearly_movable = forecast_yearly_movable
+        self.forecast_production = forecast_production
         self.time_horizon = time_horizon
         
-
 class _StorageBlock:
     """
      Storage system description for the optimization environment.
@@ -672,7 +681,11 @@ def build_environment(structured_data):
         structured_data.dispatching.Overlaps)
     
     if dispatching.predictive_dispatch:
-        Forecasts = _forecastsBlock(structured_data.forecasts.forecast_series,structured_data.forecasts.time_horizon)
+        Forecasts = _forecastsBlock(structured_data.forecasts.non_movable_load,
+                                    structured_data.forecasts.daily_movable_load,
+                                    structured_data.forecasts.yearly_movable_load,
+                                    structured_data.forecasts.production,
+                                    structured_data.forecasts.time_horizon)
     else:
         Forecasts = None
 

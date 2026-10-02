@@ -53,7 +53,7 @@ def default_wind_turbines(WT_prod):
     if (WT_prod['turbine_type']=='1 kW default'):
         turbineDict = {#SWIFT_1kW_2
                 "nominal_power": 1000,"hub_height": WT_prod['hub_height'],
-                "power_curve": pd.DataFrame(data={"value": [0,0,20,50,80,130,180,250,330,430,530,650,770,900,1020,1140,1250,1330,1390,1430,1410,1340,1210,1090,970,760,650,540,470,400,400,350,370,320,370,360,380,370,400,400], # in W
+                "power_curve": pd.DataFrame(data={"value": [0,5,20,50,80,130,180,250,330,430,530,650,770,900,1020,1140,1250,1330,1390,1430,1410,1340,1210,1090,970,760,650,540,470,400,400,350,370,320,370,360,380,370,400,400], # in W
                 "wind_speed": list(x/2 for x in range(9,49,1)) # in m/s
                                 ,}),}
     elif (WT_prod['turbine_type']=='5 kW default'):
@@ -77,7 +77,7 @@ def default_wind_turbines(WT_prod):
     elif (WT_prod['turbine_type']=='100 kW default'):
         turbineDict = {
                 "nominal_power": 100000,"hub_height": WT_prod['hub_height'],
-                "power_curve": pd.DataFrame(data={"value": [0,0,500,4100,10500,19000,29400,41000,54300,66800,77700,86400,92800,97800,100000,99900,99200,98400,97500,96800,96400,96300,96800,98000,99200], # in W
+                "power_curve": pd.DataFrame(data={"value": [0,100,500,4100,10500,19000,29400,41000,54300,66800,77700,86400,92800,97800,100000,99900,99200,98400,97500,96800,96400,96300,96800,98000,99200], # in W
                 "wind_speed": list(x for x in range(1,26,1)) # in m/s
                                 ,}),}
     else :
