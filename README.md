@@ -33,6 +33,20 @@ No need to install anything !
 3. Open the file and click on the ERMESS.exe file
 4. Follow the instructions
 
+### From source (developers and contributors)
+
+Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) (macOS, Linux or Windows). uv fetches the right Python and installs the dependencies listed in `pyproject.toml`.
+
+```bash
+git clone https://github.com/Laboratoire-Piment/ERMESS.git
+cd ERMESS
+uv run --python 3.12 python ERMESS_Pro.py inputs_ERMESS_pro_example.xlsx
+```
+
+The first run creates a `.venv/` and installs ERMESS in editable mode, so your changes to `ERMESS_scripts/` are picked up on the next run. The results are written to `output_ERMESS_pro.xlsx`. On the example file a run takes about 2 minutes, most of it Numba compilation on first call.
+
+Without a file argument, `ERMESS_Pro.py` opens a file dialog instead.
+
 ## Scripts
 
 ERMESS_Pro.py : runs the PRO optimization mode (Basic Usage/Examples/Experiments).
