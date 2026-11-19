@@ -10,7 +10,15 @@ requires-python = ">=3.9"
 
 dependencies = [
     "numpy",
-    "pandas"
+    "pandas<3",
+    "numba",
+    "openpyxl",
+    "plotly",
+    "pvlib",
+    "windpowerlib",
+    "timezonefinder",
+    "cdsapi",
+    "xarray",
 ]
 
 [project.optional-dependencies]

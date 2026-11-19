@@ -152,7 +152,7 @@ def _build_production_characteristics(data):
     WT_specs = data["WT_production_specs"][cols].to_numpy(dtype=float)
     types = np.concatenate((np.repeat("Solar",len(PV_specs)),np.repeat("Wind",len(WT_specs))))
 
-    characteristics_num = np.row_stack((PV_specs, WT_specs))
+    characteristics_num = np.vstack((PV_specs, WT_specs))
     
     capacities = np.concatenate((data["PV_production_specs"]["Capacity"].to_numpy(dtype=int),data["WT_production_specs"]["Capacity"].to_numpy(dtype=np.int64)))
     groups_ID = np.concatenate((data["PV_production_specs"]["Surface group"].to_numpy(dtype=int),data["WT_production_specs"]["Surface group"].to_numpy(dtype=np.int64)))
@@ -259,7 +259,7 @@ def _compute_production_automatic(data, site, datetime_model, MeteoData):
         for i in range(len(WT_prod))])
 
     # concat
-    unit_prods = np.row_stack([x for x in (prods_U_PV, prods_U_WT) if x.size])
+    unit_prods = np.vstack([x for x in (prods_U_PV, prods_U_WT) if x.size])
 
     return unit_prods
 
@@ -607,9 +607,14 @@ def _parse_meteo(data, siteData, datetime_model):
     
     if meteo_mode == "manual":
 
-        Meteodata = data["Meteo"].loc[:, ['GHI (W/m²)', 'DNI (W/m²)', 'DHI (W/m²)','Air temperature (°C)', 'Wind speed (m/s)'
-        ]].rename(columns={'GHI (W/m²)': 'ghi','DNI (W/m²)': 'dni','DHI (W/m²)': 'dhi','Air temperature (°C)': 'temp_air','Wind speed (m/s)': 'wind_speed'
-        })
+        # Same shape as the ERA5 path (ERMESS_meteo.import_meteo): tz-aware index + (variable, height) columns,
+        # otherwise the wind model fails on missing 'temperature'/'pressure'.
+        meteo = data["Meteo"]
+        heights = dict(zip(meteo['Variable'].dropna(), meteo['Measurement height (m)'].dropna()))
+        sheet_cols = ['GHI (W/m²)', 'Air temperature (°C)', 'Wind speed (m/s)', 'Air temperature (°C)', 'Pressure (hPa)']
+        index = pd.to_datetime(meteo["Datetime"], format="%d/%m/%Y %H:%M").dt.tz_localize(siteData.timezone, nonexistent="shift_forward", ambiguous=False)
+        Meteodata = pd.DataFrame(data=meteo.loc[:, sheet_cols].values, index=pd.DatetimeIndex(index),
+            columns=[np.array(['ghi', 'temp_air', 'wind_speed', 'temperature', 'pressure']), np.array([heights[c] for c in sheet_cols], dtype=float)])
 
     else:
         CDSAPI_key = data["Environment"]["CDSAPI key"][0]
@@ -814,7 +819,7 @@ def _parse_dispatching(data):
         Discharge_order = (np.array(data['Dispatching']['Discharge order'],dtype=np.int64)[~pd.isnull(np.array(data['Dispatching']['Storages']))])-1 
         Intern_overlap = np.array(data['Dispatching']['Overlap levels (%)'][0:9],dtype='float64')
         Extern_overlap = np.array(data['Dispatching']['DG/grid overlap levels (%)'][0:9],dtype='float64')
-        Overlaps = np.row_stack((Intern_overlap,Extern_overlap))
+        Overlaps = np.vstack((Intern_overlap,Extern_overlap))
     else :
         Discharge_order = None
         Overlaps = None   
